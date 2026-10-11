@@ -1,0 +1,123 @@
+/* Only the editor chrome consumes theme tokens; export canvases retain their palette. */
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+.app-header {
+  background: var(--surface);
+  border-color: var(--line);
+}
+.workspace {
+  max-width: 1600px;
+  grid-template-columns: 390px minmax(0, 1fr);
+}
+.editor {
+  padding: 24px;
+}
+.intro .eyebrow {
+  color: var(--accent);
+  letter-spacing: 2px;
+  font-size: 10px;
+}
+.intro h1 {
+  font-size: 26px;
+  font-weight: 500;
+}
+.intro > p:last-child {
+  line-height: 1.6;
+  font-size: 13px;
+}
+.editor-section {
+  border-radius: 12px;
+  padding: 18px;
+}
+.editor-section > summary {
+  font-size: 13px;
+}
+.editor-section label {
+  font-size: 12px;
+}
+.editor .field-row {
+  gap: 12px;
+}
+.editor button[aria-pressed='true'],
+#export-button {
+  color: var(--on-accent);
+}
+.preview-section {
+  padding: 26px 32px;
+}
+.preview-heading h2 {
+  font-weight: 500;
+}
+.layout-tabs {
+  border-radius: 10px;
+  padding: 5px;
+}
+.layout-tabs button {
+  font-size: 12px;
+  min-height: 42px;
+}
+.layout-tabs button[aria-selected='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: transparent;
+  box-shadow: none;
+}
+#preview-stage {
+  background: var(--field);
+  border-color: var(--line);
+  border-radius: 14px;
+}
+.upload-card {
+  border-style: dashed;
+  padding: 14px;
+}
+#export-button {
+  background: var(--accent);
+}
+#export-button:hover {
+  background: var(--accent-hover);
+}
+.editor #status.error {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+.integrated .app-header {
+  height: 58px;
+  padding: 0 24px;
+}
+.integrated .header-note {
+  font-size: 10px;
+  color: var(--muted);
+}
+.integrated .app-header button {
+  font-size: 12px;
+}
+.integrated #editor-form > fieldset:nth-of-type(2) {
+  display: none;
+}
+@media (max-width: 1000px) {
+  .workspace {
+    grid-template-columns: 340px minmax(0, 1fr);
+  }
+  .editor {
+    padding: 18px;
+  }
+  .preview-section {
+    padding: 20px;
+  }
+}
+@media (max-width: 660px) {
+  .workspace {
+    display: flex;
+  }
+  .editor {
+    width: 100%;
+  }
+  .preview-section {
+    padding: 20px 16px;
+  }
+  .integrated .app-header {
+    padding: 0 16px;
+  }
+}

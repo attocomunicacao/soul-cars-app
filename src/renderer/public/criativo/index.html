@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <script src="../shared/theme.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Editor de criativos automotivos com layout fixo e exportação em 1080 × 1920 ou 1080 × 1350."
+    />
+    <title>Soul Criativo — Editor automotivo</title>
+    <link rel="icon" href="../favicon.ico?v=soul-1" sizes="any" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="layout4.css" />
+    <link rel="stylesheet" href="layout6.css" />
+    <link rel="stylesheet" href="harmony.css" />
+    <script src="assets/font.js" defer></script>
+    <script src="assets/condensed.js" defer></script>
+    <script src="assets/barlow.js" defer></script>
+    <script src="assets/html-to-image.js" defer></script>
+    <script src="shadow.js" defer></script>
+    <script src="original-floor.js" defer></script>
+    <script src="script.js" defer></script>
+    <script src="layout4.js" defer></script>
+    <script src="layout6.js" defer></script>
+    <script src="layouts.js" defer></script>
+    <link rel="stylesheet" href="workbench.css" />
+    <script src="workbench.js" defer></script>
+    <link rel="stylesheet" href="../shared/tokens.css" />
+    <link rel="stylesheet" href="studio.css" />
+    <link rel="stylesheet" href="compact.css" />
+  </head>
+  <body>
+    <script src="flow-bridge.js" defer></script>
+    <script src="app-bridge.js" defer></script>
+    <header class="app-header">
+      <a class="brand" href="./index.html"
+        ><span class="brand-mark">s.</span> SOUL <b>CRIATIVO</b></a
+      ><span class="header-note">ESTÚDIO AUTOMOTIVO</span
+      ><button type="button" id="theme-toggle" data-theme-toggle>Tema escuro</button>
+    </header>
+    <main class="workspace">
+      <section class="editor" aria-label="Editar criativo">
+        <div class="intro">
+          <p class="eyebrow">SEU PRÓXIMO ANÚNCIO</p>
+          <h1>Fotos reais.<br />Uma boa impressão.</h1>
+          <p>Preencha os dados, adicione as fotos e baixe sua arte.</p>
+        </div>
+        <form id="editor-form">
+          <fieldset>
+            <legend><span>01</span> Informações do veículo</legend>
+            <label
+              >Título<input name="titulo" value="FORD FIESTA 2016" autocomplete="off" required
+            /></label>
+            <div class="field-row">
+              <label>Versão<input name="subtitulo" value="S 1.5" required /></label
+              ><label
+                >Câmbio<input name="terceiro-titulo" value="MANUAL" required
+              /></label>
+            </div>
+            <div class="field-row">
+              <label
+                >Valor de venda <span class="muted">(R$)</span
+                ><input name="valor" value="45.900" inputmode="decimal" required /></label
+              ><label>Ano<input name="ano" value="2016" inputmode="numeric" required /></label>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend><span>02</span> Fotografias</legend>
+            <p class="field-hint">Selecione, arraste ou clique em uma área e cole uma foto.</p>
+            <div id="upload-controls"></div>
+          </fieldset>
+        </form>
+        <div class="export-area">
+          <button type="button" id="export-button">Baixar layout atual <span>↓</span></button
+          ><button type="button" id="export-both">Baixar os dois formatos</button>
+          <p class="export-note">Fotos processadas neste navegador</p>
+          <p id="status" role="status" aria-live="polite">
+            Carregue a foto do veículo para começar.
+          </p>
+        </div>
+      </section>
+      <section class="preview-section" aria-label="Prévia do anúncio">
+        <div class="preview-heading">
+          <h2>Prévia do criativo</h2>
+          <span id="preview-formato">9:16 · 1080 × 1920</span>
+        </div>
+        <div class="layout-tabs" role="tablist" aria-label="Formato do criativo">
+          <button id="tab-layout4" type="button" role="tab" aria-selected="true" aria-controls="creative4" data-layout="4">01 · Tráfego Pago</button>
+          <button id="tab-layout6" type="button" role="tab" aria-selected="false" aria-controls="creative6" data-layout="6" tabindex="-1">02 · Carrossel</button>
+        </div>
+        <div id="preview-stage">
+          <div id="preview-size">
+            <div id="preview-scale">
+              <div id="creative" hidden aria-hidden="true">
+                <img id="image-main" alt="" hidden />
+                <img id="ground-shadow" alt="" hidden />
+                <img id="ground-reflection" alt="" hidden />
+                <img id="original-floor" alt="" hidden />
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="preview-caption">
+          Layout fixo. A composição permanece igual em todos os veículos.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,335 @@
+body {
+  background: var(--ui-bg);
+  color: var(--ui-text);
+}
+.app-header {
+  height: 72px;
+  background: var(--ui-panel);
+  border-color: var(--ui-line);
+  padding: 0 32px;
+  gap: 20px;
+}
+.header-note {
+  margin-left: auto;
+  color: var(--ui-muted);
+}
+.workspace {
+  max-width: 1600px;
+  grid-template-columns: 440px minmax(0, 1fr);
+}
+.editor {
+  padding: 28px;
+  background: var(--ui-panel);
+  border-color: var(--ui-line);
+}
+.intro h1 {
+  font-size: 27px;
+  letter-spacing: -0.7px;
+}
+.intro .eyebrow {
+  font-size: 12px;
+  margin-bottom: 10px;
+  color: var(--ui-muted);
+}
+.intro > p:last-child {
+  font-size: 14px;
+  margin-bottom: 26px;
+  color: var(--ui-muted);
+}
+.editor-section {
+  border: 1px solid var(--ui-line);
+  border-radius: 12px;
+  padding: 16px;
+  color: var(--ui-text);
+  background: var(--ui-panel);
+  margin-bottom: 14px;
+}
+.editor-section > summary {
+  font-weight: 600;
+  font-size: 15px;
+  padding: 3px 0;
+}
+.editor-section[open] > summary {
+  margin-bottom: 20px;
+}
+.editor-section fieldset {
+  margin: 0;
+}
+.editor-section label {
+  display: block;
+  font-size: 14px;
+}
+.editor .field-hint,
+.editor .muted,
+.file-name,
+.quality-guide,
+.export-note,
+#status,
+.preview-caption,
+.preview-heading > span {
+  color: var(--ui-muted);
+}
+.editor input:not([type='file']):not([type='range']):not([type='checkbox']),
+.editor select {
+  background: var(--ui-field);
+  color: var(--ui-text);
+  border: 1px solid var(--ui-line);
+  border-radius: 7px;
+  padding: 11px;
+  width: 100%;
+  margin: 7px 0 15px;
+  font: inherit;
+  min-height: 44px;
+}
+.editor input[type='range'] {
+  accent-color: var(--ui-focus);
+}
+.upload-card {
+  background: var(--ui-field);
+  border-color: var(--ui-line);
+  grid-template-columns: 38px 1fr 20px;
+  padding: 12px;
+  gap: 10px;
+}
+.upload-card.active,
+.upload-card.dragging {
+  background: var(--ui-field);
+  border-color: var(--ui-focus);
+  box-shadow: inset 3px 0 var(--ui-focus);
+}
+.upload-number {
+  width: 36px;
+  height: 36px;
+  background: var(--ui-panel);
+  color: var(--ui-muted);
+}
+.upload-card input[type='file'] {
+  font-size: 12px;
+  color: var(--ui-muted);
+}
+.upload-plus {
+  color: var(--ui-focus);
+}
+.editor button:not(#export-button),
+#theme-toggle,
+.quick-export {
+  background: var(--ui-field);
+  border: 1px solid var(--ui-line);
+  color: var(--ui-text);
+  padding: 10px 13px;
+  border-radius: 7px;
+  font-size: 14px;
+  min-height: 40px;
+}
+.editor button[aria-pressed='true'] {
+  background: var(--ui-accent);
+  color: #203014;
+}
+.grounding-controls {
+  background: var(--ui-field);
+  border-color: var(--ui-line);
+  color: var(--ui-text);
+}
+.grounding-controls summary {
+  font-size: 14px;
+}
+.grounding-controls details {
+  color: var(--ui-muted);
+}
+.export-area {
+  border-color: var(--ui-line);
+  margin-top: 24px;
+}
+.quality-guide {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 18px;
+}
+.export-quality {
+  font-weight: 600;
+}
+#export-button {
+  background: var(--ui-accent);
+  color: #203014;
+  min-height: 50px;
+}
+#status.error {
+  color: #cf624d;
+}
+#status {
+  padding: 12px;
+  background: var(--ui-field);
+  border-radius: 7px;
+}
+.preview-section {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  padding: 24px 36px;
+}
+.preview-heading {
+  margin-bottom: 18px;
+}
+.preview-heading h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
+.preview-heading > span {
+  margin-left: auto;
+}
+.layout-tabs {
+  padding: 5px;
+  background: var(--ui-panel);
+  border: 1px solid var(--ui-line);
+  border-radius: 10px;
+  gap: 4px;
+}
+.layout-tabs button {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ui-muted);
+  font-size: 14px;
+  padding: 10px 5px;
+}
+.layout-tabs button[aria-selected='true'] {
+  background: var(--ui-field);
+  border-color: var(--ui-line);
+  color: var(--ui-text);
+  box-shadow: 0 2px 4px #0001;
+}
+#preview-stage {
+  padding: 18px;
+  background: radial-gradient(var(--ui-line) 0.7px, transparent 0.7px);
+  background-size: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--ui-line);
+}
+#preview-size {
+  box-shadow: 0 10px 32px #0003;
+}
+.preview-caption {
+  font-size: 13px;
+}
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+.upload-card:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .app-header,
+  .editor,
+  .editor-section,
+  .layout-tabs,
+  body {
+    transition:
+      background-color 0.16s,
+      color 0.16s;
+  }
+  .layout-tabs button,
+  #export-button,
+  #theme-toggle,
+  .upload-card {
+    transition:
+      background-color 0.14s,
+      border-color 0.14s,
+      box-shadow 0.14s;
+  }
+  .layout-tabs button:hover,
+  #theme-toggle:hover {
+    box-shadow: inset 0 0 0 1px var(--ui-focus);
+  }
+}
+@media (max-width: 950px) {
+  .workspace {
+    grid-template-columns: 370px minmax(0, 1fr);
+  }
+  .editor {
+    padding: 20px;
+  }
+  .preview-section {
+    padding: 20px 16px;
+  }
+  .preview-heading > span {
+    display: none;
+  }
+  .layout-tabs {
+    flex-wrap: wrap;
+  }
+  .layout-tabs button {
+    flex: 1 1 42%;
+  }
+}
+@media (max-width: 660px) {
+  .app-header {
+    padding: 0 16px;
+  }
+  .brand {
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+  .brand-mark {
+    margin-right: 0;
+  }
+  .workspace {
+    display: flex;
+    flex-direction: column;
+  }
+  .editor {
+    order: 0;
+  }
+  .preview-section {
+    order: 1;
+    position: static;
+    width: 100%;
+  }
+  .header-note {
+    display: none;
+  }
+  #theme-toggle {
+    font-size: 12px;
+  }
+  .editor-section {
+    padding: 14px;
+  }
+}
+/* Tratamento das fotos, separado das cores da interface. */
+#creative img:not(#ground-shadow),
+#creative2 img:not(.l2-shadow),
+#creative3 img {
+  filter: brightness(var(--finish-light, 1.02)) contrast(var(--finish-contrast, 1.03))
+    saturate(var(--finish-color, 0.98));
+}
+#creative4 .g-main,
+#creative4 .g-layer[data-mirror='ground-reflection'],
+#creative4 .g-layer[data-mirror='original-floor'] {
+  filter: brightness(calc(var(--gold-brightness, 1.04) * var(--finish-light, 1.02)))
+    contrast(calc(var(--gold-contrast, 1.06) * var(--finish-contrast, 1.03)))
+    saturate(calc(var(--gold-saturation, 0.94) * var(--finish-color, 0.98)));
+}
+body {
+  font-family: Arial, sans-serif;
+}
+.upload-number {
+  overflow: hidden;
+}
+.upload-number img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+#studio-floor {
+  background:
+    radial-gradient(ellipse 70% 11% at 50% 47%, rgba(57, 55, 59, 0.14), transparent 95%),
+    radial-gradient(ellipse 65% 32% at 51% 86%, rgba(255, 255, 255, 0.7), transparent),
+    linear-gradient(180deg, transparent, rgba(181, 179, 182, 0.12) 48%, rgba(210, 208, 211, 0.04));
+}

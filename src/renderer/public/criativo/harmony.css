@@ -1,0 +1,29 @@
+/* Vitrine: só o ciclorama do veículo passa para branco neutro. */
+#creative6 .v-photo.v-studio { background: radial-gradient(ellipse 85% 85% at 50% 35%, #fff 30%, #f5f5f5 78%, #e7e7e7); }
+#creative6 .v-studio-glow { background: radial-gradient(ellipse 75% 15% at 50% 75%, #00000016, transparent), radial-gradient(ellipse 45% 100% at -10% 30%, #00000024, transparent), radial-gradient(ellipse 45% 100% at 110% 30%, #00000024, transparent); }
+
+/* Mesma família e títulos em itálico do Carrossel. */
+#creative4 { font-family:'Barlow Condensed', 'Roboto Condensed', Arial, sans-serif; }
+#creative4 :is(.g-header, .g-fit, .g-card b, .g-cta > span) { font-family:'Barlow Condensed', 'Roboto Condensed', Arial, sans-serif; }
+#creative4 :is(.g-title, .g-subtitle, .g-price, .g-card b, .g-cta > span) { font-style:normal; }
+/* A regra geral dos parágrafos não pode desfazer o flex dos contatos. */
+#creative6 .v-contact { display:flex; align-items:center; height:36px; line-height:36px; }
+#creative6 .v-contact svg { display:block; flex:0 0 36px; }
+#creative6 .v-contact > span { display:block; line-height:36px; }
+
+/* Hierarquia: preço 180, título 140, versão 44, dados 42, chamada 36,
+   assinatura 30 e rótulos 22. Semibold para destaques, regular para apoio. */
+#creative4 { font-weight:400; }
+#creative4 .g-header { font-weight:400; font-size:28px; letter-spacing:5px; }
+#creative4 .g-title { font-weight:600; letter-spacing:-1px; line-height:1.05; }
+#creative4 .g-subtitle { font-weight:400; letter-spacing:1px; }
+#creative4 .g-price { left:70px; width:940px; font-weight:600; letter-spacing:-2px; gap:10px; }
+#creative4 .g-currency { font-size:.48em; letter-spacing:-1px; }
+#creative4 .g-cents { font-size:.42em; letter-spacing:-1px; }
+#creative4 .g-card b { font-weight:600; font-style:normal; }
+#creative4 .g-card span { font-weight:400; font-size:22px; letter-spacing:.4px; }
+#creative4 .g-slogan { font-weight:400; font-size:28px; }
+#creative4 .g-cta > span { font-weight:600; font-style:normal; font-size:36px; letter-spacing:.2px; }
+#creative4 .g-footer b { font-weight:600; font-style:normal; font-size:30px; letter-spacing:1px; }
+#creative4 .g-footer span { font-weight:400; font-size:13px; letter-spacing:5px; }
+#creative4 :is(.g-slogan strong, .g-cta strong) { font-weight:600; }

@@ -1,0 +1,34 @@
+/* Editor compacto: controles avançados recolhidos, prévia em destaque. */
+.layout-tabs { display:flex; gap:8px; margin-bottom:16px; }
+.layout-tabs button { flex:1; padding:12px; border:1px solid var(--line); border-radius:9px; background:var(--field); color:var(--ink); cursor:pointer; }
+.layout-tabs button[aria-selected="true"] { background:var(--accent-soft); border-color:var(--accent); }
+.workspace { grid-template-columns:320px minmax(0,1fr); }
+.editor { padding:20px; }
+.intro { margin-bottom:16px; }
+.intro h1 { font-size:24px; margin:4px 0; }
+.intro p:last-child { font-size:12px; line-height:1.4; }
+.editor-section { margin-bottom:10px; padding:0; }
+.editor-section > summary { padding:13px 14px; font-size:13px; }
+.editor-section fieldset { padding:12px; }
+.editor label { font-size:12px; margin-bottom:10px; }
+.editor input:not([type="range"]):not([type="file"]) { padding:9px 10px; }
+.editor .field-hint { font-size:11px; line-height:1.4; }
+.editor-section[hidden] { display:none; }
+.export-area { padding-top:16px; margin-top:16px; }
+.export-quality { font-size:12px; }
+.export-note,.quality-guide { display:none; }
+.v-carousel-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+.v-carousel-card { padding:6px; }
+.v-carousel-card label { font-size:10px; }
+.v-carousel-card input[type="file"] { max-width:100%; font-size:9px; }
+.preview-section { padding:20px 24px; }
+.integrated .app-header { display:none; }
+#creative { display:none!important; }
+@media(max-width:850px) { .workspace { grid-template-columns:280px minmax(0,1fr); } }
+@media(max-width:660px) { .workspace { display:flex; } .editor { width:100%; } }
+
+.editor-section[open] > summary { margin-bottom:0; }
+.editor-section legend.sr-only { margin:0; padding:0; }
+.editor-section fieldset { padding:10px 14px; }
+.editor input:not([type="range"]):not([type="file"]):not([type="checkbox"]), .editor select { min-height:36px; margin:4px 0 7px; padding:8px 10px; }
+.intro > p:last-child { margin-bottom:12px; }

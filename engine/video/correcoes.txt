@@ -1,0 +1,12 @@
+# Correções da transcrição: errado => certo (uma por linha, sem acento/maiúscula no lado errado)
+# O nome do veículo digitado já corrige variações (ex.: "Onyx" -> "Onix") automaticamente.
+sou cars => Soul Cars
+soul cars => Soul Cars
+sou o carlos carlos => Soul Cars carros
+um ponto zero => 1.0
+um ponto quatro => 1.4
+um ponto seis => 1.6
+sou o cars => Soul Cars
+ar condicionado => ar-condicionado
+la o do cautelar => laudo cautelar
+o do cautelar => laudo cautelar

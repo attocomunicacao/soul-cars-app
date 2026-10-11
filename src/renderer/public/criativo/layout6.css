@@ -1,0 +1,481 @@
+/* Layout 06 · Vitrine — 1080 × 1350 (4:5).
+   Recomposição da peça de referência (598 × 806): as faixas de texto, cartões e rodapé
+   mantêm a altura proporcional; só a área da fotografia foi encurtada, como manda a
+   especificação — nada é achatado. Faixas: 0-96 friso · 80-419 cabeçalho ·
+   419-619 cartões · 619-1122 foto · 1122-1350 rodapé. */
+
+#creative6 {
+  position: absolute;
+  inset: 0;
+  width: 1080px;
+  height: 1350px;
+  overflow: hidden;
+  isolation: isolate;
+  background: #ece3dc;
+  color: #0b0b0b;
+  font-family: 'Barlow Condensed', 'Roboto Condensed', 'Montserrat', Arial, sans-serif;
+}
+#creative6[hidden],
+#creative6 img[hidden] {
+  display: none;
+}
+#creative6 p,
+#creative6 h2,
+#creative6 b {
+  margin: 0;
+  display: block;
+}
+/* Itálico real da Barlow Condensed Black (inclinação de 7°), mais 3° de skew para
+   chegar aos ~10° da peça de referência. Nada de itálico sintético: ele varia de
+   máquina para máquina e não sobrevive à exportação. */
+#creative6 .v-it {
+  display: inline-block;
+  font-style: italic;
+  font-weight: 900;
+  transform: skewX(-3deg);
+  transform-origin: center;
+}
+.v-fit {
+  white-space: nowrap;
+  overflow: visible;
+}
+
+/* ---------- A · friso superior ---------- */
+.v-top {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1080px;
+  height: 96px;
+  overflow: hidden;
+  z-index: 3;
+  /* base mais alta à direita, com a quebra no eixo central da arte */
+  clip-path: polygon(0 0, 1080px 0, 1080px 80px, 555px 80px, 540px 96px, 0 96px);
+  background:
+    radial-gradient(ellipse 46% 180% at 86% 40%, #262220 0%, rgba(38, 34, 32, 0) 70%),
+    linear-gradient(97deg, #0d0d0d 0%, #131110 58%, #1a1817 100%);
+}
+.v-stripe {
+  position: absolute;
+  top: -10px;
+  width: 11px;
+  height: 120px;
+  transform: skewX(-30deg);
+  background: linear-gradient(180deg, #e5bf9c 0%, #c79a72 45%, #9d7047 100%);
+}
+
+/* ---------- B · cabeçalho ---------- */
+.v-head {
+  position: absolute;
+  left: 0;
+  top: 80px;
+  width: 1080px;
+  height: 339px;
+  z-index: 1;
+  background:
+    radial-gradient(ellipse 78% 130% at 26% 34%, #f3eae6 0%, #efe6e0 46%, #e9e0d8 100%);
+}
+.v-model {
+  position: absolute;
+  left: 45px;
+  top: 59px;
+  height: 174px;
+  line-height: 174px;
+  font-weight: 700;
+  letter-spacing: -2px;
+}
+/* G1 — cobre acetinado. O recorte em texto vai no próprio elemento do texto:
+   aplicado no pai, o navegador não pinta os glifos do filho. */
+#creative6 .v-model .v-it {
+  background: linear-gradient(168deg, #a86a3d 0%, #b7794c 16%, #c08a61 38%, #d6a980 58%, #bb8155 80%, #946038 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.v-year {
+  position: absolute;
+  right: 97px;
+  top: 59px;
+  text-align: right;
+  height: 174px;
+  line-height: 174px;
+  font-weight: 700;
+  letter-spacing: -2px;
+  color: #0a0a0a;
+}
+.v-version {
+  position: absolute;
+  left: 45px;
+  top: 243px;
+  width: 690px;
+  height: 58px;
+  line-height: 58px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #0b0b0b;
+}
+.v-extra {
+  position: absolute;
+  left: 757px;
+  top: 252px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.v-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  flex: none;
+  background: linear-gradient(145deg, #d6a980 0%, #b7794c 55%, #8f5a30 100%);
+}
+.v-extra b {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* ---------- C · cartões técnicos ---------- */
+.v-cards {
+  position: absolute;
+  left: 0;
+  top: 419px;
+  width: 1080px;
+  height: 200px;
+  z-index: 1;
+  background: #efe6e0;
+}
+.v-card {
+  position: absolute;
+  inset: 0;
+}
+/* Os vãos entre os três polígonos são os filetes off-white da referência. */
+.v-card-price {
+  clip-path: polygon(0 0, 437px 0, 368px 200px, 0 200px);
+  background: linear-gradient(135deg, #0e0e0e 0%, #0b0b0b 60%, #080808 100%);
+}
+.v-card-fuel {
+  clip-path: polygon(442px 0, 749px 0, 681px 200px, 374px 200px);
+  background:
+    radial-gradient(ellipse 70% 90% at 30% 20%, rgba(255, 221, 187, 0.3) 0%, rgba(255, 221, 187, 0) 70%),
+    linear-gradient(130deg, #c98249 0%, #e0a977 44%, #c07c45 74%, #ac6b37 100%);
+}
+.v-card-gear {
+  clip-path: polygon(755px 0, 1080px 0, 1080px 200px, 686px 200px);
+  background: linear-gradient(158deg, #e6e0dc 0%, #dcd1ca 58%, #d3c7bf 100%);
+}
+.v-label {
+  position: absolute;
+  height: 30px;
+  line-height: 30px;
+  top: 32px;
+  font-size: 31px;
+  font-weight: 600;
+  font-style: normal;
+  letter-spacing: 1.5px;
+  text-align: center;
+}
+.v-value {
+  position: absolute;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+.v-price-label {
+  left: 70px;
+  width: 242px;
+  color: #f1e8e4;
+}
+.v-price-rule {
+  position: absolute;
+  left: 70px;
+  top: 72px;
+  width: 242px;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(150, 112, 77, 0) 0%, #b7794c 25%, #d6a980 50%, #b7794c 75%, rgba(150, 112, 77, 0) 100%);
+}
+.v-price {
+  left: 18px;
+  width: 352px;
+  top: 88px;
+  height: 76px;
+  line-height: 76px;
+}
+/* G3 — dourado de alto contraste sobre o preto. */
+#creative6 .v-price .v-it {
+  background: linear-gradient(165deg, #f3c8a4 0%, #dda16c 46%, #b47845 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.v-fuel-label {
+  left: 462px;
+  width: 218px;
+  color: #141008;
+}
+.v-fuel {
+  left: 450px;
+  width: 234px;
+  top: 76px;
+  height: 92px;
+  line-height: 92px;
+  color: #100d07;
+}
+.v-gear-label {
+  left: 802px;
+  width: 200px;
+  color: #15110e;
+}
+.v-gear-rule {
+  position: absolute;
+  left: 820px;
+  top: 71px;
+  width: 164px;
+  height: 1px;
+  background: rgba(120, 104, 94, 0.45);
+}
+.v-gear {
+  left: 722px;
+  width: 322px;
+  top: 86px;
+  height: 74px;
+  line-height: 74px;
+  color: #15110e;
+}
+
+/* ---------- D · fotografia ---------- */
+.v-carousel-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+.v-carousel-card { min-width: 0; }
+.v-carousel-card button {
+  width: 100%;
+  min-height: 100px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--field);
+  color: var(--ink);
+  cursor: pointer;
+}
+.v-carousel-card button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.v-carousel-card img { width: 100%; height: 68px; object-fit: contain; }
+.v-carousel-card span { display: block; font-size: 11px; }
+.v-carousel-card label { font-size: 11px; }
+.v-carousel-card input { width: 100%; font-size: 10px; }
+.v-crop-carousel {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--field);
+  color: var(--ink);
+  cursor: pointer;
+}
+.v-crop-carousel[hidden] { display: none; }
+.v-crop-carousel:disabled { opacity: 0.6; cursor: wait; }
+.v-photo {
+  position: absolute;
+  left: 0;
+  top: 619px;
+  width: 1080px;
+  height: 503px;
+  overflow: hidden;
+  z-index: 1;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 90% 30% at 50% 102%, #f2eae3 0%, rgba(242, 234, 227, 0) 78%),
+    radial-gradient(ellipse 55% 95% at 18% 15%, #f7f0e9 0%, rgba(247, 240, 233, 0) 76%),
+    radial-gradient(ellipse 70% 90% at 90% 25%, #eee6df 0%, rgba(238, 230, 223, 0) 78%),
+    linear-gradient(180deg, #e1d7ce 0%, #e6ddd5 66%, #ece3dc 100%);
+}
+/* Foto com fundo próprio: preenche a faixa e o estúdio sintético sai de cena. */
+.v-photo.v-real {
+  background: none;
+}
+.v-studio-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Ciclorama: paredes laterais na sombra, foco central e curva difusa
+     entre parede e piso. Tudo atrás da foto, sem escurecer o recorte. */
+  background:
+    radial-gradient(ellipse 54% 72% at 48% 29%, rgba(255, 252, 245, 0.58) 0%, rgba(255, 252, 245, 0) 85%),
+    radial-gradient(ellipse 74% 16% at 51% 70%, rgba(77, 57, 43, 0.22) 0%, rgba(77, 57, 43, 0) 100%),
+    radial-gradient(ellipse 45% 100% at -8% 32%, rgba(54, 43, 35, 0.36) 0%, rgba(54, 43, 35, 0) 96%),
+    radial-gradient(ellipse 49% 112% at 109% 20%, rgba(54, 43, 35, 0.44) 0%, rgba(54, 43, 35, 0) 96%),
+    linear-gradient(180deg, rgba(53, 40, 30, 0.19) 0%, rgba(53, 40, 30, 0) 42%, rgba(255, 249, 241, 0.18) 100%);
+  opacity: var(--studio-depth, 0.7);
+  z-index: 0;
+}
+.v-layer {
+  position: absolute;
+  inset: 0;
+  width: 1080px;
+  height: 503px;
+  pointer-events: none;
+}
+.v-reflection { z-index: 1; }
+.v-backdrop-shadow { z-index: 0; }
+.v-shadow { z-index: 2; }
+.v-light { z-index: 4; }
+.v-contour { z-index: 5; }
+.v-photo:not(.v-studio) .v-studio-glow,
+.v-photo:not(.v-studio) .v-layer {
+  display: none;
+}
+.v-car {
+  position: absolute;
+  left: 50%;
+  top: 22px;
+  bottom: 30px;
+  width: 702px;
+  transform: translateX(-50%);
+  z-index: 3;
+}
+.v-car img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+}
+.v-photo.v-real .v-car {
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1080px;
+  transform: none;
+}
+.v-photo.v-real .v-car img {
+  object-fit: cover;
+  object-position: center;
+}
+
+/* ---------- E · rodapé ---------- */
+.v-foot {
+  position: absolute;
+  left: 0;
+  top: 1122px;
+  width: 1080px;
+  height: 228px;
+  z-index: 2;
+  background: #e6dcd5;
+}
+.v-copper {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(0 0, 152px 0, 31px 228px, 0 228px);
+  background: linear-gradient(152deg, #9b572c 0%, #d58b56 46%, #a9663a 72%, #8f4b26 100%);
+}
+.v-copper-edge {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(152px 0, 159px 0, 38px 228px, 31px 228px);
+  background: #0d0d0d;
+}
+.v-black {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(553px 0, 1080px 0, 1080px 228px, 551px 228px, 466px 119px);
+  background: #0d0d0d;
+}
+.v-contact {
+  position: absolute;
+  left: 170px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 29px;
+  font-weight: 400;
+  letter-spacing: 0.2px;
+  color: #17120e;
+  white-space: nowrap;
+}
+.v-contact svg {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  fill: none;
+  stroke: #96704d;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.v-c1 {
+  top: 30px;
+}
+.v-c2 {
+  top: 81px;
+}
+.v-c3 {
+  top: 132px;
+}
+/* Logotipo original da revenda, recortado do arquivo em duas partes
+   (símbolo + marca verbal) para formar o bloco horizontal da referência. */
+.v-logo {
+  position: absolute;
+  left: 585px;
+  top: 0;
+  height: 228px;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+.v-mark,
+.v-word {
+  position: relative;
+  overflow: hidden;
+  flex: none;
+}
+.v-mark {
+  width: 138px;
+  height: 128px;
+}
+.v-mark img {
+  position: absolute;
+  width: 227.6px;
+  height: 210.9px;
+  left: -44.6px;
+  top: -4.4px;
+}
+.v-word {
+  width: 290px;
+  height: 72px;
+}
+.v-word img {
+  position: absolute;
+  width: 303.6px;
+  height: 280.6px;
+  left: -6.6px;
+  top: -204px;
+}
+
+.v-original-floor { z-index: 2; }
+.v-preview-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 12px 0;
+}
+.v-preview-nav[hidden] { display: none; }
+.v-preview-nav > span { color: var(--muted); font-size: 13px; margin-right: 8px; }
+.v-preview-nav button {
+  padding: 10px 22px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--field);
+  color: var(--ink);
+  cursor: pointer;
+}
+.v-preview-nav button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.v-preview-nav small { display: block; margin-top: 3px; opacity: 0.7; }
