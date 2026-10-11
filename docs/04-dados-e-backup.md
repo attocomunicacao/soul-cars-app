@@ -4,7 +4,7 @@
 - Banco/preferências: `%APPDATA%\soul-cars-app\soul.db` e config.json.
 - Fotos do editor: `%APPDATA%\soul-cars-app\veiculos\<id>\fotos`.
 - Backups: `%APPDATA%\soul-cars-app\backups`, sete nomes por dia da semana.
-- Chave da IA: `%APPDATA%soul-cars-appsegredos.json`, cifrada com o cofre do Windows (só abre no mesmo usuário/computador). **Não vai no banco nem nos backups**: ao restaurar em outro computador, informe a chave de novo em Configurações.
+- Chave da IA: `%APPDATA%\soul-cars-app\segredos.json`, cifrada com o cofre do Windows (só abre no mesmo usuário/computador). **Não vai no banco nem nos backups**: ao restaurar em outro computador, informe a chave de novo em Configurações.
 - Sessão BNDV: partição persist:bndv do Electron.
 - Instagram: sessão persist:instagram; conta/histórico/pacotes em `%APPDATA%\soul-cars-app\instagram`. Inclua o histórico no backup para preservar a prevenção de duplicatas.
 

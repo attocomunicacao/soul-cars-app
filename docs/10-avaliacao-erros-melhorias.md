@@ -122,7 +122,7 @@ Soul Cars/
 ```
 
 - Foram só **renomeações de pasta** no mesmo disco: nada foi copiado nem apagado. As 200 pastas de veículos estão em `dados-loja/ESTOQUE`.
-- `%APPDATA%soul-cars-appconfig.json`: `raizDados` agora aponta para `soul-cars-appdados-loja`.
+- `%APPDATA%\soul-cars-app\config.json`: `raizDados` agora aponta para `soul-cars-app\dados-loja`.
 - O banco `soul.db` **não foi alterado**. Os veículos guardam o caminho antigo da pasta, mas o app liga cada pasta ao veículo pelo ID BNDV e regrava o caminho na próxima leitura do Estoque (a lógica está em `lib/importacao.ts`; não foi exercitada com a interface aberta, por isso **confira a lista de veículos no primeiro uso**).
 - `src/main/caminhos.ts` passou a procurar `dados-loja` (e `legado/estoque-python`) antes do caminho antigo.
 - `.gitignore` ignora `/dados-loja/` e `/legado/`; os dois projetos antigos mantêm seus próprios repositórios Git locais (ficam fora do GitHub).
