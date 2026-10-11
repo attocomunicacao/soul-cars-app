@@ -1,6 +1,6 @@
 # GitHub
 
-Publique **somente soul-cars-app** como repositório independente. A pasta pai contém projetos de referência e vendas.
+Publique **soul-cars-app** como repositório **privado** da Atto Comunicação. Tudo o que é da loja (`dados-loja/`) e os projetos anteriores (`legado/`) ficam dentro da pasta, mas são ignorados pelo `.gitignore` e nunca vão para o GitHub.
 
 ```bat
 cd /d "CAMINHO\soul-cars-app"

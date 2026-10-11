@@ -3,7 +3,7 @@
 Leia docs/02-arquitetura-e-migracao.md, docs/03-vibe-code.md e docs/04-dados-e-backup.md antes de alterar regras de negócio.
 
 - Preserve as duas interfaces principais: Estoque primeiro e Studio segundo.
-- Não modifique a pasta vendas nem os projetos de referência ao lado deste app.
+- Não modifique `legado/` (projetos anteriores, só para consulta) nem `dados-loja/` (dados reais da loja): ambos são locais e ficam fora do Git.
 - Não coloque caminhos pessoais, documentos reais, senhas ou tokens no código.
 - Electron main controla disco, banco e processos; renderer usa a ponte preload.
 - Migrações de banco distribuídas são imutáveis; acrescente uma nova versão.

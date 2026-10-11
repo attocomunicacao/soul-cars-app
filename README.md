@@ -1,33 +1,141 @@
-# SOUL Cars
+# SOUL Cars App
 
-Estoque e Studio em uma janela Windows: **Electron + React + TypeScript + Vite**. O app abre em **01 · Estoque**; **02 · Studio** reúne ficha, produção, criativos, publicação, Instagram e relatórios Meta Ads em abas internas.
+> Projeto privado da **Atto Comunicação** para a loja **SOUL Cars**. Uso interno; não é distribuído ao público.
 
-## Rodar pelo Git CMD
+Aplicativo de desktop para Windows que leva um carro do **estoque** até o **anúncio publicado**: lê o estoque do BNDV, organiza uma pasta por veículo, ajuda a produzir ficha, fotos, vídeo e criativos, deixa o anúncio pronto para o Meta Ads e prepara a postagem no Instagram. Tudo roda no computador da loja, com dados locais.
 
-Requisitos: Git para Windows e Node.js 22.16+.
+**Stack:** Electron 44 · React 19 · TypeScript · Vite (electron-vite) · Tailwind 4 · SQLite (`node:sqlite`) · motor Python 3.12 (OCR, recorte, visão, vídeo, IA opcional).
+
+---
+
+## Sumário
+
+- [O que o app faz](#o-que-o-app-faz)
+- [As duas interfaces](#as-duas-interfaces)
+- [Como o app é montado](#como-o-app-é-montado)
+- [Estrutura de pastas](#estrutura-de-pastas)
+- [Instalação e execução](#instalação-e-execução)
+- [Comandos](#comandos)
+- [Onde ficam os dados](#onde-ficam-os-dados)
+- [Segurança e privacidade](#segurança-e-privacidade)
+- [Documentação](#documentação)
+- [Estado atual](#estado-atual)
+- [Licença e autoria](#licença-e-autoria)
+
+---
+
+## O que o app faz
+
+| Etapa | O que acontece | Onde |
+|---|---|---|
+| 1. Estoque | Abre o BNDV numa janela própria, lê veículos e vendas pela API GraphQL, grava CSVs e cria/atualiza uma pasta por veículo (`INFO.md`, `CRIATIVO`, `FOTOS`, `VIDEO`). | Aba **Estoque** |
+| 2. Balanço | Calcula patrimônio, lucro, giro e margem; mostra gráficos (inclusive lucro dos últimos 12 meses) e gera um relatório HTML. | Estoque › Balanço / Relatório completo |
+| 3. Entrada de arquivos | Vigia uma pasta sincronizada (Google Drive/OneDrive). Fotos, vídeo e documento enviados pela equipe, com a placa no nome da pasta, são **copiados** (nunca movidos) para a pasta do veículo. | Estoque › Entrada |
+| 4. Ficha e documento | Lê o CRLV (PDF, com ou sem senha, ou escaneado via OCR), preenche a ficha, busca a ficha técnica no Carros na Web e gera `DOC.md` e `DES.md` (descrição do anúncio). | Studio › veículo |
+| 5. Produção | Painel de fotos (reordenar, renomear, recorte de fundo), Editor Mágico de vídeo (tarjas, legendas, trilha) e versão leve do vídeo para anúncio. | Studio › Produção |
+| 6. Criativos | Editor de artes (layouts 4 e 6, sombra, piso) com exportação de PNG para `CRIATIVO`. | Studio › Criativos |
+| 7. Pronto para anunciar | Checklist de prontidão e cartão de campanha com textos, títulos, descrições e arquivos, com botões de copiar. Registro do anúncio e lembrete de pausa quando o carro é vendido. | Studio › Pronto para anunciar |
+| 8. Publicação | Blocos de texto para o Gerenciador de Anúncios, prontos para copiar. | Studio › Publicação |
+| 9. Instagram | Publica carrossel e depois Reels pelo navegador integrado, com retomada e prevenção de duplicatas. | Studio › Instagram |
+| 10. Relatórios | Relatórios Meta Ads e exportação XLSX. | Studio › Relatórios |
+
+**Regra de ouro:** nenhuma automação ativa campanha sozinha. O app deixa tudo pronto; a pessoa cria e ativa o anúncio. Não há chaves de API no código e nada pago roda por padrão.
+
+## As duas interfaces
+
+O app abre em **01 · Estoque** (lista de veículos, balanço, entrada de arquivos). Em **02 · Studio** ficam a ficha do veículo e suas abas, na ordem: **Produção → Criativos → Pronto para anunciar → Publicação → Instagram**, além de Relatórios e Configurações.
+
+## Como o app é montado
+
+```text
+React (renderer) ──► preload (window.soul.invocar / ouvir) ──► IPC do Electron (main)
+                                                                 ├─ estoque/  BNDV, CSV, pastas, balanço, relatório
+                                                                 ├─ studio/   SQLite, arquivos, entrada, Instagram, motor
+                                                                 └─ Python    CRLV, OCR, CNW, visão, recorte, IA, vídeo
+```
+
+- O **renderer não tem Node**: tudo passa pela ponte do preload, que só expõe `invocar` e `ouvir`.
+- O **main** valida o remetente do IPC e executa comandos de uma tabela fechada (`src/main/ipc.ts`).
+- O **motor Python** conversa por JSON de uma linha por mensagem (`engine/main.py`); bibliotecas pesadas só carregam quando usadas.
+- As janelas remotas (BNDV, Instagram) **não recebem preload** nem acesso a Node.
+
+Detalhes em [docs/02-arquitetura-e-migracao.md](docs/02-arquitetura-e-migracao.md) e no [Manual do Desenvolvedor](docs/12-manual-do-desenvolvedor.md).
+
+## Estrutura de pastas
+
+```text
+soul-cars-app/
+├── src/
+│   ├── main/            processo principal: janela, IPC, banco, disco, BNDV, Instagram, motor
+│   │   ├── estoque/     extração BNDV, sincronização de pastas, balanço, relatório, vendas
+│   │   └── studio/      banco/esquema SQLite, arquivos, entrada, Instagram, motor Python
+│   ├── preload/         ponte segura window.soul
+│   ├── compartilhado/   regras puras usadas por main e renderer (anúncio, entrada, publicação)
+│   └── renderer/        interface React (src/) e recursos estáticos, incluindo o editor de criativos (public/criativo)
+├── engine/              motor Python (CRLV, OCR, CNW, fotos, visão, IA, vídeo) + testes
+├── resources/           ícone e logo empacotados
+├── scripts/             instalação (.cmd) e testes de fumaça (smoke)
+├── testes/              testes Vitest e fixtures
+├── docs/                guias, avaliação, manuais e planejamento
+├── dados-loja/          (local, fora do Git) ESTOQUE/ e dados/ da loja
+└── legado/              (local, fora do Git) projetos anteriores usados como referência
+```
+
+## Instalação e execução
+
+Requisitos: Windows 10/11 x64, Git para Windows e Node.js 22.16+. Para as automações: [uv](https://docs.astral.sh/uv/), Tesseract (com português) e FFmpeg.
 
 ```bat
-cd /d "C:\Users\gusta\Downloads\Soul Cars\soul-cars-app"
+cd /d "CAMINHO\ate\soul-cars-app"
 scripts\instalar.cmd
 npm run dev
 ```
 
-Em outro computador, ajuste o caminho do `cd`. `npm ci` baixa as versões do lockfile. Também pode iniciar por `scripts\iniciar.cmd`.
+Também é possível iniciar por `scripts\iniciar.cmd`. Para o motor Python, execute `scripts\instalar-motor.cmd` (veja [docs/05-motor-python.md](docs/05-motor-python.md)). Passo a passo de uso em [docs/01-primeiro-uso.md](docs/01-primeiro-uso.md).
 
-Para automações Python, execute `scripts\instalar-motor.cmd`; veja [Motor Python](docs/05-motor-python.md). Nesta máquina, npm/Python foram instalados e FFmpeg/Tesseract já estavam presentes.
+## Comandos
 
-```bat
-npm run tipos
-npm test
-npm run test:engine
-npm run build
-npm run smoke
-npm run smoke:instagram
-npm run empacotar
-```
+| Comando | Para quê |
+|---|---|
+| `npm run dev` | Abre o app em desenvolvimento |
+| `npm run build` / `npm start` | Gera e abre o build (verifica `file://`) |
+| `npm run tipos` | TypeScript (main/preload e React) |
+| `npm test` | Vitest |
+| `npm run test:engine` | Testes Python do motor |
+| `npm run smoke` / `npm run smoke:instagram` | Testes de fumaça em Electron real, com dados temporários; o Instagram é simulado |
+| `npm run formatar` / `npm run formatar:check` | Prettier |
+| `npm run empacotar` | Instalador NSIS Windows x64 em `dist/` |
 
-`npm run start` abre o build. O instalador sai em `dist`. Os smokes usam dados temporários; o Instagram é simulado e nenhuma publicação real é feita. Veja [Instagram](docs/09-instagram.md) para conectar sua conta no navegador do app.
+## Onde ficam os dados
+
+| O quê | Onde |
+|---|---|
+| Banco, preferências, fotos do editor, backups, histórico do Instagram | `%APPDATA%\soul-cars-app\` |
+| Pastas dos veículos e CSVs do BNDV | Raiz de dados escolhida em Configurações (por padrão `dados-loja/` ao lado do app) |
+| Sessões do BNDV e do Instagram | Partições persistentes do Electron, dentro de `%APPDATA%\soul-cars-app\` |
+
+Veja [docs/04-dados-e-backup.md](docs/04-dados-e-backup.md).
+
+## Segurança e privacidade
+
+- Repositório **privado**. Nunca versionar bancos, CSVs, documentos, fotos, sessões, `.env` ou chaves (o `.gitignore` já cobre os locais padrão).
+- Sem caminhos pessoais, senhas ou tokens no código.
+- Migrações de banco distribuídas são imutáveis; novas mudanças viram uma nova versão.
+- Pastas existentes e IDs BNDV são preservados; pastas órfãs nunca são apagadas.
 
 ## Documentação
 
-Comece por [docs/README.md](docs/README.md). Os projetos antigos permanecem como referências. **A pasta `vendas` não foi modificada.** Publique somente `soul-cars-app` no GitHub, conforme [o guia](docs/06-github.md), sem dados da loja.
+Índice completo em [docs/README.md](docs/README.md). Destaques:
+
+- [Manual do Usuário](docs/11-manual-do-usuario.md): fluxo completo, do estoque ao anúncio.
+- [Manual do Desenvolvedor](docs/12-manual-do-desenvolvedor.md): fluxo técnico, roadmap de manutenção e receitas.
+- [Avaliação: erros, melhorias e pontos fortes](docs/10-avaliacao-erros-melhorias.md): resultado dos testes de 11/10/2026.
+- [Roadmap do produto](docs/planejamento/02-roadmap.md).
+
+## Estado atual
+
+Versão **1.0.0**. Em 11/10/2026: tipos sem erros, 101 testes Vitest e 36 testes Python passando, build gerado e os dois smokes em Electron real aprovados. Pendências e riscos estão na avaliação.
+
+## Licença e autoria
+
+Desenvolvido e assinado pela **Atto Comunicação**, para uso privado da SOUL Cars. Código sob licença MIT conforme o arquivo [LICENSE](LICENSE); os avisos das fontes e bibliotecas embutidas permanecem. Confirme os direitos de marca, logo e trilha antes de qualquer distribuição pública.

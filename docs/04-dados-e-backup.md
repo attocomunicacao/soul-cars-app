@@ -11,8 +11,7 @@ Anúncios registrados ficam na tabela `anuncios` (migração 7) e entram no back
 
 Entrada por pasta sincronizada: a pasta escolhida fica no banco (`config`, chave `entrada_pasta`) e o registro do que foi copiado, pendente ou com aviso fica na tabela `entrada_arquivos` (migração 6). A pasta da nuvem em si não faz parte do backup do app; os arquivos copiados ficam na pasta do veículo no ESTOQUE.
 
-`dados/bndv_vendas.csv` é entrada financeira do Estoque. Não é a pasta `vendas` do workspace, que permanece fora da migração.
-
+`dados/bndv_vendas.csv` é entrada financeira do Estoque.
 ## Importação antiga
 
 Se o banco novo não existir e `%APPDATA%\com.soulcars.studio\soul.db` existir, o app verifica integridade, cria snapshot SQLite e copia fotos. A origem é aberta somente para leitura. O snapshot inclui registros no WAL; não é uma cópia simples de arquivo aberto. O registro fica no config.json. Um banco novo existente nunca é substituído.

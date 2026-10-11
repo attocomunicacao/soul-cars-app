@@ -12,7 +12,7 @@
 
 **Reler pastas** lê dados locais; **Atualizar BNDV** consulta a rede. A lista relê pastas a cada minuto quando nenhuma ficha está aberta nem tarefa está em andamento.
 
-Sem estoque anterior ao lado do projeto, a raiz padrão é `Documentos\SOUL Cars`. O app pode importar o banco anterior na primeira execução; veja o documento 04.
+Sem a pasta `dados-loja` dentro do projeto (nem o estoque anterior em `legado/estoque-python`), a raiz padrão é `Documentos\SOUL Cars`. O app pode importar o banco anterior na primeira execução; veja o documento 04.
 
 ## Aplicativo instalado
 

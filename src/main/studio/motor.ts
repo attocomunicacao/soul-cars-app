@@ -149,6 +149,8 @@ function garantirProcesso(emitir: Emitir) {
     stdio: ["pipe", "pipe", "pipe"],
     env: {
       ...process.env,
+      PYTHONUTF8: "1",
+      PYTHONIOENCODING: "utf-8",
       SOUL_DATA_DIR: caminhos.userData(),
       U2NET_HOME: path.join(caminhos.userData(), "modelos", "rembg"),
       HF_HOME: path.join(caminhos.userData(), "modelos", "huggingface"),

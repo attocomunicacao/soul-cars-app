@@ -9,5 +9,10 @@
 7. [Validação](07-validacao.md)
 8. [Fluxo de produção no Studio](08-fluxo-studio.md)
 9. [Instagram: conexão, automação e pesquisa](09-instagram.md)
+10. [Avaliação: testes, erros, melhorias e pontos fortes](10-avaliacao-erros-melhorias.md)
+11. [Manual do Usuário: do estoque ao anúncio](11-manual-do-usuario.md)
+12. [Manual do Desenvolvedor: fluxo técnico e roadmap de manutenção](12-manual-do-desenvolvedor.md)
+
+Planejamento do produto: [planejamento/](planejamento/02-roadmap.md).
 
 Assistentes: leiam primeiro 02, 03 e 04, depois o módulo da alteração.

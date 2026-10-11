@@ -171,6 +171,9 @@ METHODS = {
 
 
 def main():
+    # O app fala UTF-8; sem isso o Windows usa cp1252 nos pipes e os acentos quebram.
+    sys.stdin.reconfigure(encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8")
     sys.path.insert(0, __file__.rsplit("\\", 1)[0].rsplit("/", 1)[0])
     for line in sys.stdin:
         if not line.strip():
