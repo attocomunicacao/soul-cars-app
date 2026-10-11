@@ -275,8 +275,8 @@ article {
 }
 .relatorio-completo {
   width: 100%;
-  height: calc(100vh - 310px);
   min-height: 500px;
+  overflow: hidden;
   border: 0;
   background: white;
   border-radius: 8px;

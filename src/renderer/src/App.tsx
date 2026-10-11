@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke, open, openPath } from "./lib/desktop";
+import { alturaDaMensagem, comAvisoDeAltura } from "./lib/relatorio-frame";
 import { importarEstoque } from "./lib/importacao";
 import { type Veiculo, manutencaoBanco } from "./lib/db";
 import type { Balanco, Contas } from "./types";
@@ -26,6 +27,8 @@ export function App() {
     [motor, setMotor] = useState("");
   const [aba, setAba] = useState("veiculos");
   const [relatorio, setRelatorio] = useState("");
+  const [alturaRelatorio, setAlturaRelatorio] = useState<number | null>(null);
+  const quadroRelatorio = useRef<HTMLIFrameElement>(null);
   async function carregar() {
     const b = await invoke<Balanco>("balanco_montar");
     setBalanco(b);
@@ -48,6 +51,16 @@ export function App() {
       setOcupado(false);
     }
   }
+  // O relatório avisa a própria altura: o iframe cresce e só a página rola.
+  useEffect(() => {
+    const aoReceber = (e: MessageEvent) => {
+      if (e.source !== quadroRelatorio.current?.contentWindow) return;
+      const altura = alturaDaMensagem(e.data);
+      if (altura) setAlturaRelatorio(altura);
+    };
+    window.addEventListener("message", aoReceber);
+    return () => window.removeEventListener("message", aoReceber);
+  }, []);
   useEffect(() => {
     const off = window.soul.ouvir<{ texto: string }>("estoque:log", (v) =>
       setLogs((l) => [...l.slice(-199), v.texto]),
@@ -287,6 +300,7 @@ export function App() {
                 disabled={ocupado}
                 onClick={() =>
                   tarefa(async () => {
+                    setAlturaRelatorio(null);
                     setRelatorio(await invoke<string>("relatorio_abrir"));
                     setAba("completo");
                   })
@@ -314,10 +328,13 @@ export function App() {
               </button>
             </div>
             <iframe
+              ref={quadroRelatorio}
               className="relatorio-completo"
               title="Relatório completo do estoque"
               sandbox="allow-scripts"
-              srcDoc={relatorio}
+              scrolling="no"
+              style={alturaRelatorio ? { height: alturaRelatorio } : undefined}
+              srcDoc={comAvisoDeAltura(relatorio)}
             />
           </section>
         ) : aba === "entrada" && pagina === "estoque" ? (

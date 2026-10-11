@@ -56,6 +56,8 @@ app.on("browser-window-created", (_e, w) => {
         relatorioBotao.click(); await new Promise(r=>setTimeout(r,400));
         const relatorioFrame=document.querySelector('iframe.relatorio-completo');
         if(!relatorioFrame || !relatorioFrame.srcdoc.includes('<html'))throw Error('Relatório interno não carregou');
+        for(let i=0;i<20&&!relatorioFrame.style.height;i++)await new Promise(r=>setTimeout(r,150));
+        if(!/^[0-9.]+px$/.test(relatorioFrame.style.height)||parseFloat(relatorioFrame.style.height)<500)throw Error('O relatório não ajustou a altura (segunda barra de rolagem)');
         const botao=[...document.querySelectorAll('aside button')].find(b=>b.textContent.includes('Studio'));botao.click();
         await new Promise(r=>setTimeout(r,100));
         if(document.querySelector('h1')?.textContent!=='Studio')throw Error('Navegação para Studio falhou');
