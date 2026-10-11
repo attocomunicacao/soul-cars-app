@@ -19,6 +19,7 @@ import {
   shell,
 } from "electron";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import * as caminhos from "./caminhos";
 import * as balanco from "./estoque/balanco";
@@ -30,6 +31,8 @@ import * as arquivos from "./studio/arquivos";
 import * as bancoStudio from "./studio/banco";
 import * as motor from "./studio/motor";
 import { segredos } from "./segredos-sistema";
+import { criarEsquemas, EXTENSOES_EXECUTAVEIS } from "./ipc-esquemas";
+import { validarChamada } from "./validacao";
 import * as instagram from "./studio/instagram";
 import { criarEntrada } from "./studio/entrada";
 
@@ -279,6 +282,8 @@ const COMANDOS: Record<string, Comando> = {
     return shell.openExternal(url.href);
   },
   open_path: async (a) => {
+    if (EXTENSOES_EXECUTAVEIS.test(String(a.path)))
+      throw new Error("Este tipo de arquivo não pode ser aberto pelo app.");
     const erro = await shell.openPath(
       path.resolve(String(naoVazio(a.path, "Caminho vazio."))),
     );
@@ -289,10 +294,6 @@ const COMANDOS: Record<string, Comando> = {
     const alvo = path.resolve(String(naoVazio(a.path, "Caminho vazio.")));
     if (!fs.existsSync(alvo)) throw new Error("Arquivo não encontrado.");
     shell.showItemInFolder(alvo);
-    return null;
-  },
-  salvar_texto: (a) => {
-    fs.writeFileSync(a.caminho, String(a.conteudo), "utf8");
     return null;
   },
 
@@ -350,7 +351,30 @@ function paramsDoMotor(a: Args) {
   return chave ? { ...resto, api_key: chave } : resto;
 }
 
+const ESQUEMAS = criarEsquemas({
+  raizes: () => [caminhos.raizDados(), caminhos.userData()],
+  raizesAbrir: () => [
+    caminhos.raizDados(),
+    caminhos.userData(),
+    path.join(os.homedir(), "Pictures", "SOUL Cars"),
+  ],
+  pastaBackups: () => caminhos.PASTA_BACKUPS(),
+});
+
+/** Comando sem esquema é erro de programação: o app não abre. */
+function conferirEsquemas() {
+  const sem = Object.keys(COMANDOS).filter((c) => !ESQUEMAS[c]);
+  const sobra = Object.keys(ESQUEMAS).filter((c) => !COMANDOS[c]);
+  if (sem.length || sobra.length)
+    throw new Error(
+      `IPC sem esquema: [${sem.join(", ")}]; esquema sem comando: [${sobra.join(", ")}]`,
+    );
+}
+
+const CABECALHOS_CODIFICADOS = ["x-pasta", "x-nome", "x-destino"];
+
 export function registrarIpc() {
+  conferirEsquemas();
   ipcMain.handle(
     "soul:invoke",
     async (
@@ -367,19 +391,30 @@ export function registrarIpc() {
       ) {
         throw new Error("Origem do comando não autorizada.");
       }
-      const executar = COMANDOS[comando];
-      if (!executar) throw new Error(`Comando não disponível: ${comando}`);
+      const executar = Object.hasOwn(COMANDOS, comando)
+        ? COMANDOS[comando]
+        : undefined;
+      const esquema = Object.hasOwn(ESQUEMAS, comando)
+        ? ESQUEMAS[comando]
+        : undefined;
+      if (!executar || !esquema)
+        throw new Error(`Comando não disponível: ${String(comando)}`);
       // Erros voltam como mensagem, não como stack: a interface mostra ao usuário.
       try {
-        const decodificados = Object.fromEntries(
-          Object.entries(cabecalhos).map(([nome, valor]) => [
-            nome,
-            ["x-pasta", "x-nome", "x-destino"].includes(nome)
-              ? decodeURIComponent(valor)
-              : valor,
-          ]),
-        );
-        return await executar(args, corpo, decodificados);
+        const decodificados =
+          cabecalhos && typeof cabecalhos === "object"
+            ? Object.fromEntries(
+                Object.entries(cabecalhos).map(([nome, valor]) => [
+                  nome,
+                  CABECALHOS_CODIFICADOS.includes(nome) &&
+                  typeof valor === "string"
+                    ? decodeURIComponent(valor)
+                    : valor,
+                ]),
+              )
+            : cabecalhos;
+        const v = validarChamada(comando, esquema, args, decodificados, corpo);
+        return await executar(v.args, v.corpo, v.cabecalhos);
       } catch (erro) {
         throw new Error(erro instanceof Error ? erro.message : String(erro));
       }

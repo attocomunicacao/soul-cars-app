@@ -7,7 +7,7 @@ React → preload window.soul → IPC Electron
                                 └─ Python: CRLV, OCR, CNW, visão, recorte, IA e vídeo
 ```
 
-React não acessa Node/disco diretamente. O main valida o remetente IPC e executa comandos de uma tabela fechada. A janela remota do BNDV não recebe preload. Navegação da janela principal é bloqueada. Referência: [segurança do Electron](https://www.electronjs.org/docs/latest/tutorial/security).
+React não acessa Node/disco diretamente. A janela roda em sandbox (preload CommonJS). O main valida o remetente IPC, valida os argumentos de cada comando por esquema (`ipc-esquemas.ts`) e executa comandos de uma tabela fechada. A janela remota do BNDV não recebe preload. Navegação da janela principal é bloqueada. Referência: [segurança do Electron](https://www.electronjs.org/docs/latest/tutorial/security).
 
 | Origem | Responsabilidade | Destino |
 |---|---|---|

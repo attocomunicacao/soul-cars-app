@@ -36,7 +36,7 @@ Gravidade: 🔴 alta · 🟠 média · 🟡 baixa.
 |---|---|---|---|---|
 | E1 | 🟠 | **Acentos corrompidos nas mensagens do motor Python.** O Python no Windows usa `cp1252` no stdout/stdin quando é um pipe, e o Electron lê como UTF-8. | `main.py` devolveu o byte `0xE9` (`é` em cp1252) em `"Método desconhecido"`; `motor.ts` não define `PYTHONUTF8`/`PYTHONIOENCODING`. Os logs do teste de vídeo também aparecem com `�`. Caracteres fora do cp1252 podem até gerar erro ao escrever. | Em `src/main/studio/motor.ts`, acrescentar `PYTHONUTF8: "1"` e `PYTHONIOENCODING: "utf-8"` ao `env` do `spawn`, e `sys.stdout.reconfigure(encoding="utf-8")` em `engine/main.py`. ✅ **Corrigido em 11/10/2026** (`motor.ts`, `engine/main.py` e teste `engine/tests/test_utf8.py`). |
 | E2 | 🟠 | **Chave da IA (Anthropic) guardada em texto simples no SQLite** (`config`, chave `anthropic_api_key`). Qualquer pessoa com acesso ao `soul.db` ou aos backups lê a chave. | `Configuracoes.tsx` → `salvarConfig("anthropic_api_key", …)`. | ✅ **Corrigido em 11/10/2026:** a chave fica em `segredos.json` cifrada com `safeStorage` (DPAPI do Windows); a interface só grava/apaga/pergunta se existe; a migração remove qualquer chave antiga do `soul.db` e dos backups. |
-| E3 | 🟡 | **Versão do app exibida sempre "1.0.0" no instalado.** O preload lê `process.env.npm_package_version`, que só existe quando rodado via `npm`. | `src/preload/index.ts`, bloco `versoes.app`. | Expor a versão pelo main (`app.getVersion()`). |
+| E3 | ✅ | **(Corrigido)** Versão do app exibida sempre "1.0.0" no instalado. O preload lê `process.env.npm_package_version`, que só existe quando rodado via `npm`. | `src/preload/index.ts`, bloco `versoes.app`. | Expor a versão pelo main (`app.getVersion()`). |
 | E4 | 🟡 | **Aviso `ResourceWarning: unclosed file`** ao gerar a versão leve do vídeo. Os pipes do `ffmpeg` não são fechados explicitamente. | Saída de `npm run test:engine` (`leve.py:84` → `run_ffmpeg`). | Usar `with subprocess.Popen(...)` em `video/render.py`. |
 | E5 | 🟡 | **README tinha caminho pessoal** (`C:\Users\gusta\...`), contra a regra do `AGENTS.md`. | README anterior, linha 10. | ✅ Corrigido neste README. |
 | E6 | 🟡 | **Documentação cita uma pasta `vendas`** que não existe neste workspace e manda nunca alterá-la. Pode confundir quem chega novo. | `README`, `AGENTS.md`, docs 04 e 06. | ✅ Corrigido: menções removidas/trocadas em `AGENTS.md` e docs 04 e 06. |
@@ -46,8 +46,8 @@ Gravidade: 🔴 alta · 🟠 média · 🟡 baixa.
 
 Riscos de segurança observados (sem exploração conhecida):
 
-- `sandbox: false` na janela principal (`src/main/index.ts`). O renderer só carrega código local e não tem Node, mas ativar `sandbox: true` seria mais seguro se o preload permitir.
-- Os argumentos do IPC são tipados como `Record<string, any>` (`ipc.ts`); a validação é feita comando a comando. Um esquema (ex.: Zod) por comando reduziria o risco de caminho ou tipo inesperado.
+- ✅ **Corrigido em 11/10/2026:** a janela principal agora roda com `sandbox: true` (o preload é gerado em CommonJS, `out/preload/index.cjs`, e a versão do app chega pelo main).
+- ✅ **Corrigido em 11/10/2026:** todo comando do IPC tem esquema (`src/main/ipc-esquemas.ts` + `validacao.ts`). Campos extras são descartados, tipos errados viram erro, caminhos de pasta só valem dentro da pasta de dados/dados internos, o motor só aceita os métodos conhecidos, `open_path` recusa executáveis, o SQL da interface não pode usar `ATTACH`/`load_extension` nem gravar `VACUUM INTO` fora dos backups, e o comando `salvar_texto` (gravava em qualquer caminho, sem uso) foi removido. Limite que permanece: a interface ainda escreve SQL livre no próprio banco (`lib/db.ts`).
 - A sessão de login do BNDV e do Instagram fica em partições persistentes; quem acessa o `%APPDATA%` do Windows da loja acessa as sessões.
 
 ## 3. Pontos que podem ser melhores

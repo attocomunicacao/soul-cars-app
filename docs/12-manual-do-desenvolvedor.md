@@ -20,7 +20,7 @@ Requisitos: Windows x64, Node 22.16+, Git, uv, Tesseract (com `por`) e FFmpeg. O
 | `src/main` | Processo principal | Único lugar com acesso a disco, banco, rede e processos |
 | `src/main/estoque` | `extracao.ts` (BNDV), `sync.ts` (CSV e pastas), `balanco.ts`, `relatorio.ts`, `vendas.ts` | Regras financeiras e de pasta |
 | `src/main/studio` | `banco.ts`, `esquema.ts`, `arquivos.ts`, `entrada.ts`, `instagram*.ts`, `motor.ts`, `legado.ts` | Banco, arquivos, automações |
-| `src/main/ipc.ts` | Tabela `COMANDOS` | Única porta de entrada do renderer |
+| `src/main/ipc.ts`, `ipc-esquemas.ts`, `validacao.ts` | Tabela `COMANDOS` e o esquema de cada um | Única porta de entrada do renderer; tudo é validado antes de executar |
 | `src/preload` | `window.soul` | Só `invocar`, `ouvir` e `versoes` |
 | `src/compartilhado` | Regras puras (anúncio, entrada, publicação, instagram) | Importadas por main **e** renderer; sem I/O |
 | `src/renderer/src` | React: `App`, `Ficha`, `Producao`, `Criativos`, `Anunciar`, `Instagram`, `Entrada`, `Relatorios`, `Configuracoes` | `lib/` tem banco, DES.md, relatórios e XLSX |
@@ -63,7 +63,7 @@ flowchart LR
 
 ### 4.1 Adicionar um comando de IPC
 1. Escreva a função no módulo do domínio (`estoque/` ou `studio/`).
-2. Registre em `COMANDOS` (`src/main/ipc.ts`), validando os argumentos (`naoVazio` ou esquema).
+2. Registre em `COMANDOS` (`src/main/ipc.ts`) **e** declare o esquema em `src/main/ipc-esquemas.ts` (tipos, cabeçalhos, se exige arquivo, e `caminhoEmRaizes` para pastas). Sem esquema o app não abre e o teste `validacao.test.ts` falha. O comando só recebe o que o esquema declara.
 3. Chame pelo nome na interface por `lib/desktop.ts`. Binários vão como `Uint8Array` em `corpo`; textos curtos vão em `cabecalhos` (`x-pasta`, `x-nome`, `x-destino` são decodificados no IPC).
 4. Rode `npm run tipos`, `npm test` e `npm run smoke`.
 
@@ -133,7 +133,7 @@ Derivado da [avaliação](10-avaliacao-erros-melhorias.md); o roadmap do produto
 | Fase | Entrega | Itens | Passa quando |
 |---|---|---|---|
 | **M0 · Correções** (P) | ~~Acentos do motor (E1, feito)~~, versão do app, `ResourceWarning`, licença | E3, E4, E8 | Versão aparece certa no instalado; sem avisos no teste do vídeo |
-| **M1 · Segurança** (P/M) | ~~Chave da IA cifrada (E2, feito)~~; `sandbox: true` se possível; esquema de argumentos do IPC | riscos da seção 2 | Janela principal em sandbox; argumentos do IPC validados por esquema |
+| **M1 · Segurança** ~~(feito)~~ | ~~Chave da IA cifrada (E2)~~, ~~`sandbox: true`~~, ~~esquema de argumentos do IPC~~ | riscos da seção 2 | Próximo passo de segurança: tirar o SQL livre da interface (comandos de banco nomeados) |
 | **M2 · CI e qualidade** (M) | `test:engine`, `smoke` e `audit` no CI; ESLint; Dependabot | Melhorias 1, 2, 5 | CI vermelho quando qualquer suíte quebra |
 | **M3 · Testes de interface** (M) | Testes de componentes (Entrada, Anunciar, Ficha); fixtures sintéticas para os testes pulados | Melhorias 3, 4 | Zero testes pulados por dependência externa |
 | **M4 · Desempenho e instalação** (M) | Carregamento sob demanda; verificação de requisitos nas Configurações; atualização automática | Melhorias 6–8 | Bundle principal abaixo de 500 kB; instalador testado em máquina limpa |

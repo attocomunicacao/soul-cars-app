@@ -43,7 +43,9 @@ const api = {
   },
 
   versoes: {
-    app: process.env.npm_package_version ?? "1.0.0",
+    app:
+      process.argv.find((a) => a.startsWith("--soul-versao="))?.slice(14) ??
+      "desconhecida",
     electron: process.versions.electron,
     chrome: process.versions.chrome,
     node: process.versions.node,

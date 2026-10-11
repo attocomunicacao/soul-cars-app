@@ -35,11 +35,12 @@ function criarJanela() {
     icon: caminhos.recurso("icone.ico"),
     autoHideMenuBar: true,
     webPreferences: {
-      preload: path.join(aqui, "../preload/index.mjs"),
+      preload: path.join(aqui, "../preload/index.cjs"),
+      additionalArguments: [`--soul-versao=${app.getVersion()}`],
       // A interface não tem Node: tudo passa pela ponte do preload.
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false,
+      sandbox: true,
       spellcheck: false,
     },
   });
