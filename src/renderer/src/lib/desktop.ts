@@ -19,20 +19,6 @@ export async function invoke<T = unknown>(
   if (result instanceof Uint8Array) return result.slice().buffer as T;
   return result as T;
 }
-export default class Database {
-  static async load(_path: string) {
-    return new Database();
-  }
-  select<T>(sql: string, values: unknown[] = []) {
-    return invoke<T>("sql_select", { sql, values });
-  }
-  execute(sql: string, values: unknown[] = []) {
-    return invoke<{ lastInsertId: number; rowsAffected: number }>(
-      "sql_execute",
-      { sql, values },
-    );
-  }
-}
 export const ask = async (message: string, _options?: unknown) =>
   window.confirm(message);
 type Options = {

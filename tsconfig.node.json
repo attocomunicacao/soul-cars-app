@@ -22,6 +22,7 @@
     "electron.vite.config.ts",
     "testes/entrada.test.ts",
     "testes/segredos.test.ts",
-    "testes/validacao.test.ts"
+    "testes/validacao.test.ts",
+    "testes/repositorio.test.ts"
   ]
 }

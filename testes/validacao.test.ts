@@ -14,7 +14,6 @@ const interno = path.join(os.tmpdir(), "soul-validacao", "interno");
 const esquemas = criarEsquemas({
   raizes: () => [raiz, interno],
   raizesAbrir: () => [raiz, interno],
-  pastaBackups: () => path.join(interno, "backups"),
 });
 const chamar = (
   comando: string,
@@ -120,25 +119,67 @@ describe("validação de argumentos", () => {
     ).toThrow();
   });
 
-  it("bloqueia SQL perigoso e backup fora da pasta de backups", () => {
-    expect(() => chamar("sql_select", { sql: "SELECT 1" })).not.toThrow();
+  it("não existe mais SQL livre; as operações do banco são nomeadas", () => {
+    expect(esquemas.sql_select).toBeUndefined();
+    expect(esquemas.sql_execute).toBeUndefined();
+    expect(
+      Object.keys(esquemas).filter((c) => c.startsWith("db_")).length,
+    ).toBeGreaterThan(10);
+  });
+
+  it("valida os comandos do banco", () => {
+    // Só as colunas editáveis passam; chave presente sem valor vira NULL.
+    const r = chamar("db_veiculo_atualizar", {
+      id: 3,
+      patch: {
+        nome: "Fiesta",
+        preco: 48900,
+        ano: undefined,
+        id: 99,
+        "x; DROP TABLE veiculos": 1,
+      },
+    });
+    expect(r.args).toEqual({
+      id: 3,
+      patch: { nome: "Fiesta", preco: 48900, ano: null },
+    });
     expect(() =>
-      chamar("sql_execute", { sql: "ATTACH DATABASE 'x.db' AS x" }),
-    ).toThrow(/não permitido/);
+      chamar("db_veiculo_atualizar", { id: 3, patch: { status: "hackeado" } }),
+    ).toThrow(/status/);
     expect(() =>
-      chamar("sql_select", { sql: "SELECT load_extension('a')" }),
-    ).toThrow(/não permitido/);
-    const ok = path.join(interno, "backups", "soul-seg.db").replace(/'/g, "''");
+      chamar("db_veiculo_atualizar", { id: "3", patch: {} }),
+    ).toThrow(/id/);
     expect(() =>
-      chamar("sql_execute", { sql: `VACUUM INTO '${ok}'` }),
-    ).not.toThrow();
+      chamar("db_veiculo_atualizar", { id: 3, patch: { nome: { a: 1 } } }),
+    ).toThrow(/nome/);
+    expect(
+      chamar("db_veiculo_criar", { veiculo: { nome: "Toro", extra: 1 } }).args,
+    ).toEqual({
+      veiculo: { nome: "Toro" },
+    });
+    for (const chave of [
+      "campanha_modelo",
+      "ia_modo_api",
+      "estoque_leitura:" + raiz + "/ESTOQUE/1_X",
+    ])
+      expect(() => chamar("db_config_obter", { chave })).not.toThrow();
+    for (const chave of [
+      "anthropic_api_key",
+      "Maiuscula",
+      "x y",
+      "",
+      "sqlite_master;--",
+    ])
+      expect(() => chamar("db_config_obter", { chave })).toThrow();
     expect(() =>
-      chamar("sql_execute", { sql: "VACUUM INTO 'C:/Users/x/roubado.db'" }),
-    ).toThrow(/backups/);
-    expect(() => chamar("sql_execute", { sql: "VACUUM INTO ?" })).toThrow();
-    expect(() =>
-      chamar("sql_select", { sql: "SELECT ?", values: [{ a: 1 }] }),
-    ).toThrow(/values/);
+      chamar("db_config_salvar", { chave: "campanha_modelo", valor: 5 }),
+    ).toThrow(/valor/);
+    expect(
+      chamar("db_config_salvar", { chave: "campanha_modelo", valor: null })
+        .args,
+    ).toEqual({
+      chave: "campanha_modelo",
+    });
   });
 
   it("documento precisa ser PDF; balanço só aceita números", () => {

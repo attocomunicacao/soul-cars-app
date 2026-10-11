@@ -53,7 +53,7 @@ flowchart LR
 |---|---|---|
 | Atualizar BNDV | `atualizarEstoque` em `ipc.ts` → `estoque/extracao.ts` → `sync.ts` → `balanco.ts` → `relatorio.ts` | `bndv_veiculos.csv`, `bndv_vendas.csv`, `_INDICE.csv`, `balanco.json`, `RELATORIO.html`, pastas e `INFO.md/.txt`; eventos `estoque:log` e `estoque:etapa` |
 | Entrada | `criarEntrada` em `studio/entrada.ts`, tabela `entrada_arquivos` (migração 6) | Cópias em `FOTOS`/`VIDEO`/`DOC.pdf`; pendências; Lixeira só por hash |
-| Ficha | `Ficha.tsx`, `lib/db.ts`, `lib/des.ts`, motor (`ler_crlv`, `cnw_*`) | Linha do veículo, `DOC.md`, `DES.md` |
+| Ficha | `Ficha.tsx`, `lib/db.ts` → comandos `db_*` → `studio/repositorio.ts`, `lib/des.ts`, motor (`ler_crlv`, `cnw_*`) | Linha do veículo, `DOC.md`, `DES.md` |
 | Produção | `Producao.tsx`, `studio/arquivos.ts`, `fotos_renomear`, motor (`remover_fundo`, `fotos_organizar`), `engine/video/*` | Fotos renomeadas, `*_sem_fundo`, `VIDEO_*.mp4`, `ANUNCIO/ANUNCIO_*.mp4` |
 | Criativos | `Criativos.tsx` + `public/criativo` via `app-bridge.js`/`flow-bridge.js` | PNGs em `CRIATIVO/` |
 | Pronto para anunciar | `compartilhado/anuncio.ts`, `Anunciar.tsx`, `AvisosAnuncio.tsx`, `estoque/vendas.ts`, tabela `anuncios` (migração 7) | Checklist, cartão da campanha, lembrete de pausa |
@@ -70,7 +70,7 @@ flowchart LR
 ### 4.2 Alterar o banco
 1. **Nunca edite migração distribuída.** Acrescente a versão 8, 9… em `src/main/studio/esquema.ts`.
 2. Reconheça colunas/tabelas já existentes e rode em transação.
-3. Atualize `Veiculo`/`EDITAVEIS` em `lib/db.ts` e os testes.
+3. Escreva a consulta em `studio/repositorio.ts` (recebe a conexão; teste em `testes/repositorio.test.ts` com banco em memória), exponha como comando `db_*` em `ipc.ts` com esquema em `ipc-esquemas.ts`, e chame por `lib/db.ts`. Atualize `Veiculo` em `lib/db.ts` e `EDITAVEIS` em `compartilhado/veiculo.ts`. **A interface não escreve SQL.**
 4. Teste com uma cópia do `soul.db` real antes de distribuir.
 
 ### 4.3 Adicionar um método ao motor Python
@@ -133,7 +133,7 @@ Derivado da [avaliação](10-avaliacao-erros-melhorias.md); o roadmap do produto
 | Fase | Entrega | Itens | Passa quando |
 |---|---|---|---|
 | **M0 · Correções** (P) | ~~Acentos do motor (E1)~~, ~~versão do app (E3)~~, ~~`ResourceWarning` (E4)~~, ~~licença (E8)~~ | — | Fase concluída |
-| **M1 · Segurança** ~~(feito)~~ | ~~Chave da IA cifrada (E2)~~, ~~`sandbox: true`~~, ~~esquema de argumentos do IPC~~ | riscos da seção 2 | Próximo passo de segurança: tirar o SQL livre da interface (comandos de banco nomeados) |
+| **M1 · Segurança** ~~(feito)~~ | ~~Chave da IA cifrada (E2)~~, ~~`sandbox: true`~~, ~~esquema de argumentos do IPC~~, ~~SQL livre trocado por comandos `db_*`~~ | riscos da seção 2 | Fase concluída |
 | **M2 · CI e qualidade** (M) | `test:engine`, `smoke` e `audit` no CI; ESLint; Dependabot | Melhorias 1, 2, 5 | CI vermelho quando qualquer suíte quebra |
 | **M3 · Testes de interface** (M) | Testes de componentes (Entrada, Anunciar, Ficha); fixtures sintéticas para os testes pulados | Melhorias 3, 4 | Zero testes pulados por dependência externa |
 | **M4 · Desempenho e instalação** (M) | Carregamento sob demanda; verificação de requisitos nas Configurações; atualização automática | Melhorias 6–8 | Bundle principal abaixo de 500 kB; instalador testado em máquina limpa |

@@ -43,9 +43,13 @@ app.on("browser-window-created", (_e, w) => {
       const r = await w.webContents.executeJavaScript(`(async()=>{
         if(!window.soul)throw Error('Ponte preload ausente');
         if(document.querySelector('h1')?.textContent!=='Estoque')throw Error('Página inicial incorreta');
-        const insert=await window.soul.invocar('sql_execute',{sql:'INSERT INTO veiculos(nome) VALUES($1)',values:['SMOKE']});
-        const rows=await window.soul.invocar('sql_select',{sql:'SELECT nome FROM veiculos WHERE id=$1',values:[insert.lastInsertId]});
-        if(rows[0]?.nome!=='SMOKE')throw Error('SQLite/IPC falhou');
+        const novoId=await window.soul.invocar('db_veiculo_criar',{veiculo:{nome:'SMOKE'}});
+        const veiculo=await window.soul.invocar('db_veiculo_obter',{id:novoId});
+        if(veiculo?.nome!=='SMOKE')throw Error('SQLite/IPC falhou');
+        const livre=await window.soul.invocar('sql_execute',{sql:'DELETE FROM veiculos'}).then(()=>true,()=>false);
+        if(livre)throw Error('SQL livre ainda está disponível');
+        const manutencao=await window.soul.invocar('db_manutencao');
+        if(!manutencao.ok||!manutencao.backup)throw Error('Backup do banco falhou');
         const motor=await window.soul.invocar('engine_call',{method:'ping'});
         if(!motor.python)throw Error('Motor Python não respondeu');
         const relatorioBotao=[...document.querySelectorAll('nav button')].find(b=>b.textContent.includes('Abrir relatório completo'));

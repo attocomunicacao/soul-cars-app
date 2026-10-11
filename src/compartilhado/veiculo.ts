@@ -1,0 +1,30 @@
+/** Colunas do veículo que a interface pode alterar (lista fechada, usada no main e na interface). */
+export const EDITAVEIS = [
+  "nome",
+  "ano",
+  "versao",
+  "cambio",
+  "combustivel",
+  "preco",
+  "km",
+  "placa",
+  "status",
+  "marca_modelo",
+  "cor",
+  "renavam",
+  "chassi",
+  "configuracao",
+  "lugares",
+  "portas",
+  "direcao",
+  "seguranca",
+  "conforto",
+  "infotenimento",
+  "des_md",
+  "des_base",
+  "des_ia",
+  "pasta",
+  "ajustes",
+] as const;
+
+export const STATUS_VEICULO = ["rascunho", "criativos", "publicado"] as const;

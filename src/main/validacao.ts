@@ -67,6 +67,12 @@ export const opcional =
   (v, campo) =>
     v === undefined || v === null ? undefined : regra(v, campo);
 
+/** Aceita nulo (grava NULL) e mantém o nulo; ausente vira `undefined`. */
+export const anulavel =
+  <T>(regra: Regra<T>): Regra<T | null | undefined> =>
+  (v, campo) =>
+    v === undefined ? undefined : v === null ? null : regra(v, campo);
+
 export const lista =
   <T>(regra: Regra<T>, max = 1000): Regra<T[]> =>
   (v, campo) => {
@@ -85,39 +91,6 @@ export const objeto =
 /** Objeto sem forma fixa (parâmetros do motor): precisa ser objeto e conter só dados. */
 export const objetoLivre: Regra<Record<string, unknown>> = (v, campo) =>
   ehObjetoPlano(v) ? v : erro(campo, "um objeto");
-
-/** Valor simples de consulta SQL. */
-export const valorSql: Regra = (v, campo) => {
-  if (
-    v === null ||
-    typeof v === "string" ||
-    typeof v === "boolean" ||
-    (typeof v === "number" && Number.isFinite(v))
-  )
-    return v;
-  return erro(campo, "texto, número, booleano ou nulo");
-};
-
-/**
- * Consulta SQL vinda da interface. A interface precisa de SQL livre (o banco
- * é acessado por `lib/db.ts`), mas não de anexar outros bancos, carregar
- * extensões nem gravar arquivos fora da pasta de backups.
- */
-export const consultaSql =
-  (pastaBackups: () => string): Regra<string> =>
-  (v, campo) => {
-    const sql = texto({ max: 200_000 })(v, campo);
-    if (/\battach\b|load_extension|\bdetach\b/i.test(sql))
-      throw new Error("Comando SQL não permitido.");
-    const into = /\bvacuum\s+into\s+'((?:[^']|'')*)'/i.exec(sql);
-    if (/\bvacuum\s+into\b/i.test(sql)) {
-      if (!into) throw new Error("Comando SQL não permitido.");
-      const alvo = path.resolve(into[1].replace(/''/g, "'"));
-      if (!dentroDe(pastaBackups(), alvo))
-        throw new Error("Backup fora da pasta de backups.");
-    }
-    return sql;
-  };
 
 const minusculas = (s: string) =>
   process.platform === "win32" ? s.toLowerCase() : s;

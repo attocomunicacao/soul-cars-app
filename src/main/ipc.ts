@@ -29,6 +29,7 @@ import { lerCsv, sincronizar } from "./estoque/sync";
 import { ultimasVendas } from "./estoque/vendas";
 import * as arquivos from "./studio/arquivos";
 import * as bancoStudio from "./studio/banco";
+import * as repo from "./studio/repositorio";
 import * as motor from "./studio/motor";
 import { segredos } from "./segredos-sistema";
 import { criarEsquemas, EXTENSOES_EXECUTAVEIS } from "./ipc-esquemas";
@@ -43,6 +44,8 @@ type Comando = (
   corpo: Uint8Array | null,
   cabecalhos: Cabecalhos,
 ) => unknown;
+
+const banco = bancoStudio.banco;
 
 let janela: BrowserWindow | null = null;
 export const definirJanela = (w: BrowserWindow) => {
@@ -180,9 +183,25 @@ const COMANDOS: Record<string, Comando> = {
   instagram_confirmar: (a) =>
     instagram.confirmarInstagram(a.id, a.etapa, a.publicado === true),
   // ---- banco do Studio ----
-  sql_select: (a) => bancoStudio.selecionar(a.sql, a.values ?? []),
-  sql_execute: (a) => bancoStudio.executar(a.sql, a.values ?? []),
-  banco_backup_preparar: (a) => bancoStudio.prepararBackup(a.nome),
+  // Cada operação do banco é um comando nomeado: a interface não escreve SQL.
+  db_veiculos_listar: (a) => repo.listarVeiculos(banco(), a.busca),
+  db_veiculo_obter: (a) => repo.obterVeiculo(banco(), a.id),
+  db_veiculo_criar: (a) => repo.criarVeiculo(banco(), a.veiculo as never),
+  db_veiculo_atualizar: (a) => repo.atualizarVeiculo(banco(), a.id, a.patch),
+  db_anuncios_listar: (a) => repo.listarAnuncios(banco(), a.veiculoId),
+  db_anuncio_registrar: (a) =>
+    repo.registrarAnuncio(banco(), a.anuncio as never),
+  db_anuncio_pausar: (a) => repo.marcarAnuncioPausado(banco(), a.id, a.dia),
+  db_anuncio_remover: (a) => repo.removerAnuncio(banco(), a.id),
+  db_config_obter: (a) => repo.obterConfig(banco(), a.chave),
+  db_config_salvar: (a) => repo.salvarConfig(banco(), a.chave, a.valor ?? null),
+  db_loja_obter: () => repo.obterLoja(banco()),
+  db_loja_salvar: (a) => repo.salvarLoja(banco(), a.loja as never),
+  db_relatorio_salvar: (a) =>
+    repo.salvarRelatorio(banco(), a.relatorio as never),
+  db_relatorios_listar: (a) => repo.listarRelatorios(banco(), a.limite),
+  db_relatorio_excluir: (a) => repo.excluirRelatorio(banco(), a.id),
+  db_manutencao: () => bancoStudio.manutencao(),
 
   // ---- caminhos e configuração ----
   app_data: () => caminhos.userData(),
@@ -358,7 +377,6 @@ const ESQUEMAS = criarEsquemas({
     caminhos.userData(),
     path.join(os.homedir(), "Pictures", "SOUL Cars"),
   ],
-  pastaBackups: () => caminhos.PASTA_BACKUPS(),
 });
 
 /** Comando sem esquema é erro de programação: o app não abre. */

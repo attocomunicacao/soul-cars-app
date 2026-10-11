@@ -5,15 +5,15 @@
  * para compilar, então `npm install` nunca precisa de Visual Studio nem de
  * Python. O arquivo fica em `%APPDATA%\soul-cars-app\soul.db`.
  *
- * A interface conversa com este módulo por `sql_select` / `sql_execute`,
- * exatamente como fazia com o serviço anterior, então o código de
- * `renderer/src/lib/db.ts` continua valendo sem mudanças.
+ * A interface não escreve SQL: ela chama os comandos `db_*` (ipc.ts), que
+ * usam as consultas de `repositorio.ts`.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import * as caminhos from "../caminhos";
 import { MIGRACOES } from "./esquema";
+import * as repositorio from "./repositorio";
 
 let conexao: DatabaseSync | null = null;
 
@@ -106,18 +106,27 @@ export function executar(sql: string, valores: unknown[] = []) {
   };
 }
 
+/** Nome do backup do dia: sobram sempre os últimos 7 dias sem precisar limpar nada. */
+const DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
+
 /**
- * Prepara o caminho do backup do dia e apaga o anterior.
- *
- * O nome usa o dia da semana, então sobram sempre os últimos 7 dias sem
- * precisar limpar nada. Quem copia é o `VACUUM INTO` disparado pela
- * interface.
+ * Confere o banco e guarda a cópia do dia em `backups/`.
+ * Devolve o aviso quando o banco está corrompido (o app mostra na tela).
  */
-export function prepararBackup(nome: string) {
-  if (path.basename(nome) !== nome || !nome.endsWith(".db"))
-    throw new Error("Backup inválido.");
-  fs.mkdirSync(caminhos.PASTA_BACKUPS(), { recursive: true });
-  const destino = path.join(caminhos.PASTA_BACKUPS(), nome);
-  fs.rmSync(destino, { force: true });
-  return destino.replace(/\\/g, "/");
+export function manutencao(agora = new Date()) {
+  const db = banco();
+  const detalhe = repositorio.conferirBanco(db);
+  if (detalhe !== "ok") return { ok: false, detalhe, backup: null };
+  try {
+    fs.mkdirSync(caminhos.PASTA_BACKUPS(), { recursive: true });
+    const destino = path.join(
+      caminhos.PASTA_BACKUPS(),
+      `soul-${DIAS[agora.getDay()]}.db`,
+    );
+    fs.rmSync(destino, { force: true });
+    repositorio.copiarBanco(db, destino);
+    return { ok: true, detalhe, backup: destino.replace(/\\/g, "/") };
+  } catch (erro) {
+    return { ok: true, detalhe: `backup falhou: ${erro}`, backup: null };
+  }
 }

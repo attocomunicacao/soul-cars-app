@@ -5,11 +5,12 @@
  * um teste confere. Caminhos de pasta só são aceitos dentro das raízes
  * autorizadas (pasta de dados da loja e dados internos do app).
  */
+import { EDITAVEIS, STATUS_VEICULO } from "../compartilhado/veiculo";
 import {
   booleano,
   caminhoEmRaizes,
   caminhoQualquer,
-  consultaSql,
+  anulavel,
   idVeiculo,
   inteiro,
   lista,
@@ -19,7 +20,6 @@ import {
   opcional,
   texto,
   umDe,
-  valorSql,
   type Esquema,
   type Regra,
 } from "./validacao";
@@ -45,7 +45,6 @@ export type Contexto = {
   raizes: () => string[];
   /** Raízes onde abrir um arquivo pelo sistema é aceitável (inclui Imagens\SOUL Cars). */
   raizesAbrir: () => string[];
-  pastaBackups: () => string;
 };
 
 const contas: Regra = (v, campo) => {
@@ -58,14 +57,116 @@ const contas: Regra = (v, campo) => {
   return externo;
 };
 
+const escalar: Regra<string | number> = (v, campo) =>
+  typeof v === "number"
+    ? numero(v, campo)
+    : texto({ vazio: true, max: 50_000 })(v, campo);
+
+/** Chaves da tabela config: letras minúsculas, números e "_", com sufixo ":<texto>" opcional. Nunca segredos. */
+const chaveConfig: Regra<string> = (v, campo) => {
+  const chave = texto({ max: 1100 })(v, campo);
+  if (
+    !/^[a-z][a-z0-9_]*(:.+)?$/s.test(chave) ||
+    /api_key|senha|token|segredo/i.test(chave.split(":")[0])
+  )
+    throw new Error(
+      `Argumento inválido: "${campo}" não é uma chave de configuração permitida.`,
+    );
+  return chave;
+};
+
+/** Alterações do veículo: só as colunas de EDITAVEIS; chave presente com valor vazio vira NULL. */
+const patchVeiculo: Regra = (v, campo) => {
+  const origem = objetoLivre(v, campo);
+  const saida: Record<string, string | number | null> = {};
+  for (const coluna of EDITAVEIS) {
+    if (!(coluna in origem)) continue;
+    const valor = origem[coluna];
+    saida[coluna] =
+      valor === undefined || valor === null
+        ? null
+        : coluna === "status"
+          ? umDe(...STATUS_VEICULO)(valor, `${campo}.status`)
+          : escalar(valor, `${campo}.${coluna}`);
+  }
+  return saida;
+};
+
+function esquemasDoBanco(): Record<string, Esquema> {
+  const id = inteiro;
+  const cheio = texto({ max: 2000, vazio: true });
+  return {
+    db_veiculos_listar: {
+      args: { busca: opcional(texto({ max: 200, vazio: true })) },
+    },
+    db_veiculo_obter: { args: { id } },
+    db_veiculo_criar: {
+      args: {
+        veiculo: objeto({
+          nome: texto({ max: 200 }),
+          ano: anulavel(escalar),
+          versao: anulavel(escalar),
+          cambio: anulavel(escalar),
+          preco: anulavel(escalar),
+          km: anulavel(escalar),
+          placa: anulavel(escalar),
+        }),
+      },
+    },
+    db_veiculo_atualizar: { args: { id, patch: patchVeiculo } },
+    db_anuncios_listar: { args: { veiculoId: opcional(id) } },
+    db_anuncio_registrar: {
+      args: {
+        anuncio: objeto({
+          veiculo_id: id,
+          estoque_id: anulavel(id),
+          modelo: texto({ max: 300 }),
+          campanha: texto({ max: 300 }),
+          criado_dia: texto({ max: 10 }),
+        }),
+      },
+    },
+    db_anuncio_pausar: { args: { id, dia: texto({ max: 10 }) } },
+    db_anuncio_remover: { args: { id } },
+    db_config_obter: { args: { chave: chaveConfig } },
+    db_config_salvar: {
+      args: {
+        chave: chaveConfig,
+        valor: opcional(texto({ max: 1_000_000, vazio: true })),
+      },
+    },
+    db_loja_obter: {},
+    db_loja_salvar: {
+      args: {
+        loja: objeto({
+          contato: cheio,
+          horario: cheio,
+          loja: cheio,
+          endereco: cheio,
+        }),
+      },
+    },
+    db_relatorio_salvar: {
+      args: {
+        relatorio: objeto({
+          tipo: texto({ max: 50 }),
+          arquivo: texto({ max: 500 }),
+          inicio: texto({ max: 30 }),
+          fim: texto({ max: 30 }),
+          dados: texto({ max: 50_000_000, vazio: true }),
+        }),
+      },
+    },
+    db_relatorios_listar: { args: { limite: opcional(id) } },
+    db_relatorio_excluir: { args: { id } },
+    db_manutencao: {},
+  };
+}
+
 export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
   const pasta = caminhoEmRaizes(ctx.raizes);
-  const sql = consultaSql(ctx.pastaBackups);
   const nome = texto({ max: 255 });
   const veiculo = idVeiculo;
-  const consulta: Esquema = {
-    args: { sql, values: opcional(lista(valorSql, 2000)) },
-  };
   const vazio: Esquema = {};
 
   return {
@@ -85,9 +186,7 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
     },
 
     // ---- banco, caminhos e configuração ----
-    sql_select: consulta,
-    sql_execute: consulta,
-    banco_backup_preparar: { args: { nome: texto({ max: 100 }) } },
+    ...esquemasDoBanco(),
     app_data: vazio,
     config_ler: vazio,
     config_gravar: {

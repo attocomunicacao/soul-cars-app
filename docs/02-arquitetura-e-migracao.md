@@ -16,7 +16,7 @@ React não acessa Node/disco diretamente. A janela roda em sandbox (preload Comm
 | Estoque sync.py | CSV, deduplicação, pastas e fichas | main/estoque/sync.ts |
 | Estoque balanco.py/relatorio.py | Patrimônio, margens, gráficos e relatório | main/estoque/balanco.ts e relatorio.ts |
 | Studio rotas Svelte/componentes | Painel, lista, ficha, produção, editor, publicação, relatórios e sistema | React App, Ficha, Criativos, Relatorios e Configuracoes |
-| Studio lib/db, des, estoque-parse, publicacao, relatorios, xlsx | Regras de negócio, formatos e consultas | renderer/src/lib, reaproveitado com imports locais |
+| Studio lib/db (agora só chama comandos `db_*`; SQL em main/studio/repositorio.ts), des, estoque-parse, publicacao, relatorios, xlsx | Regras de negócio, formatos e consultas | renderer/src/lib, reaproveitado com imports locais |
 | Studio estoque.svelte.ts | Importação e vigia reativo | lib/importacao.ts e efeitos React |
 | Studio desktop.ts, local_server.py e núcleo Rust | Ponte, arquivos, processos, banco | main/ipc.ts, studio/* e preload/index.ts |
 | Studio migrações SQL | Esquema histórico | studio/esquema.ts, cinco versões preservadas mais a 6 (entrada) e a 7 (anúncios) |

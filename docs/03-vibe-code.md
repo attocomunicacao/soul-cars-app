@@ -14,7 +14,7 @@
 | Sombra e piso | criativo/shadow.js, original-floor.js, workbench.js |
 | Comunicação com editor | Criativos.tsx, criativo/app-bridge.js e flow-bridge.js |
 | Arquivos e comandos | main/ipc.ts, studio/arquivos.ts, lib/desktop.ts |
-| Banco | studio/banco.ts, studio/esquema.ts, lib/db.ts |
+| Banco | studio/banco.ts, studio/esquema.ts, studio/repositorio.ts (consultas), lib/db.ts (chamadas nomeadas), main/ipc-esquemas.ts |
 | Caminhos | main/caminhos.ts |
 | BNDV e financeiro | main/estoque/* |
 | Lucro mensal e setas do relatório | main/estoque/relatorio.ts |
@@ -37,6 +37,6 @@ Exemplo:
 
 > Leia docs/02-arquitetura-e-migracao.md, 03-vibe-code.md e 04-dados-e-backup.md. Adicione “Observações internas” à ficha do Studio. Preserve DES.md, os veículos existentes e vendas. Crie uma migração nova, atualize tipos/consultas/campo React, rode os testes pertinentes e explique as mudanças.
 
-Nunca edite migração já distribuída; acrescente uma versão. Atualize Veiculo/EDITAVEIS em lib/db.ts. Comando que toca disco pertence ao main e à lista COMANDOS; não adicione Node à janela. Binários trafegam como Uint8Array, cabeçalhos são codificados uma vez e decodificados no IPC. Antes de alterar artes, confira ambos layouts e exportação PNG.
+Nunca edite migração já distribuída; acrescente uma versão. Atualize Veiculo em lib/db.ts e EDITAVEIS em compartilhado/veiculo.ts. A interface não escreve SQL: crie a consulta em studio/repositorio.ts, o comando db_* em ipc.ts e o esquema em ipc-esquemas.ts. Comando que toca disco pertence ao main e à lista COMANDOS; não adicione Node à janela. Binários trafegam como Uint8Array, cabeçalhos são codificados uma vez e decodificados no IPC. Antes de alterar artes, confira ambos layouts e exportação PNG.
 
 `npm run formatar` formata o código novo; `npm run formatar:check` confere o padrão.
