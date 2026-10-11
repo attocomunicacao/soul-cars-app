@@ -18,6 +18,7 @@ import {
 } from "./ipc";
 import { reiniciarMotor } from "./studio/motor";
 import { importarLegado } from "./studio/legado";
+import { migrarSegredos } from "./segredos-sistema";
 import { encerrarInstagram } from "./studio/instagram";
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
@@ -80,6 +81,7 @@ if (!app.requestSingleInstanceLock()) {
     .then(async () => {
       app.setAppUserModelId("com.soulcars.app");
       await importarLegado();
+      migrarSegredos();
       registrarIpc();
       criarJanela();
       iniciarEntrada();

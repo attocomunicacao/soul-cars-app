@@ -25,5 +25,5 @@
     "src/compartilhado/**/*.ts",
     "testes/**/*.ts"
   ],
-  "exclude": ["testes/entrada.test.ts"]
+  "exclude": ["testes/entrada.test.ts", "testes/segredos.test.ts"]
 }

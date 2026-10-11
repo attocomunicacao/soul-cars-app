@@ -100,11 +100,9 @@ export function Ficha({
         throw new Error(
           "O modo API está desligado. Use o prompt pronto ou ative o modo API em Configurações.",
         );
-      const api_key = await obterConfig("anthropic_api_key");
       textos = await engine<TextosIA>("gerar_textos", {
         ficha: ficha(),
         loja: loja.loja,
-        api_key,
       });
     }
     const md = gerarDes(ficha(), loja, textos);

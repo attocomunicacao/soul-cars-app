@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { obterLoja, salvarLoja, obterConfig, salvarConfig } from "./lib/db";
+import { invoke } from "./lib/desktop";
 import type { Loja } from "./lib/des";
 export function Configuracoes() {
   const [loja, setLoja] = useState<Loja | null>(null),
@@ -18,9 +19,10 @@ export function Configuracoes() {
     void obterConfig("ia_modo_api")
       .then((c) => setModoApi(c === "1"))
       .catch((e) => setAviso(String(e)));
-    void obterConfig("anthropic_api_key")
-      .then((c) => {
-        if (c) setAviso("Chave da Anthropic configurada neste computador.");
+    void invoke<boolean>("segredo_existe", { nome: "anthropic_api_key" })
+      .then((existe) => {
+        if (existe)
+          setAviso("Chave da Anthropic configurada neste computador.");
       })
       .catch((e) => setAviso(String(e)));
   }, []);
@@ -30,7 +32,11 @@ export function Configuracoes() {
       if (loja) await salvarLoja(loja);
       await salvarConfig("ia_modo_api", modoApi ? "1" : null);
       await salvarConfig("campanha_modelo", campanhaModelo.trim() || null);
-      if (chave.trim()) await salvarConfig("anthropic_api_key", chave.trim());
+      if (chave.trim())
+        await invoke("segredo_definir", {
+          nome: "anthropic_api_key",
+          valor: chave.trim(),
+        });
       setChave("");
       setAviso("Configurações salvas.");
     } catch (e) {
@@ -94,7 +100,10 @@ export function Configuracoes() {
         disabled={ocupado}
         onClick={async () => {
           try {
-            await salvarConfig("anthropic_api_key", null);
+            await invoke("segredo_definir", {
+              nome: "anthropic_api_key",
+              valor: null,
+            });
             setAviso("Chave removida.");
           } catch (e) {
             setAviso(String(e));

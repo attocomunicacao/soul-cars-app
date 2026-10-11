@@ -20,6 +20,7 @@
     "src/preload/**/*.ts",
     "src/compartilhado/**/*.ts",
     "electron.vite.config.ts",
-    "testes/entrada.test.ts"
+    "testes/entrada.test.ts",
+    "testes/segredos.test.ts"
   ]
 }

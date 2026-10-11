@@ -86,6 +86,9 @@ Mexa em `renderer/src/lib/des.ts` / `compartilhado/publicacao.ts` e confira `tes
 ### 4.5 Mexer no Instagram
 Seletores e passos ficam só em `instagram-browser.ts`. Depois de qualquer mudança: `npm run smoke:instagram` e uma validação manual com a conta real (o smoke não detecta mudanças do site).
 
+### 4.6 Segredos
+Chaves e tokens nunca vão para o SQLite nem para o renderer. Use `src/main/segredos.ts` (lista `NOMES_PERMITIDOS`), grave pelo comando `segredo_definir` e entregue ao motor/serviço no main (veja `paramsDoMotor` em `ipc.ts`). A interface não consegue ler de volta.
+
 ## 5. Regras de negócio que não podem quebrar
 
 - ID BNDV identifica pasta e veículo; renomear no BNDV não renomeia pasta.
@@ -130,7 +133,7 @@ Derivado da [avaliação](10-avaliacao-erros-melhorias.md); o roadmap do produto
 | Fase | Entrega | Itens | Passa quando |
 |---|---|---|---|
 | **M0 · Correções** (P) | ~~Acentos do motor (E1, feito)~~, versão do app, `ResourceWarning`, licença | E3, E4, E8 | Versão aparece certa no instalado; sem avisos no teste do vídeo |
-| **M1 · Segurança** (P/M) | Chave da IA cifrada; `sandbox: true` se possível; esquema de argumentos do IPC | E2 e riscos da seção 2 | A chave não aparece em texto no `soul.db` nem nos backups |
+| **M1 · Segurança** (P/M) | ~~Chave da IA cifrada (E2, feito)~~; `sandbox: true` se possível; esquema de argumentos do IPC | riscos da seção 2 | Janela principal em sandbox; argumentos do IPC validados por esquema |
 | **M2 · CI e qualidade** (M) | `test:engine`, `smoke` e `audit` no CI; ESLint; Dependabot | Melhorias 1, 2, 5 | CI vermelho quando qualquer suíte quebra |
 | **M3 · Testes de interface** (M) | Testes de componentes (Entrada, Anunciar, Ficha); fixtures sintéticas para os testes pulados | Melhorias 3, 4 | Zero testes pulados por dependência externa |
 | **M4 · Desempenho e instalação** (M) | Carregamento sob demanda; verificação de requisitos nas Configurações; atualização automática | Melhorias 6–8 | Bundle principal abaixo de 500 kB; instalador testado em máquina limpa |
