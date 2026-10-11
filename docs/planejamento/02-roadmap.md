@@ -71,8 +71,8 @@ Publicação semiautomática: o app deixa tudo pronto e você duplica a campanha
 Ordem sugerida; o mesmo método (prompt, teste de passagem) vale para todos.
 
 ### Flow B · Podcast (PODPRESTEM e Segeti)
-- [ ] Perfil por cliente em arquivo YAML (logo, paleta, introdução, contexto da empresa, estilo de legenda, regras de corte).
-- [ ] Corte de início e fim por transcrição com tempo por palavra (faster-whisper).
+- [x] Perfil por cliente em arquivo YAML (logo, paleta, introdução, contexto da empresa, estilo de legenda, regras de corte). Feito no projeto separado `atto-podcast` (`perfis/`); falta você preencher logo, paleta, frases e contexto.
+- [x] Corte de início e fim por transcrição com tempo por palavra (faster-whisper). Feito no `atto-podcast` (comandos `transcrever` e `limites`); falta testar com um episódio real.
 - [ ] Candidatos a corte por regras (janelas de 80 a 100 s, começo e fim em frase completa, palavras-chave do perfil).
 - [ ] Modo "prompt pronto": o sistema monta o prompt com a transcrição e os candidatos; você cola no chat e devolve o JSON; ele valida.
 - [ ] Legenda dinâmica palavra por palavra, queimada por FFmpeg (arquivo ASS), com 2 ou 3 estilos para comparar.
