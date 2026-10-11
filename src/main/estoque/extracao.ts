@@ -17,13 +17,9 @@ import { BrowserWindow, session } from "electron";
 import fs from "node:fs";
 import * as caminhos from "../caminhos";
 
-export type Log = (
-  texto: string,
-  tom?: "normal" | "aviso" | "erro" | "ok",
-) => void;
+import { puxar, type Log, type Pagina, type Registro } from "./graphql";
 
-type Registro = Record<string, unknown>;
-type Pagina = { itens: Registro[]; total: number };
+export type { Log };
 
 /** Os campos "extras" são opcionais de propósito: o schema GraphQL declara
  *  vários como não-nuláveis, mas eles vêm nulos em registros antigos, e no
@@ -249,60 +245,6 @@ async function capturarToken(
   }
 }
 
-// -------------------------------------------------------------- consulta
-async function puxar(
-  cabecalhos: Record<string, string>,
-  raiz: string,
-  core: string,
-  extra: string,
-  chave: string,
-): Promise<Pagina> {
-  const itens: Registro[] = [];
-  const vistos = new Set<unknown>();
-  let total = 0;
-
-  const consultar = async (selecao: string, pagina: number) => {
-    const query = `query { ${raiz}(pagination:{page:${pagina},pageSize:20},filters:{}) { paginationOut { totalRows } items { ${selecao} } } }`;
-    const resposta = await fetch(caminhos.API_BNDV, {
-      method: "POST",
-      headers: cabecalhos,
-      body: JSON.stringify({ query }),
-      signal: AbortSignal.timeout(60_000),
-    });
-    if (!resposta.ok)
-      throw new Error(
-        `O BNDV respondeu HTTP ${resposta.status}. Tente atualizar novamente.`,
-      );
-    return (await resposta.json()) as {
-      data?: Record<
-        string,
-        { paginationOut: { totalRows: number }; items: Registro[] }
-      >;
-      errors?: { message: string }[];
-    };
-  };
-
-  for (let pagina = 0; pagina <= 200; pagina++) {
-    let r = await consultar(extra ? `${core} ${extra}` : core, pagina);
-    if (r.errors && extra) r = await consultar(core, pagina);
-    if (r.errors)
-      throw new Error(
-        `a API recusou a consulta de ${raiz}: ${r.errors[0].message}`,
-      );
-    const d = r.data?.[raiz];
-    if (!d) throw new Error(`a API não devolveu ${raiz}.`);
-    if (d.paginationOut?.totalRows) total = d.paginationOut.totalRows;
-    if (!d.items.length) break;
-    for (const it of d.items) {
-      if (!vistos.has(it[chave])) {
-        vistos.add(it[chave]);
-        itens.push(it);
-      }
-    }
-  }
-  return { itens, total };
-}
-
 export type ResultadoExtracao = {
   veiculos: Pagina;
   vendas: Pagina;
@@ -320,15 +262,16 @@ export async function extrair(
   aoAutenticar?.();
 
   log("Consultando veículos e vendas…");
+  const api = { url: caminhos.API_BNDV, cabecalhos, log };
   const veiculos = await puxar(
-    cabecalhos,
+    api,
     "vehicles_web_app",
     CAMPOS_VEICULOS,
     "",
     "idVehicle",
   );
   const vendas = await puxar(
-    cabecalhos,
+    api,
     "sales",
     CAMPOS_VENDAS,
     EXTRAS_VENDAS,

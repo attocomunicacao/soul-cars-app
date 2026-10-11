@@ -29,6 +29,7 @@
     "testes/entrada.test.ts",
     "testes/limpeza-ia.test.ts",
     "testes/validacao.test.ts",
+    "testes/graphql.test.ts",
     "testes/repositorio.test.ts"
   ]
 }

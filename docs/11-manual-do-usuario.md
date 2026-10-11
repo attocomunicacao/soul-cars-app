@@ -128,6 +128,7 @@ Aba **Pronto para anunciar**.
 |---|---|
 | "Uma atualização já está em andamento" | Aguarde terminar. Se travou, feche e reabra o app |
 | Lista de carros vazia | Confira a **Raiz de dados** em Configurações e clique em **Atualizar BNDV** |
+| "O BNDV respondeu HTTP 400…" ao atualizar | O BNDV recusou a consulta. O app agora tenta de novo sem o campo que o BNDV não aceita mais e mostra o motivo na mensagem. Se continuar, tire um print da mensagem completa (ela traz a resposta do BNDV) e faça o login de novo na janela que abre |
 | BNDV pede login de novo | Faça login na janela que abrir; a sessão fica salva |
 | Botões de documento, recorte ou vídeo falham | Em Configurações, **Instalar / reparar motor Python**; confirme uv, Tesseract e FFmpeg |
 | Arquivo da Entrada ficou como pendência | Confira a placa no nome da pasta e se existe um único veículo com essa placa |

@@ -157,3 +157,9 @@ Decisão do projeto: **o app não tem nenhuma aplicação paga**. Foi removido t
 - Na interface: o campo de chave, o modo API em Configurações e o botão "Gerar textos com IA (API paga)" na Ficha. **Fica o prompt pronto** (Ficha › Textos pelo chat), que não chama serviço nenhum.
 - Na abertura, `main/limpeza-ia.ts` apaga qualquer chave guardada por versões anteriores (tabela `config` do banco e dos backups, e o `segredos.json`). No seu computador não havia chave guardada.
 - Os dados antigos `des_ia` (textos do prompt pronto) continuam sendo usados; nenhuma migração de banco foi alterada.
+
+## 10. Erro "O BNDV respondeu HTTP 400" ao atualizar (relato do usuário, 11/10/2026)
+
+- **Causa provável (não confirmada com a API real):** o BNDV passou a recusar a consulta com HTTP 400. O app só tinha plano B quando a API devolvia 200 com `errors`; num 400 ele parava na hora e escondia o corpo da resposta, que diz o motivo.
+- **Correção:** `estoque/graphql.ts` lê o corpo mesmo em 400; se o motivo for um campo que não existe mais, tira só aquele campo (pela posição que o servidor informa), avisa no log e segue; se não der para ligar o erro a um campo, refaz só com os campos essenciais; e, se mesmo assim falhar, a mensagem agora traz o status e o texto da API. Nunca poda o campo que identifica o registro. 12 testes novos, com um `fetch` de mentira, cobrem os cenários.
+- **O que falta:** clicar de novo em **Atualizar BNDV** e ver a mensagem. Se o problema for o login/token (e não um campo), a mensagem nova vai dizer isso.

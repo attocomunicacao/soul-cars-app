@@ -51,7 +51,7 @@ flowchart LR
 
 | Etapa do usuário | Comandos/arquivos principais | Saída |
 |---|---|---|
-| Atualizar BNDV | `atualizarEstoque` em `ipc.ts` → `estoque/extracao.ts` → `sync.ts` → `balanco.ts` → `relatorio.ts` | `bndv_veiculos.csv`, `bndv_vendas.csv`, `_INDICE.csv`, `balanco.json`, `RELATORIO.html`, pastas e `INFO.md/.txt`; eventos `estoque:log` e `estoque:etapa` |
+| Atualizar BNDV | `atualizarEstoque` em `ipc.ts` → `estoque/extracao.ts` (token) → `estoque/graphql.ts` (consulta paginada que lê o corpo de erro do HTTP 400 e poda campos que o BNDV removeu) → `sync.ts` → `balanco.ts` → `relatorio.ts` | `bndv_veiculos.csv`, `bndv_vendas.csv`, `_INDICE.csv`, `balanco.json`, `RELATORIO.html`, pastas e `INFO.md/.txt`; eventos `estoque:log` e `estoque:etapa` |
 | Entrada | `criarEntrada` em `studio/entrada.ts`, tabela `entrada_arquivos` (migração 6) | Cópias em `FOTOS`/`VIDEO`/`DOC.pdf`; pendências; Lixeira só por hash |
 | Ficha | `Ficha.tsx`, `lib/db.ts` → comandos `db_*` → `studio/repositorio.ts`, `lib/des.ts`, motor (`ler_crlv`, `cnw_*`) | Linha do veículo, `DOC.md`, `DES.md` |
 | Produção | `Producao.tsx`, `studio/arquivos.ts`, `fotos_renomear`, motor (`remover_fundo`, `fotos_organizar`), `engine/video/*` | Fotos renomeadas, `*_sem_fundo`, `VIDEO_*.mp4`, `ANUNCIO/ANUNCIO_*.mp4` |
