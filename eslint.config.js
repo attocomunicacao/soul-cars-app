@@ -80,7 +80,7 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
   {
-    files: ["testes/**/*.mjs", "scripts/**/*.cjs", "*.config.{js,ts}"],
+    files: ["testes/**/*.mjs", "scripts/**/*.{cjs,mjs}", "*.config.{js,ts}"],
     languageOptions: {
       globals: { ...globals.node, ...globals.browser },
       sourceType: "commonjs",
@@ -88,7 +88,7 @@ export default tseslint.config(
     rules: { "@typescript-eslint/no-require-imports": "off" },
   },
   {
-    files: ["testes/**/*.mjs", "*.config.js"],
+    files: ["testes/**/*.mjs", "scripts/**/*.mjs", "*.config.js"],
     languageOptions: { sourceType: "module" },
   },
 );

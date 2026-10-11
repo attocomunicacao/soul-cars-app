@@ -1,4 +1,6 @@
 // Executado pelo Electron real, com banco e estoque temporários.
+// Sem tela de carregamento: o teste espera uma única janela principal.
+process.env.SOUL_SEM_SPLASH = "1";
 const { app, BrowserWindow, nativeImage, session } = require("electron");
 const fs = require("node:fs");
 const path = require("node:path");

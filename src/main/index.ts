@@ -21,6 +21,7 @@ import { reiniciarMotor } from "./studio/motor";
 import { importarLegado } from "./studio/legado";
 import { apagarArquivoDeSegredos, removerConfigIa } from "./limpeza-ia";
 import { fecharJanelaBndv } from "./estoque/bndv-janela";
+import { mostrarSplash, type Splash } from "./splash";
 import { encerrarInstagram } from "./studio/instagram";
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
@@ -40,7 +41,7 @@ function limparRestosDoModoApi() {
   apagarArquivoDeSegredos(caminhos.userData());
 }
 
-function criarJanela() {
+function criarJanela(splash: Splash | null) {
   const janela = new BrowserWindow({
     width: 1280,
     height: 820,
@@ -64,7 +65,10 @@ function criarJanela() {
 
   definirJanela(janela);
   janela.on("closed", encerrarInstagram);
-  janela.once("ready-to-show", () => janela.show());
+  // Com tela de carregamento, ela decide o momento (tempo mínimo) de mostrar a janela.
+  janela.once("ready-to-show", () =>
+    splash ? splash.revelar(janela) : janela.show(),
+  );
 
   // Link externo abre no navegador do sistema, não numa janela do app.
   janela.webContents.setWindowOpenHandler(({ url }) => {
@@ -96,21 +100,25 @@ if (!app.requestSingleInstanceLock()) {
     }
   });
 
+  let splash: Splash | null = null;
   app
     .whenReady()
     .then(async () => {
       app.setAppUserModelId("com.soulcars.app");
+      // Primeira coisa: a tela de carregamento, antes do banco e da interface.
+      splash = mostrarSplash();
       await importarLegado();
       limparRestosDoModoApi();
       registrarIpc();
-      criarJanela();
+      criarJanela(splash);
       iniciarEntrada();
 
       app.on("activate", () => {
-        if (!BrowserWindow.getAllWindows().length) criarJanela();
+        if (!BrowserWindow.getAllWindows().length) criarJanela(null);
       });
     })
     .catch((erro) => {
+      splash?.fechar();
       dialog.showErrorBox("SOUL Cars", String(erro));
       app.quit();
     });

@@ -34,6 +34,10 @@ flowchart TD
 
 ---
 
+## Como abrir o app
+
+Dê um duplo clique no atalho **SOUL Cars** (pasta `Soul Cars`). Não aparece terminal: surge uma tela de carregamento escura com a marca e, em poucos segundos, o app. Se o código do app tiver sido atualizado, a primeira abertura leva alguns segundos a mais (ele se prepara sozinho). Se não abrir, aparece um aviso e o motivo fica em `soul-cars-app/.tmp/iniciar.log`.
+
 ## Antes de começar (primeira vez)
 
 1. Abra o app **SOUL Cars**. Ele abre em **01 · Estoque**.

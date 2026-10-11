@@ -91,7 +91,7 @@ scripts\instalar.cmd
 npm run dev
 ```
 
-Também é possível iniciar por `scripts\iniciar.cmd`. Para o motor Python, execute `scripts\instalar-motor.cmd` (veja [docs/05-motor-python.md](docs/05-motor-python.md)). Passo a passo de uso em [docs/01-primeiro-uso.md](docs/01-primeiro-uso.md).
+Para o dia a dia, use o atalho `SOUL Cars` (na pasta acima de `soul-cars-app`): ele abre o app **sem terminal**, com uma tela de carregamento, e só recompila se o código mudou (`scripts/iniciar-oculto.vbs` → `iniciar.cmd` → `iniciar.mjs`; erros ficam em `.tmp/iniciar.log`). `scripts/iniciar-dev.cmd` abre o modo de desenvolvimento, com terminal. Para o motor Python, execute `scripts\instalar-motor.cmd` (veja [docs/05-motor-python.md](docs/05-motor-python.md)). Passo a passo de uso em [docs/01-primeiro-uso.md](docs/01-primeiro-uso.md).
 
 ## Comandos
 

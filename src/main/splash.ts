@@ -1,0 +1,113 @@
+/**
+ * Tela de carregamento: aparece assim que o app abre e some quando a janela principal
+ * está pronta. Minimalista de propósito: a marca, um fio de luz dourado e uma palavra.
+ *
+ * É HTML local sem Node, sem preload e em sandbox. Fica no mínimo `MINIMO_MS` na tela
+ * para não piscar quando o app abre rápido.
+ */
+import { BrowserWindow } from "electron";
+import fs from "node:fs";
+import * as caminhos from "./caminhos";
+
+const MINIMO_MS = 1200;
+
+function html(logo: string) {
+  return `<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><style>
+  * { margin: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; background: #131110; cursor: default; user-select: none; }
+  body {
+    display: grid; place-items: center;
+    background: radial-gradient(120% 90% at 50% 38%, #1f1b16 0%, #131110 62%);
+    font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    border: 1px solid rgba(210, 171, 85, 0.14);
+    -webkit-app-region: drag;
+  }
+  main { display: grid; justify-items: center; gap: 30px; animation: entrar 900ms cubic-bezier(.2,.7,.2,1) both; }
+  img { width: 92px; height: 92px; border-radius: 22px; display: block;
+        box-shadow: 0 0 0 1px rgba(210,171,85,.18), 0 18px 48px rgba(0,0,0,.55), 0 0 60px rgba(210,171,85,.07); }
+  .fio { position: relative; width: 132px; height: 1px; background: rgba(210,171,85,.16); overflow: hidden; }
+  .fio::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 44px;
+    background: linear-gradient(90deg, transparent, #d2ab55, transparent);
+    animation: correr 1.7s cubic-bezier(.45,.05,.35,1) infinite; }
+  p { font-size: 10.5px; letter-spacing: .34em; text-transform: uppercase; color: #8d8473; padding-left: .34em; }
+  @keyframes entrar { from { opacity: 0; transform: translateY(6px) scale(.985); } to { opacity: 1; transform: none; } }
+  @keyframes correr { from { transform: translateX(-60px); } to { transform: translateX(150px); } }
+  @media (prefers-reduced-motion: reduce) { main, .fio::after { animation: none; } .fio::after { left: 44px; } }
+</style></head><body>
+  <main>${logo ? `<img alt="" src="${logo}">` : ""}<div class="fio"></div><p>Carregando</p></main>
+</body></html>`;
+}
+
+export type Splash = {
+  /** Mostra a janela principal e fecha a tela de carregamento (respeitando o tempo mínimo). */
+  revelar(principal: BrowserWindow): void;
+  fechar(): void;
+};
+
+/** Sem tela de carregamento (testes automáticos): `revelar` só mostra a janela. */
+const SEM_SPLASH: Splash = {
+  revelar: (principal) => principal.show(),
+  fechar: () => {},
+};
+
+export function mostrarSplash(): Splash {
+  if (process.env.SOUL_SEM_SPLASH === "1") return SEM_SPLASH;
+
+  let logo = "";
+  try {
+    logo =
+      "data:image/jpeg;base64," +
+      fs.readFileSync(caminhos.recurso("logo-soul.jpg")).toString("base64");
+  } catch {
+    /* sem logo: a tela continua válida, só com o fio de luz */
+  }
+
+  const inicio = Date.now();
+  const janela = new BrowserWindow({
+    width: 420,
+    height: 300,
+    frame: false,
+    resizable: false,
+    maximizable: false,
+    minimizable: false,
+    fullscreenable: false,
+    center: true,
+    show: false,
+    title: "SOUL Cars",
+    backgroundColor: "#131110",
+    icon: caminhos.recurso("icone.ico"),
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      spellcheck: false,
+    },
+  });
+  janela.setMenuBarVisibility(false);
+  janela.once("ready-to-show", () => janela.show());
+  void janela
+    .loadURL("data:text/html;charset=utf-8," + encodeURIComponent(html(logo)))
+    .catch(() => janela.destroy());
+
+  let encerrada = false;
+  const fechar = () => {
+    if (encerrada) return;
+    encerrada = true;
+    if (!janela.isDestroyed()) janela.destroy();
+  };
+  return {
+    fechar,
+    revelar(principal) {
+      const esperar = Math.max(0, MINIMO_MS - (Date.now() - inicio));
+      setTimeout(() => {
+        if (!principal.isDestroyed()) {
+          principal.show();
+          principal.focus();
+        }
+        // A principal já está por cima: a tela de carregamento sai logo depois.
+        setTimeout(fechar, 150);
+      }, esperar);
+    },
+  };
+}
