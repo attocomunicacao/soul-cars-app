@@ -19,9 +19,10 @@ React não acessa Node/disco diretamente. O main valida o remetente IPC e execut
 | Studio lib/db, des, estoque-parse, publicacao, relatorios, xlsx | Regras de negócio, formatos e consultas | renderer/src/lib, reaproveitado com imports locais |
 | Studio estoque.svelte.ts | Importação e vigia reativo | lib/importacao.ts e efeitos React |
 | Studio desktop.ts, local_server.py e núcleo Rust | Ponte, arquivos, processos, banco | main/ipc.ts, studio/* e preload/index.ts |
-| Studio migrações SQL | Esquema histórico | studio/esquema.ts, cinco versões preservadas mais a versão 6 (entrada) |
+| Studio migrações SQL | Esquema histórico | studio/esquema.ts, cinco versões preservadas mais a 6 (entrada) e a 7 (anúncios) |
 | Studio static/criativo | Layouts 4/6, sombra, piso, exportação | renderer/public/criativo, iframe local |
 | Entrada por pasta sincronizada | Nova no Electron | main/studio/entrada.ts, compartilhado/entrada.ts, Entrada.tsx |
+| Painel Pronto para anunciar | Novo no Electron | compartilhado/anuncio.ts, Anunciar.tsx, AvisosAnuncio.tsx, main/estoque/vendas.ts |
 | Studio engine | CRLV, OCR, CNW, fotos, IA e vídeo | engine, preservado em Python |
 | PyInstaller/Tauri/servidor local | Execução e empacotamento anteriores | electron-vite/electron-builder e scripts CMD |
 

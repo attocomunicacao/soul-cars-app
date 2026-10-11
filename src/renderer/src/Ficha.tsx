@@ -27,6 +27,7 @@ import { blocosDeCopia } from "./lib/publicacao";
 import { Criativos } from "./Criativos";
 import { Instagram } from "./Instagram";
 import { PromptAnuncio } from "./PromptAnuncio";
+import { Anunciar } from "./Anunciar";
 
 const CAMPOS: [Editavel, string][] = [
   ["nome", "Nome comercial"],
@@ -186,24 +187,32 @@ export function Ficha({
         </button>
       </div>
       <nav>
-        {["producao", "ficha", "criativos", "publicacao", "instagram"].map(
-          (a) => (
-            <button
-              key={a}
-              disabled={ocupado}
-              className={aba === a ? "selected" : ""}
-              onClick={() => {
-                setBaixarInstagram(false);
-                if (a === "instagram")
-                  void tarefa(async () => {
-                    await salvar();
-                    setAba(a);
-                  });
-                else setAba(a);
-              }}
-            >
-              {a === "producao"
-                ? "Produção"
+        {[
+          "producao",
+          "ficha",
+          "criativos",
+          "anunciar",
+          "publicacao",
+          "instagram",
+        ].map((a) => (
+          <button
+            key={a}
+            disabled={ocupado}
+            className={aba === a ? "selected" : ""}
+            onClick={() => {
+              setBaixarInstagram(false);
+              if (a === "instagram")
+                void tarefa(async () => {
+                  await salvar();
+                  setAba(a);
+                });
+              else setAba(a);
+            }}
+          >
+            {a === "producao"
+              ? "Produção"
+              : a === "anunciar"
+                ? "Pronto para anunciar"
                 : a === "publicacao"
                   ? "Publicação"
                   : a === "ficha"
@@ -211,9 +220,8 @@ export function Ficha({
                     : a === "instagram"
                       ? "Instagram"
                       : "Criativos"}
-            </button>
-          ),
-        )}
+          </button>
+        ))}
       </nav>
       {aviso && (
         <p role="status" className="notice">
@@ -417,6 +425,7 @@ export function Ficha({
           }}
         />
       )}
+      {aba === "anunciar" && <Anunciar veiculo={v} irPara={setAba} />}
       {aba === "publicacao" && (
         <div className="panel">
           <h2>Textos para publicação</h2>

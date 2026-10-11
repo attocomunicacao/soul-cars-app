@@ -52,10 +52,10 @@ Tarefas:
 
 Publicação semiautomática: o app deixa tudo pronto e você duplica a campanha modelo no Gerenciador de Anúncios.
 
-- [ ] Prompt 4: no Studio, por veículo, checklist de prontidão (documento, fotos, vídeo, `DES.md`, criativos exportados, vídeo leve) e um cartão "Campanha" com nome, texto, título e arquivos a usar, com botões de copiar.
-- [ ] Criar e manter uma **campanha modelo** no Gerenciador (objetivo vendas, WhatsApp, 28 a 60 anos, raio de 15 km, SP, R$ 15 por dia). Documentar no app o passo a passo de duplicar e trocar criativo e texto.
-- [ ] Marcar manualmente "anúncio criado" no app (data e nome da campanha).
-- [ ] Lembrete de pausa: quando a varredura do BNDV detectar a saída do veículo, o app avisa "pause a campanha de <modelo>".
+- [x] Prompt 4 (feito, falta o seu teste com um carro real): no Studio, por veículo, checklist de prontidão (documento, fotos, vídeo, `DES.md`, criativos exportados, vídeo leve) e um cartão "Campanha" com nome, texto, título e arquivos a usar, com botões de copiar.
+- [ ] (nome da campanha modelo em Configurações) Criar e manter uma **campanha modelo** no Gerenciador (objetivo vendas, WhatsApp, 28 a 60 anos, raio de 15 km, SP, R$ 15 por dia). Documentar no app o passo a passo de duplicar e trocar criativo e texto.
+- [x] Marcar manualmente "anúncio criado" no app (data e nome da campanha).
+- [x] Lembrete de pausa (depende de Atualizar BNDV; avisa se os dados têm mais de 24 h): quando a varredura do BNDV detectar a saída do veículo, o app avisa "pause a campanha de <modelo>".
 
 **Passa quando:** do carro pronto ao anúncio no ar levam poucos minutos, e nenhum carro vendido fica com campanha ativa por esquecimento.
 

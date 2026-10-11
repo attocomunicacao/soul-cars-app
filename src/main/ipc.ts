@@ -25,6 +25,7 @@ import * as balanco from "./estoque/balanco";
 import { extrair } from "./estoque/extracao";
 import { gerarHtml } from "./estoque/relatorio";
 import { lerCsv, sincronizar } from "./estoque/sync";
+import { ultimasVendas } from "./estoque/vendas";
 import * as arquivos from "./studio/arquivos";
 import * as bancoStudio from "./studio/banco";
 import * as motor from "./studio/motor";
@@ -187,6 +188,7 @@ const COMANDOS: Record<string, Comando> = {
   // ---- Estoque (BNDV) ----
   estoque_atualizar: (a) => atualizarEstoque(a),
   estoque_resumo: () => resumoEstoque(),
+  anuncios_vendas: () => ultimasVendas(),
   balanco_carregar: () => ({
     modelo: balanco.MODELO,
     auto: balanco.AUTO,

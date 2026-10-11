@@ -128,4 +128,23 @@ export const MIGRACOES: { versao: number; nome: string; sql: string }[] = [
       CREATE INDEX IF NOT EXISTS idx_entrada_situacao ON entrada_arquivos (situacao);
     `,
   },
+  {
+    versao: 7,
+    nome: "anuncios",
+    // Anúncios que o usuário registrou como criados no Gerenciador (nada é publicado pelo app).
+    // modelo e estoque_id são cópias: o lembrete de pausa continua valendo se o veículo for excluído.
+    sql: `
+      CREATE TABLE IF NOT EXISTS anuncios (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        veiculo_id  INTEGER NOT NULL,
+        estoque_id  INTEGER,
+        modelo      TEXT    NOT NULL,
+        campanha    TEXT    NOT NULL,
+        criado_dia  TEXT    NOT NULL,
+        pausado_dia TEXT,
+        registrado  TEXT    NOT NULL DEFAULT (datetime('now', 'localtime'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_anuncios_veiculo ON anuncios (veiculo_id);
+    `,
+  },
 ];

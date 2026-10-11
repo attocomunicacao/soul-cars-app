@@ -7,6 +7,8 @@
 - Sessão BNDV: partição persist:bndv do Electron.
 - Instagram: sessão persist:instagram; conta/histórico/pacotes em `%APPDATA%\soul-cars-app\instagram`. Inclua o histórico no backup para preservar a prevenção de duplicatas.
 
+Anúncios registrados ficam na tabela `anuncios` (migração 7) e entram no backup do banco; o lembrete de pausa depende do `dados/bndv_vendas.csv` e do nome da campanha modelo (`config`, chave `campanha_modelo`).
+
 Entrada por pasta sincronizada: a pasta escolhida fica no banco (`config`, chave `entrada_pasta`) e o registro do que foi copiado, pendente ou com aviso fica na tabela `entrada_arquivos` (migração 6). A pasta da nuvem em si não faz parte do backup do app; os arquivos copiados ficam na pasta do veículo no ESTOQUE.
 
 `dados/bndv_vendas.csv` é entrada financeira do Estoque. Não é a pasta `vendas` do workspace, que permanece fora da migração.

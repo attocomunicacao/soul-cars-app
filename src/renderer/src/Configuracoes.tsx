@@ -5,11 +5,15 @@ export function Configuracoes() {
   const [loja, setLoja] = useState<Loja | null>(null),
     [chave, setChave] = useState(""),
     [modoApi, setModoApi] = useState(false),
+    [campanhaModelo, setCampanhaModelo] = useState(""),
     [aviso, setAviso] = useState(""),
     [ocupado, setOcupado] = useState(false);
   useEffect(() => {
     void obterLoja()
       .then(setLoja)
+      .catch((e) => setAviso(String(e)));
+    void obterConfig("campanha_modelo")
+      .then((c) => setCampanhaModelo(c ?? ""))
       .catch((e) => setAviso(String(e)));
     void obterConfig("ia_modo_api")
       .then((c) => setModoApi(c === "1"))
@@ -25,6 +29,7 @@ export function Configuracoes() {
     try {
       if (loja) await salvarLoja(loja);
       await salvarConfig("ia_modo_api", modoApi ? "1" : null);
+      await salvarConfig("campanha_modelo", campanhaModelo.trim() || null);
       if (chave.trim()) await salvarConfig("anthropic_api_key", chave.trim());
       setChave("");
       setAviso("Configurações salvas.");
@@ -50,6 +55,14 @@ export function Configuracoes() {
           ))}
         </div>
       )}
+      <label>
+        Nome da campanha modelo (Gerenciador de Anúncios)
+        <input
+          value={campanhaModelo}
+          onChange={(e) => setCampanhaModelo(e.target.value)}
+          placeholder="Aparece no passo a passo do anúncio"
+        />
+      </label>
       <label>
         <input
           type="checkbox"

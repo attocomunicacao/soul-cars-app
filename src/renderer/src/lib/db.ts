@@ -134,6 +134,53 @@ export async function atualizarVeiculo(
   );
 }
 
+export type Anuncio = {
+  id: number;
+  veiculo_id: number;
+  estoque_id: number | null;
+  modelo: string;
+  campanha: string;
+  criado_dia: string;
+  pausado_dia: string | null;
+  registrado: string;
+};
+
+/** Anúncios registrados (mais recentes primeiro); `veiculoId` filtra por veículo. */
+export async function listarAnuncios(veiculoId?: number): Promise<Anuncio[]> {
+  return (await db()).select<Anuncio[]>(
+    veiculoId == null
+      ? `SELECT * FROM anuncios ORDER BY id DESC`
+      : `SELECT * FROM anuncios WHERE veiculo_id = $1 ORDER BY id DESC`,
+    veiculoId == null ? [] : [veiculoId],
+  );
+}
+
+export async function registrarAnuncio(a: {
+  veiculo_id: number;
+  estoque_id: number | null;
+  modelo: string;
+  campanha: string;
+  criado_dia: string;
+}): Promise<number> {
+  const r = await (
+    await db()
+  ).execute(
+    `INSERT INTO anuncios (veiculo_id, estoque_id, modelo, campanha, criado_dia) VALUES ($1, $2, $3, $4, $5)`,
+    [a.veiculo_id, a.estoque_id, a.modelo, a.campanha, a.criado_dia],
+  );
+  return Number(r.lastInsertId);
+}
+
+export async function marcarAnuncioPausado(id: number, dia: string) {
+  await (
+    await db()
+  ).execute(`UPDATE anuncios SET pausado_dia = $1 WHERE id = $2`, [dia, id]);
+}
+
+export async function removerAnuncio(id: number) {
+  await (await db()).execute(`DELETE FROM anuncios WHERE id = $1`, [id]);
+}
+
 export async function excluirVeiculo(id: number): Promise<void> {
   await (await db()).execute(`DELETE FROM veiculos WHERE id = $1`, [id]);
 }

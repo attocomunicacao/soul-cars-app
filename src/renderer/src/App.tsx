@@ -7,6 +7,7 @@ import { Ficha } from "./Ficha";
 import { Relatorios } from "./Relatorios";
 import { Configuracoes } from "./Configuracoes";
 import { Entrada } from "./Entrada";
+import { AvisosAnuncio } from "./AvisosAnuncio";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -153,6 +154,14 @@ export function App() {
             {erro}
           </div>
         )}
+        <AvisosAnuncio
+          veiculos={lista}
+          abrir={(veiculo) => {
+            setPagina("studio");
+            setAba("veiculos");
+            setSelecionado(veiculo);
+          }}
+        />
         {config && (
           <section className="panel">
             <h2>Dados e motor</h2>

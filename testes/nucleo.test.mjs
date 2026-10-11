@@ -20,6 +20,7 @@ import {
   ficha,
 } from "../src/main/estoque/sync";
 import { dadosBndv } from "../src/main/estoque/balanco";
+import { ultimasVendas } from "../src/main/estoque/vendas";
 import {
   dentro,
   nomeSeguro,
@@ -130,7 +131,36 @@ describe("núcleo migrado", () => {
     expect([s.video_final_bytes, s.video_leve_bytes]).toEqual([1000, 200]);
     expect(s.criativos).toEqual([]);
   });
-  it("cria as seis migrações e aceita placeholders repetidos", () => {
+  it("lê a última venda de cada veículo do CSV do BNDV e informa quando ele foi gravado", () => {
+    fs.rmSync(path.join(raiz, "vendas.csv"), { force: true });
+    expect(ultimasVendas()).toEqual({ vendas: {}, atualizadoEm: null });
+    fs.writeFileSync(
+      path.join(raiz, "vendas.csv"),
+      "﻿idSale;date;idVehicle;plate\r\n" +
+        '"1";"2026-10-08T00:00:00.000";"500";"AAA1A11"\r\n' +
+        '"2";"2026-10-09T00:00:00.000";"500";"AAA1A11"\r\n' +
+        '"3";"2026-10-01T00:00:00.000";"600";"BBB2B22"\r\n',
+    );
+    const r = ultimasVendas();
+    expect(r.vendas).toEqual({
+      500: "2026-10-09T00:00:00.000",
+      600: "2026-10-01T00:00:00.000",
+    });
+    expect(Date.now() - Date.parse(r.atualizadoEm)).toBeLessThan(60_000);
+  });
+  it("guarda anúncios sem depender do veículo existir", () => {
+    executar(
+      "INSERT INTO anuncios(veiculo_id,estoque_id,modelo,campanha,criado_dia) VALUES($1,$2,$3,$4,$5)",
+      [99, 500, "Jeep", "[VENDA] JEEP", "2026-10-05"],
+    );
+    expect(
+      consultar(
+        "SELECT modelo, pausado_dia FROM anuncios WHERE estoque_id=$1",
+        [500],
+      ),
+    ).toEqual([{ modelo: "Jeep", pausado_dia: null }]);
+  });
+  it("cria as sete migrações e aceita placeholders repetidos", () => {
     const r = executar("INSERT INTO veiculos(nome,placa) VALUES($1,$2)", [
       "FIESTA",
       "ABC1D23",
@@ -141,7 +171,7 @@ describe("núcleo migrado", () => {
       ]),
     ).toEqual([{ nome: "FIESTA" }]);
     expect(consultar("SELECT count(*) AS n FROM studio_migracoes")[0].n).toBe(
-      6,
+      7,
     );
     expect(r.lastInsertId).toBeGreaterThan(0);
   });

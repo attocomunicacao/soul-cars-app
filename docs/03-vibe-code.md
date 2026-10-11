@@ -20,6 +20,7 @@
 | Lucro mensal e setas do relatório | main/estoque/relatorio.ts |
 | Instagram e retomada de publicação | Instagram.tsx, main/studio/instagram.ts, instagram-browser.ts e instagram-plano.ts; veja docs/09-instagram.md |
 | Automação | engine/* e main/studio/motor.ts |
+| Pronto para anunciar, registro e lembrete de pausa | compartilhado/anuncio.ts, Anunciar.tsx, AvisosAnuncio.tsx, main/estoque/vendas.ts |
 | Versão leve do vídeo para anúncio | engine/video/leve.py, main/studio/motor.ts e Producao.tsx |
 | Entrada de arquivos da pasta sincronizada | main/studio/entrada.ts, compartilhado/entrada.ts, Entrada.tsx |
 
