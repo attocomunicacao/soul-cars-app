@@ -24,6 +24,7 @@ import path from "node:path";
 import * as caminhos from "./caminhos";
 import * as balanco from "./estoque/balanco";
 import { extrair } from "./estoque/extracao";
+import { abrirJanelaBndv } from "./estoque/bndv-janela";
 import { gerarHtml } from "./estoque/relatorio";
 import { lerCsv, sincronizar } from "./estoque/sync";
 import { ultimasVendas } from "./estoque/vendas";
@@ -219,6 +220,7 @@ const COMANDOS: Record<string, Comando> = {
 
   // ---- Estoque (BNDV) ----
   estoque_atualizar: (a) => atualizarEstoque(a),
+  bndv_abrir: () => abrirJanelaBndv(janela),
   estoque_resumo: () => resumoEstoque(),
   anuncios_vendas: () => ultimasVendas(),
   balanco_carregar: () => ({

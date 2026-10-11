@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { invoke, open } from "./lib/desktop";
+import { invoke, open, openPath } from "./lib/desktop";
 import { importarEstoque } from "./lib/importacao";
 import { type Veiculo, manutencaoBanco } from "./lib/db";
 import type { Balanco, Contas } from "./types";
@@ -132,6 +132,28 @@ export function App() {
             <button disabled={ocupado} onClick={() => tarefa(carregar)}>
               Reler pastas
             </button>
+            <button
+              title="Abre no Explorador de Arquivos a pasta ESTOQUE, com uma pasta por veículo."
+              onClick={() => {
+                setErro("");
+                invoke<{ estoque: string }>("caminhos_app")
+                  .then((c) => openPath(c.estoque))
+                  .catch((e) => setErro(String(e)));
+              }}
+            >
+              Abrir pasta do estoque
+            </button>
+            {pagina === "estoque" && (
+              <button
+                title="Abre o BNDV numa janela para entrar ou conferir o login. O login vale para o Atualizar BNDV."
+                onClick={() => {
+                  setErro("");
+                  invoke("bndv_abrir").catch((e) => setErro(String(e)));
+                }}
+              >
+                Entrar no BNDV
+              </button>
+            )}
             {pagina === "estoque" && (
               <button
                 className="primary"

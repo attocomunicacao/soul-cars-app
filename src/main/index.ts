@@ -20,6 +20,7 @@ import {
 import { reiniciarMotor } from "./studio/motor";
 import { importarLegado } from "./studio/legado";
 import { apagarArquivoDeSegredos, removerConfigIa } from "./limpeza-ia";
+import { fecharJanelaBndv } from "./estoque/bndv-janela";
 import { encerrarInstagram } from "./studio/instagram";
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
@@ -120,4 +121,5 @@ if (!app.requestSingleInstanceLock()) {
   app.on("before-quit", pararEntrada);
   app.on("before-quit", reiniciarMotor);
   app.on("before-quit", encerrarInstagram);
+  app.on("before-quit", fecharJanelaBndv);
 }

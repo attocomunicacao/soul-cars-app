@@ -1,5 +1,5 @@
 // Executado pelo Electron real, com banco e estoque temporários.
-const { app, nativeImage } = require("electron");
+const { app, BrowserWindow, nativeImage, session } = require("electron");
 const fs = require("node:fs");
 const path = require("node:path");
 const os = require("node:os");
@@ -122,6 +122,22 @@ app.on("browser-window-created", (_e, w) => {
         if(!document.querySelector('.instagram'))throw Error('Aba Instagram não abriu');
         return {pagina:document.querySelector('h1').textContent,sqlite:true,relatorioInterno:true,painelFotos:true,copia:true,editor:true,instagramAba:true,pacoteInstagram:true,motor:motor.python,exportacao:saved,png:estoque+'/123_FORD_FIESTA_ABC1D23/CRIATIVO/'+artes[0],versoes:window.soul.versoes};
       })()`);
+      // Botão "Entrar no BNDV": uma única janela, na sessão do BNDV (persist:bndv), sem preload.
+      const antes = BrowserWindow.getAllWindows().length;
+      await w.webContents.executeJavaScript(
+        "window.soul.invocar('bndv_abrir')",
+      );
+      const segunda = await w.webContents.executeJavaScript(
+        "window.soul.invocar('bndv_abrir')",
+      );
+      const janelas = BrowserWindow.getAllWindows();
+      if (janelas.length !== antes + 1 || !segunda.jaAberta)
+        throw new Error("A janela de login do BNDV deveria ser única.");
+      const login = janelas.find((j) => j !== w);
+      if (login.webContents.session !== session.fromPartition("persist:bndv"))
+        throw new Error("A janela de login não usa a sessão do BNDV.");
+      r.loginBndv = true;
+      login.destroy();
       console.log("SMOKE OK " + JSON.stringify(r));
       const png = fs.readFileSync(r.png);
       if (png.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a")

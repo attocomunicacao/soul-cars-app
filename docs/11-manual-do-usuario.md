@@ -45,7 +45,7 @@ flowchart TD
 
 ## Etapa 1: Atualizar o estoque
 
-1. Em **Estoque**, clique em **Atualizar BNDV**.
+1. Em **Estoque**, clique em **Atualizar BNDV**. Para só entrar (ou conferir se o login continua valendo) sem atualizar, use **Entrar no BNDV**: abre o BNDV numa janela, com a mesma sessão do Atualizar. **Abrir pasta do estoque** abre a pasta `ESTOQUE` no Explorador de Arquivos.
 2. Uma janela do BNDV abre. Na primeira vez, faça login; nas próximas, o app entra sozinho.
 3. Aguarde cerca de 1 minuto. O app baixa veículos e vendas e cria uma pasta para cada carro novo:
    `ESTOQUE/<ID>_<MARCA>_<MODELO>_<PLACA>/` com `INFO.md`, `CRIATIVO`, `FOTOS` e `VIDEO`.
