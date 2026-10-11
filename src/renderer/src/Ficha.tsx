@@ -15,7 +15,13 @@ import {
   engine,
   type VersaoCnw,
 } from "./lib/engine";
-import { gerarDocMd, gravarNaPasta, gerarVideo, tarjas } from "./lib/producao";
+import {
+  gerarDocMd,
+  gravarNaPasta,
+  gerarVideo,
+  gerarVideoLeve,
+  tarjas,
+} from "./lib/producao";
 import { Producao } from "./Producao";
 import { blocosDeCopia } from "./lib/publicacao";
 import { Criativos } from "./Criativos";
@@ -375,6 +381,9 @@ export function Ficha({
               await salvar();
               const t = tarjas(v);
               await gerarVideo(v.pasta!, t.veiculo, t.motor, t.preco);
+            }}
+            videoLeve={async () => {
+              await gerarVideoLeve(v.pasta!);
             }}
           />
           {!!logs.length && <pre>{logs.join("\n")}</pre>}

@@ -43,7 +43,7 @@ Tarefas:
 
 ## Fase 2 · Vídeo leve para anúncio (P)
 
-- [ ] Prompt 3: gerar, além do `VIDEO_<MODELO>.mp4` atual, uma versão leve (cerca de 10 a 12 Mbps), **sem quebrar** a regra de "um único `VIDEO_*.mp4`" usada na publicação do Instagram. Manter o render atual intacto.
+- [x] Prompt 3 (feito, falta a sua aprovação visual): gerar, além do `VIDEO_<MODELO>.mp4` atual, uma versão leve (cerca de 10 a 12 Mbps), **sem quebrar** a regra de "um único `VIDEO_*.mp4`" usada na publicação do Instagram. Manter o render atual intacto.
 - [ ] Comparar lado a lado a qualidade das duas versões antes de adotar a leve nos anúncios.
 
 **Passa quando:** a versão leve tem uma fração do tamanho (meta: abaixo de 100 MB) e você aprova a qualidade visualmente.

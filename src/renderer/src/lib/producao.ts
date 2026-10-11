@@ -19,6 +19,9 @@ export type StatusProducao = {
   sem_fundo: string | null;
   video_bruto: string | null;
   video_final: string | null;
+  video_final_bytes: number | null;
+  video_leve: string | null;
+  video_leve_bytes: number | null;
   criativos: string[];
   projeto: boolean;
 };
@@ -120,6 +123,10 @@ export const gerarVideo = (
 ) =>
   invoke<VideoPronto>("video_gerar", { pasta, veiculo, motor, preco, python });
 
+/** Recodifica o VIDEO_*.mp4 em ANUNCIO/ para subir em anúncio (cerca de 10 Mbps). */
+export const gerarVideoLeve = (pasta: string, python?: string | null) =>
+  invoke<VideoPronto>("video_leve", { pasta, python });
+
 /** Etapas do fluxo, na ordem, com o que falta em cada uma. */
 export type Etapa = {
   id: string;
@@ -189,7 +196,7 @@ export function etapas(
       ok: !!s?.video_final,
       detalhe: s?.video_final
         ? s.video_final.split("\\").pop()!
-        : "Gere o VIDEO_<MODELO>.mp4 (tarjas, legendas e trilha)",
+        : "Gere o VIDEO_<MARCA>.mp4 (tarjas, legendas e trilha)",
     },
     {
       id: "criativos",

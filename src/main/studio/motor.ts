@@ -248,34 +248,31 @@ export function reiniciarMotor() {
  * requisição/resposta e manda cada linha para a interface pelo evento
  * `video:log`.
  */
-export function gerarVideo(
-  args: {
-    pasta: string;
-    veiculo: string;
-    motor: string;
-    preco: string;
-    python?: string | null;
-  },
+type VideoPronto = { caminho: string; segundos: number };
+
+/** Um vídeo por vez: o render e a versão leve disputam CPU e disco (16 GB, sem GPU). */
+let videoEmAndamento = false;
+
+function executarVideo(
+  script: string,
+  argumentos: string[],
+  python: string | null | undefined,
   emitir: Emitir,
-): Promise<{ caminho: string; segundos: number }> {
+): Promise<VideoPronto> {
   const pasta = pastaMotor();
-  const python = args.python || pythonMotor();
-  if (!python || !pasta)
+  const exe = python || pythonMotor();
+  if (!exe || !pasta)
     throw new Error(
       "Instale o motor opcional de vídeo (docs/05-motor-python.md).",
     );
+  if (videoEmAndamento)
+    throw new Error("Já há um vídeo sendo gerado. Aguarde terminar.");
 
   const inicio = Date.now();
+  videoEmAndamento = true;
   const p = spawn(
-    python,
-    [
-      "-u",
-      path.join(pasta, "video", "render.py"),
-      args.pasta,
-      args.veiculo,
-      args.motor,
-      args.preco,
-    ],
+    exe,
+    ["-u", path.join(pasta, "video", script), ...argumentos],
     {
       cwd: pasta,
       windowsHide: true,
@@ -293,8 +290,12 @@ export function gerarVideo(
     };
     p.stdout.on("data", ler);
     p.stderr.on("data", ler);
-    p.on("error", rejeitar);
+    p.on("error", (erro) => {
+      videoEmAndamento = false;
+      rejeitar(erro);
+    });
     p.on("close", (codigo) => {
+      videoEmAndamento = false;
       if (codigo) return rejeitar(new Error(ultima || "Falha ao gerar vídeo."));
       resolver({
         caminho: ultima.split(": ").at(-1)?.trim() ?? "",
@@ -302,4 +303,30 @@ export function gerarVideo(
       });
     });
   });
+}
+
+export function gerarVideo(
+  args: {
+    pasta: string;
+    veiculo: string;
+    motor: string;
+    preco: string;
+    python?: string | null;
+  },
+  emitir: Emitir,
+): Promise<VideoPronto> {
+  return executarVideo(
+    "render.py",
+    [args.pasta, args.veiculo, args.motor, args.preco],
+    args.python,
+    emitir,
+  );
+}
+
+/** Versão leve para anúncio: recodifica o VIDEO_*.mp4 em ANUNCIO/ (engine/video/leve.py). */
+export function gerarVideoLeve(
+  args: { pasta: string; python?: string | null },
+  emitir: Emitir,
+): Promise<VideoPronto> {
+  return executarVideo("leve.py", [args.pasta], args.python, emitir);
 }

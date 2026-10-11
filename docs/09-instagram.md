@@ -16,7 +16,7 @@ O nome das peças é derivado do nome/ano da ficha. Para Jeep Renegade 2020, o c
 2. `jeep-renegade-2020-carrossel-1.png`
 3. `jeep-renegade-2020-carrossel-3.png`
 
-A legenda é exatamente o bloco **1. TEXTO PRINCIPAL**. Depois da confirmação do carrossel, o app envia o único `VIDEO_*.mp4` na pasta do veículo com **2. TEXTO PRINCIPAL**. A capa é `jeep-renegade-2020-trafego-pago.png`, correspondente a **01 · Tráfego Pago**.
+A legenda é exatamente o bloco **1. TEXTO PRINCIPAL**. Depois da confirmação do carrossel, o app envia o único `VIDEO_*.mp4` na pasta do veículo (a versão leve para anúncio fica em `ANUNCIO/` e não é usada aqui) com **2. TEXTO PRINCIPAL**. A capa é `jeep-renegade-2020-trafego-pago.png`, correspondente a **01 · Tráfego Pago**.
 
 ## Retomada
 

@@ -14,6 +14,8 @@ export const SLOTS = ["main", "left", "center", "right", "original"] as const;
 export type Slot = (typeof SLOTS)[number];
 const IMAGENS = [".jpg", ".jpeg", ".png", ".webp"];
 const VIDEOS = [".mp4", ".mov", ".mkv", ".avi"];
+/** Subpasta da versão leve do vídeo (engine/video/leve.py). */
+export const PASTA_ANUNCIO = "ANUNCIO";
 
 const MIMES: Record<string, string> = {
   ".png": "image/png",
@@ -293,6 +295,10 @@ export type StatusProducao = {
   sem_fundo: string | null;
   video_bruto: string | null;
   video_final: string | null;
+  video_final_bytes: number | null;
+  /** Versão leve para anúncio, em ANUNCIO/ (fora das pastas que o render e o Instagram leem). */
+  video_leve: string | null;
+  video_leve_bytes: number | null;
   criativos: string[];
   projeto: boolean;
 };
@@ -310,6 +316,20 @@ export function statusProducao(pasta: string): StatusProducao {
     ),
   ];
   const naPasta = arquivos(pasta);
+  const final =
+    naPasta.find(
+      (p) =>
+        path.basename(p).toUpperCase().startsWith("VIDEO_") &&
+        ext(p) === ".mp4",
+    ) ?? null;
+  const leve =
+    arquivos(path.join(pasta, PASTA_ANUNCIO)).find(
+      (p) =>
+        path.basename(p).toUpperCase().startsWith("ANUNCIO_") &&
+        ext(p) === ".mp4" &&
+        !path.basename(p).toLowerCase().endsWith(".parcial.mp4"),
+    ) ?? null;
+  const bytes = (p: string | null) => (p ? fs.statSync(p).size : null);
   return {
     doc_pdf: naPasta.some((p) => ext(p) === ".pdf"),
     doc_md: fs.existsSync(path.join(pasta, "DOC.md")),
@@ -320,12 +340,10 @@ export function statusProducao(pasta: string): StatusProducao {
       (p) => ext(p) === ".png" && (stem(p) === "1" || stem(p).startsWith("1_")),
     ),
     video_bruto: videos.find((p) => VIDEOS.includes(ext(p))) ?? null,
-    video_final:
-      naPasta.find(
-        (p) =>
-          path.basename(p).toUpperCase().startsWith("VIDEO_") &&
-          ext(p) === ".mp4",
-      ) ?? null,
+    video_final: final,
+    video_final_bytes: bytes(final),
+    video_leve: leve,
+    video_leve_bytes: bytes(leve),
     criativos: arquivos(path.join(pasta, "CRIATIVO")).map((p) =>
       path.basename(p),
     ),

@@ -50,6 +50,19 @@ describe("plano Instagram", () => {
       "jeep-renegade-2020-trafego-pago.png",
     );
   });
+  it("a versão leve em ANUNCIO não cria um segundo vídeo para publicar", () => {
+    fs.mkdirSync(path.join(pasta, "ANUNCIO"), { recursive: true });
+    fs.writeFileSync(
+      path.join(pasta, "ANUNCIO", "ANUNCIO_RENEGADE.mp4"),
+      "leve",
+    );
+    const plano = montarPlanoInstagram(v);
+    expect(plano.pendencias).toEqual([]);
+    expect(plano.arquivos.filter((f) => f.tipo === "video")).toHaveLength(1);
+    expect(plano.arquivos.find((f) => f.tipo === "video")?.nome).toBe(
+      "VIDEO_RENEGADE.mp4",
+    );
+  });
   it("interrompe se a legenda está ausente ou excede o limite", () => {
     expect(montarPlanoInstagram({ ...v, des_md: "" }).pendencias.length).toBe(
       2,

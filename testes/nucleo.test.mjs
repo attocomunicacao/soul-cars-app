@@ -108,6 +108,28 @@ describe("núcleo migrado", () => {
       "recorte",
     );
   });
+  it("a versão leve em ANUNCIO não vira vídeo bruto e aparece com os tamanhos", () => {
+    const pasta = path.join(raiz, "leve");
+    fs.mkdirSync(path.join(pasta, "ANUNCIO"), { recursive: true });
+    fs.mkdirSync(path.join(pasta, "VIDEO"), { recursive: true });
+    fs.writeFileSync(path.join(pasta, "VIDEO", "bruto.MOV"), "video");
+    fs.writeFileSync(path.join(pasta, "VIDEO_JEEP.mp4"), "x".repeat(1000));
+    expect(statusProducao(pasta).video_leve).toBeNull();
+    fs.writeFileSync(
+      path.join(pasta, "ANUNCIO", "ANUNCIO_JEEP.mp4"),
+      "x".repeat(200),
+    );
+    fs.writeFileSync(
+      path.join(pasta, "ANUNCIO", "ANUNCIO_JEEP.parcial.mp4"),
+      "incompleto",
+    );
+    const s = statusProducao(pasta);
+    expect(s.video_bruto).toBe(path.join(pasta, "VIDEO", "bruto.MOV"));
+    expect(s.video_final).toBe(path.join(pasta, "VIDEO_JEEP.mp4"));
+    expect(s.video_leve).toBe(path.join(pasta, "ANUNCIO", "ANUNCIO_JEEP.mp4"));
+    expect([s.video_final_bytes, s.video_leve_bytes]).toEqual([1000, 200]);
+    expect(s.criativos).toEqual([]);
+  });
   it("cria as seis migrações e aceita placeholders repetidos", () => {
     const r = executar("INSERT INTO veiculos(nome,placa) VALUES($1,$2)", [
       "FIESTA",

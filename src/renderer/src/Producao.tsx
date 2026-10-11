@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { invoke, open } from "./lib/desktop";
+import { ask, invoke, open } from "./lib/desktop";
 import {
   copiarComoDoc,
   documentoNaPasta,
@@ -11,17 +11,22 @@ import {
 } from "./lib/producao";
 
 type Foto = { nome: string; miniatura: string };
+const mb = (b: number) =>
+  (b / 1024 / 1024).toLocaleString("pt-BR", { maximumFractionDigits: 0 }) +
+  " MB";
 export function Producao({
   pasta,
   vincular,
   documento,
   video,
+  videoLeve,
   onBusy,
 }: {
   pasta: string | null;
   vincular: () => Promise<void>;
   documento: (origem: string, senha: string) => Promise<void>;
   video: () => Promise<void>;
+  videoLeve: () => Promise<void>;
   onBusy: (valor: boolean) => void;
 }) {
   const [status, setStatus] = useState<StatusProducao | null>(null);
@@ -308,7 +313,32 @@ export function Producao({
           >
             {ocupado ? "Aguarde…" : "Editor Mágico"}
           </button>
+          <button
+            disabled={ocupado || !status?.video_final}
+            onClick={() =>
+              tarefa(async () => {
+                if (
+                  status?.video_leve &&
+                  !(await ask(
+                    "Já existe uma versão leve em ANUNCIO. Gerar de novo e substituir?",
+                  ))
+                )
+                  return false;
+                await videoLeve();
+              }, "Versão leve para anúncio gerada em ANUNCIO.")
+            }
+          >
+            Gerar versão leve para anúncio
+          </button>
         </div>
+        {status?.video_final_bytes != null && (
+          <p>
+            Final: {mb(status.video_final_bytes)} ·{" "}
+            {status.video_leve_bytes != null
+              ? `Leve (anúncio): ${mb(status.video_leve_bytes)}`
+              : "versão leve ainda não gerada"}
+          </p>
+        )}
       </fieldset>
     </div>
   );

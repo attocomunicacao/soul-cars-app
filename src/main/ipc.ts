@@ -239,6 +239,11 @@ const COMANDOS: Record<string, Comando> = {
   motor_instalar: () => motor.instalarMotor(emitir),
   video_gerar: (a) =>
     motor.gerarVideo(a as Parameters<typeof motor.gerarVideo>[0], emitir),
+  video_leve: (a) =>
+    motor.gerarVideoLeve(
+      a as Parameters<typeof motor.gerarVideoLeve>[0],
+      emitir,
+    ),
 
   // ---- sistema ----
   copiar_texto: (a) => clipboard.writeText(String(a.texto ?? "")),
