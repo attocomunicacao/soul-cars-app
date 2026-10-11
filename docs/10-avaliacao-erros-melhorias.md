@@ -146,3 +146,10 @@ Auditoria das 64 dependências do `engine/uv.lock` (metadados instalados), dos m
   3. Não havia lista de avisos de terceiros. Criado `THIRD_PARTY_NOTICES.md` (gerado por `scripts/gerar-avisos-licencas.py`), incluído no instalador e conferido pelo teste `engine/tests/test_licencas.py` (sem copyleft forte, sem licença não identificada, lista em dia com o `uv.lock`).
 - **Instalador:** o `electron-builder --dir` confirmou `THIRD_PARTY_NOTICES.md` em `resources/`, o `Lato-OFL.txt` dentro do `engine/` e os avisos do Electron/Chromium (`LICENSE.electron.txt`, `LICENSES.chromium.html`).
 - **Pendente (decisão sua):** `TRILHA.flac` (trilha do vídeo) e os logos não têm licença registrada. A trilha precisa de direitos para uso em anúncio e redes. Antes de qualquer distribuição pública, confirme a origem e a autorização.
+
+## 9. Modelo da IA (`engine/ia.py`)
+
+- `MODELO` era `claude-opus-5`. Esse ID é válido, mas já não é o atual: o Opus atual é `claude-opus-5-5` (mesma janela de 1M, mais barato: US$ 4 / 20 por milhão de tokens contra US$ 5 / 25). Trocado.
+- A chamada já era compatível com o Opus 5.5: não envia `thinking`, `temperature`, `top_p`, `tool_choice` forçado nem prefill (todos dão erro 400 nele), usa saída estruturada, `effort: medium` (o padrão dele) e o fallback do servidor (`fallbacks: "default"`). Os testes novos em `engine/tests/test_ia.py` (cliente de mentira, sem chamar a API) travam isso.
+- As mensagens de erro mandavam configurar a chave "na tela Sistema"; a tela se chama **Configurações**. Corrigido (e um comentário em `caminhos.ts`).
+- Não foi testado com uma chave real da Anthropic: confirme gerando os textos de um veículo no modo API.

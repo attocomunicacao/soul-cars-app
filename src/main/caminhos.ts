@@ -4,7 +4,7 @@
  * Um lugar só para os caminhos, para nenhum módulo precisar adivinhar a
  * estrutura de pastas.
  *
- *   <raizDados>/            escolhida pelo usuário (Studio › Sistema)
+ *   <raizDados>/            escolhida pelo usuário (Studio › Configurações)
  *   ├── ESTOQUE/            uma pasta por veículo (criada pelo Estoque)
  *   ├── dados/              CSVs do BNDV, balanco.json, RELATORIO.html
  *   └── .perfil-bndv/       sessão do navegador usada na extração

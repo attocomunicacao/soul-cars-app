@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import json
 
-MODELO = "claude-opus-5"
+# Opus atual (1M de contexto). Pensamento adaptativo sempre ligado: não enviar `thinking`, `temperature`,
+# `top_p`, `tool_choice` forçado nem prefill (todos dão erro 400 neste modelo).
+MODELO = "claude-opus-5-5"
 
 SCHEMA = {
     "type": "object",
@@ -59,7 +61,7 @@ Regras:
 def _chave(params: dict) -> str:
     chave = (params.get("api_key") or "").strip()
     if not chave:
-        raise ValueError("Configure a chave da API da Anthropic na tela Sistema.")
+        raise ValueError("Configure a chave da API da Anthropic em Configurações.")
     return chave
 
 
@@ -93,7 +95,7 @@ def gerar_textos(params: dict) -> dict:
             messages=[{"role": "user", "content": "Ficha do veículo (JSON):\n" + json.dumps(dados, ensure_ascii=False, indent=2)}],
         )
     except anthropic.AuthenticationError as exc:
-        raise ValueError("Chave da API inválida. Confira na tela Sistema.") from exc
+        raise ValueError("Chave da API inválida. Confira em Configurações.") from exc
     except anthropic.PermissionDeniedError as exc:
         raise ValueError("A chave não tem permissão para usar o modelo.") from exc
     except anthropic.RateLimitError as exc:
