@@ -25,7 +25,6 @@ import {
 } from "./validacao";
 
 export const METODOS_DO_MOTOR = [
-  "gerar_textos",
   "ping",
   "ler_crlv",
   "ocr_equipamentos",
@@ -62,7 +61,7 @@ const escalar: Regra<string | number> = (v, campo) =>
     ? numero(v, campo)
     : texto({ vazio: true, max: 50_000 })(v, campo);
 
-/** Chaves da tabela config: letras minúsculas, números e "_", com sufixo ":<texto>" opcional. Nunca segredos. */
+/** Chaves da tabela config: letras minúsculas, números e "_", com sufixo ":<texto>" opcional. Nunca senhas ou chaves. */
 const chaveConfig: Regra<string> = (v, campo) => {
   const chave = texto({ max: 1100 })(v, campo);
   if (
@@ -233,13 +232,6 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
         params: opcional(objetoLivre),
       },
     },
-    segredo_definir: {
-      args: {
-        nome: texto({ max: 64 }),
-        valor: opcional(texto({ max: 500, vazio: true })),
-      },
-    },
-    segredo_existe: { args: { nome: texto({ max: 64 }) } },
     engine_reiniciar: vazio,
     motor_estado: vazio,
     motor_instalar: vazio,

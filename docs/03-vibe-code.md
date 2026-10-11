@@ -5,7 +5,7 @@
 | Duas interfaces, lista, balanço | src/renderer/src/App.tsx |
 | Visual, medidas e cores | src/renderer/src/style.css |
 | Ficha, documento, produção e publicação | src/renderer/src/Ficha.tsx |
-| Loja e chave IA | src/renderer/src/Configuracoes.tsx |
+| Dados da loja e campanha modelo | src/renderer/src/Configuracoes.tsx |
 | DES.md | renderer/src/lib/des.ts |
 | Blocos de anúncio | src/compartilhado/publicacao.ts |
 | Relatórios e XLSX | Relatorios.tsx, lib/relatorios.ts, lib/xlsx.ts |

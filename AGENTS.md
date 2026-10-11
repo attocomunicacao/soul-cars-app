@@ -11,6 +11,7 @@ Leia docs/02-arquitetura-e-migracao.md, docs/03-vibe-code.md e docs/04-dados-e-b
 - Preserve DES.md e DOC.md; confira fixtures quando alterar formatos.
 - Consignados não entram no custo patrimonial; margem é bruta.
 - Interface deve limpar listeners/timers e mostrar erros de operação ao usuário.
+- O app não usa nenhum serviço pago nem exige chave de API (a integração com a Anthropic foi removida). Textos de IA saem pelo prompt pronto, no chat do usuário. Não adicione dependências que cobrem por uso ou peçam chave.
 - Use nomes/comentários/mensagens em português e código formatado.
 
 Valide tipos, testes e build conforme o alcance. Para IPC, preload, editor ou arquivos, rode smoke; para Python, rode test:engine. Mudanças somente em documentação não precisam de novas suítes.

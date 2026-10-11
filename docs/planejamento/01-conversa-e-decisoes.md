@@ -53,7 +53,7 @@ Consequências: não há máquina 24 h; tudo roda em lote. Sem GPU de IA; tudo n
 - Subpastas criadas por veículo: `CRIATIVO`, `FOTOS`, `VIDEO` (`src/main/estoque/sync.ts`).
 - O Studio detecta documento (PDF, com prioridade para `DOC.pdf`), fotos (em `FOTOS`) e vídeo (um único vídeo bruto em `PROJETO`, `VIDEO` ou na pasta do veículo; vídeos finais com prefixo `VIDEO_` não são usados como entrada).
 - `Editor Mágico` gera `VIDEO_<MODELO>.mp4`. Em `engine/video/render.py`: 1080x1920, HEVC pelo codificador Intel (`hevc_qsv`) a 50 Mbps, com queda para `libx265` se o QSV falhar. É por isso que o vídeo final tem cerca de 400 MB.
-- `engine/ia.py` usa a API paga da Anthropic para gerar textos do anúncio. Gera custo se for usado.
+- `engine/ia.py` usava a API paga da Anthropic para gerar textos do anúncio. **Removido em 11/10/2026**: o app não tem mais nenhuma aplicação paga; só o prompt pronto.
 - O app já gera `DES.md` com blocos de cópia (nome da campanha, textos principais, títulos, descrições, mensagem de WhatsApp) e tem aba Instagram que publica pelo navegador integrado (a publicação no Instagram usa "o único `VIDEO_*.mp4`" da pasta do veículo).
 - Não encontrei código de publicação de anúncios no Meta Ads; só relatórios.
 

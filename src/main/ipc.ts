@@ -31,7 +31,6 @@ import * as arquivos from "./studio/arquivos";
 import * as bancoStudio from "./studio/banco";
 import * as repo from "./studio/repositorio";
 import * as motor from "./studio/motor";
-import { segredos } from "./segredos-sistema";
 import { criarEsquemas, EXTENSOES_EXECUTAVEIS } from "./ipc-esquemas";
 import { validarChamada } from "./validacao";
 import * as instagram from "./studio/instagram";
@@ -268,10 +267,7 @@ const COMANDOS: Record<string, Comando> = {
     ),
 
   // ---- motor Python (opcional) ----
-  engine_call: (a) => motor.chamarMotor(a.method, paramsDoMotor(a), emitir),
-  // Segredos: a interface grava, apaga e pergunta se existe; nunca lê de volta.
-  segredo_definir: (a) => segredos().definir(a.nome, a.valor ?? null),
-  segredo_existe: (a) => segredos().existe(a.nome),
+  engine_call: (a) => motor.chamarMotor(a.method, a.params, emitir),
   engine_reiniciar: () => motor.reiniciarMotor(),
   motor_estado: () => motor.estadoMotor(),
   motor_instalar: () => motor.instalarMotor(emitir),
@@ -361,14 +357,6 @@ const COMANDOS: Record<string, Comando> = {
     arquivos.gravarNaPasta(h["x-pasta"], h["x-nome"], corpo!),
   fotos_renomear: (a) => arquivos.renomearFotos(a.pasta, a.ordem),
 };
-
-/** A chave da IA vem do cofre, nunca da interface. */
-function paramsDoMotor(a: Args) {
-  if (a.method !== "gerar_textos") return a.params;
-  const { api_key: _ignorada, ...resto } = a.params ?? {};
-  const chave = segredos().obter("anthropic_api_key");
-  return chave ? { ...resto, api_key: chave } : resto;
-}
 
 const ESQUEMAS = criarEsquemas({
   raizes: () => [caminhos.raizDados(), caminhos.userData()],

@@ -4,7 +4,7 @@
 
 Aplicativo de desktop para Windows que leva um carro do **estoque** até o **anúncio publicado**: lê o estoque do BNDV, organiza uma pasta por veículo, ajuda a produzir ficha, fotos, vídeo e criativos, deixa o anúncio pronto para o Meta Ads e prepara a postagem no Instagram. Tudo roda no computador da loja, com dados locais.
 
-**Stack:** Electron 44 · React 19 · TypeScript · Vite (electron-vite) · Tailwind 4 · SQLite (`node:sqlite`) · motor Python 3.12 (OCR, recorte, visão, vídeo, IA opcional).
+**Stack:** Electron 44 · React 19 · TypeScript · Vite (electron-vite) · Tailwind 4 · SQLite (`node:sqlite`) · motor Python 3.12 (OCR, recorte, visão e vídeo). **Nenhuma aplicação paga:** sem API, sem chave, sem cobrança por uso.
 
 ---
 
@@ -39,7 +39,7 @@ Aplicativo de desktop para Windows que leva um carro do **estoque** até o **an�
 | 9. Instagram | Publica carrossel e depois Reels pelo navegador integrado, com retomada e prevenção de duplicatas. | Studio › Instagram |
 | 10. Relatórios | Relatórios Meta Ads e exportação XLSX. | Studio › Relatórios |
 
-**Regra de ouro:** nenhuma automação ativa campanha sozinha. O app deixa tudo pronto; a pessoa cria e ativa o anúncio. Não há chaves de API no código e nada pago roda por padrão.
+**Regra de ouro:** nenhuma automação ativa campanha sozinha. O app deixa tudo pronto; a pessoa cria e ativa o anúncio. O app não usa nenhum serviço pago: sem API, sem chave, sem cobrança por uso. Os textos de IA do anúncio saem pelo prompt pronto, colado no chat que a pessoa já usa.
 
 ## As duas interfaces
 
@@ -51,7 +51,7 @@ O app abre em **01 · Estoque** (lista de veículos, balanço, entrada de arquiv
 React (renderer) ──► preload (window.soul.invocar / ouvir) ──► IPC do Electron (main)
                                                                  ├─ estoque/  BNDV, CSV, pastas, balanço, relatório
                                                                  ├─ studio/   SQLite, arquivos, entrada, Instagram, motor
-                                                                 └─ Python    CRLV, OCR, CNW, visão, recorte, IA, vídeo
+                                                                 └─ Python    CRLV, OCR, CNW, visão, recorte, vídeo
 ```
 
 - O **renderer não tem Node**: tudo passa pela ponte do preload, que só expõe `invocar` e `ouvir`.
@@ -72,7 +72,7 @@ soul-cars-app/
 │   ├── preload/         ponte segura window.soul
 │   ├── compartilhado/   regras puras usadas por main e renderer (anúncio, entrada, publicação)
 │   └── renderer/        interface React (src/) e recursos estáticos, incluindo o editor de criativos (public/criativo)
-├── engine/              motor Python (CRLV, OCR, CNW, fotos, visão, IA, vídeo) + testes
+├── engine/              motor Python (CRLV, OCR, CNW, fotos, visão, vídeo) + testes
 ├── resources/           ícone e logo empacotados
 ├── scripts/             instalação (.cmd) e testes de fumaça (smoke)
 ├── testes/              testes Vitest e fixtures

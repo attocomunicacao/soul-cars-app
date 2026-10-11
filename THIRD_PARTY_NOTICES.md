@@ -16,8 +16,6 @@ As bibliotecas **não são redistribuídas** no instalador nem no repositório: 
 
 | Pacote | Versão | Licença | Dependência |
 |---|---|---|---|
-| annotated-types | 0.8.0 | MIT | indireta |
-| anthropic | 1.5.0 | MIT | direta (textos) |
 | anyio | 4.15.1 | MIT | indireta |
 | attrs | 26.1.0 | MIT | indireta |
 | av | 18.1.0 | BSD-3-Clause | indireta |
@@ -28,7 +26,6 @@ As bibliotecas **não são redistribuídas** no instalador nem no repositório: 
 | colorama | 0.4.6 | BSD-3-Clause | indireta |
 | cryptography | 50.0.1 | Apache-2.0 OR BSD-3-Clause | indireta |
 | ctranslate2 | 4.8.2 | MIT | indireta |
-| docstring-parser | 0.18.0 | MIT | indireta |
 | faster-whisper | 1.2.1 | MIT | direta (video) |
 | filelock | 3.32.6 | MIT | indireta |
 | flatbuffers | 25.12.19 | Apache-2.0 | indireta |
@@ -36,14 +33,10 @@ As bibliotecas **não são redistribuídas** no instalador nem no repositório: 
 | h11 | 0.16.0 | MIT | indireta |
 | hf-xet | 1.6.0 | Apache-2.0 | indireta |
 | httpcore | 1.0.9 | BSD-3-Clause | indireta |
-| httpcore2 | 2.12.0 | BSD-3-Clause | indireta |
 | httpx | 0.28.1 | BSD-3-Clause | indireta |
-| httpx2 | 2.12.0 | BSD-3-Clause | indireta |
-| httpx2-jsfetch | 1.0 | não instalado neste sistema (pacote de outra plataforma) | indireta |
 | huggingface-hub | 1.31.0 | Apache-2.0 | indireta |
 | idna | 3.19 | BSD-3-Clause | indireta |
 | imageio | 2.37.4 | BSD-2-Clause | indireta |
-| jiter | 0.17.0 | MIT | indireta |
 | jsonschema | 4.26.0 | MIT | indireta |
 | jsonschema-specifications | 2025.9.1 | MIT | indireta |
 | lazy-loader | 0.5 | BSD-3-Clause | indireta |
@@ -60,8 +53,6 @@ As bibliotecas **não são redistribuídas** no instalador nem no repositório: 
 | pooch | 1.9.0 | BSD-3-Clause | indireta |
 | protobuf | 7.36.1 | BSD-3-Clause | indireta |
 | pycparser | 3.0 | BSD-3-Clause | indireta |
-| pydantic | 2.13.5 | MIT | indireta |
-| pydantic-core | 2.46.5 | MIT | indireta |
 | pymatting | 1.1.16 | MIT | indireta |
 | pypdfium2 | 5.13.0 | BSD-3-Clause ou Apache-2.0 (mais as licenças das bibliotecas que ele incorpora) | indireta |
 | pytesseract | 0.3.13 | Apache-2.0 | direta (documentos) |
@@ -72,13 +63,10 @@ As bibliotecas **não são redistribuídas** no instalador nem no repositório: 
 | rpds-py | 2026.6.3 | MIT | indireta |
 | scikit-image | 0.26.0 | BSD-3-Clause | indireta |
 | scipy | 1.18.1 | BSD-3-Clause | indireta |
-| sniffio | 1.3.1 | MIT OR Apache-2.0 | indireta |
 | tifffile | 2026.9.9 | BSD-3-Clause | indireta |
 | tokenizers | 0.23.2 | Apache-2.0 | indireta |
 | tqdm | 4.70.1 | MPL-2.0 AND MIT | indireta |
-| truststore | 0.10.4 | MIT | indireta |
 | typing-extensions | 4.16.0 | PSF-2.0 | indireta |
-| typing-inspection | 0.4.4 | MIT | indireta |
 | urllib3 | 2.7.0 | MIT | indireta |
 
 ## Modelos de IA (baixados no primeiro uso)

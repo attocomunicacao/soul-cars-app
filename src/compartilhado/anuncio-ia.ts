@@ -1,7 +1,6 @@
 /**
  * Modo "prompt pronto" para os textos do anúncio: monta o prompt que o usuário cola no chat
  * (Claude, ChatGPT) e valida o JSON devolvido. Não chama nenhum serviço: custo zero.
- * As regras espelham o SYSTEM e o SCHEMA de engine/ia.py (modo API); mantenha os dois juntos.
  */
 
 export type FichaIA = {
@@ -62,7 +61,7 @@ const limpaMarcador = (linha: string) => linha.replace(/^[-*•]\s*/, "").trim()
 const chave = (s: string) =>
   limpaMarcador(s).replace(/\s+/g, " ").toLocaleLowerCase("pt-BR");
 
-/** Linhas de equipamentos da ficha, como o modo API as enxerga (engine/ia.py). */
+/** Linhas de equipamentos da ficha, como o prompt as apresenta. */
 export function equipamentosDaFicha(f: FichaIA): string[] {
   return [f.seguranca, f.conforto, f.infotenimento].flatMap((campo) =>
     (campo ?? "")

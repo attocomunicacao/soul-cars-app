@@ -86,8 +86,8 @@ Mexa em `renderer/src/lib/des.ts` / `compartilhado/publicacao.ts` e confira `tes
 ### 4.5 Mexer no Instagram
 Seletores e passos ficam só em `instagram-browser.ts`. Depois de qualquer mudança: `npm run smoke:instagram` e uma validação manual com a conta real (o smoke não detecta mudanças do site).
 
-### 4.6 Segredos
-Chaves e tokens nunca vão para o SQLite nem para o renderer. Use `src/main/segredos.ts` (lista `NOMES_PERMITIDOS`), grave pelo comando `segredo_definir` e entregue ao motor/serviço no main (veja `paramsDoMotor` em `ipc.ts`). A interface não consegue ler de volta.
+### 4.6 Sem serviços pagos
+O app não chama nenhum serviço pago nem guarda chaves (a integração com a API da Anthropic foi removida em 11/10/2026). Se uma feature nova precisar de chave, token ou cobrança por uso, ela não entra sem decisão explícita; os textos de IA continuam pelo **prompt pronto** (`compartilhado/anuncio-ia.ts`, `PromptAnuncio.tsx`). Na abertura, `main/limpeza-ia.ts` apaga qualquer chave que versões antigas tenham guardado (banco, backups e `segredos.json`).
 
 ## 5. Regras de negócio que não podem quebrar
 
@@ -133,7 +133,7 @@ Derivado da [avaliação](10-avaliacao-erros-melhorias.md); o roadmap do produto
 | Fase | Entrega | Itens | Passa quando |
 |---|---|---|---|
 | **M0 · Correções** (P) | ~~Acentos do motor (E1)~~, ~~versão do app (E3)~~, ~~`ResourceWarning` (E4)~~, ~~licença (E8)~~ | — | Fase concluída |
-| **M1 · Segurança** ~~(feito)~~ | ~~Chave da IA cifrada (E2)~~, ~~`sandbox: true`~~, ~~esquema de argumentos do IPC~~, ~~SQL livre trocado por comandos `db_*`~~ | riscos da seção 2 | Fase concluída |
+| **M1 · Segurança** ~~(feito)~~ | ~~Chave da IA (E2: recurso removido)~~, ~~`sandbox: true`~~, ~~esquema de argumentos do IPC~~, ~~SQL livre trocado por comandos `db_*`~~ | riscos da seção 2 | Fase concluída |
 | **M2 · CI e qualidade** ~~(feito)~~ | ~~`test:engine`, `smoke` e `audit` no CI; ESLint; Dependabot~~ | Melhorias 1, 2, 5 | Falta rodar o CI no GitHub pela primeira vez (ainda não foi executado) |
 | **M3 · Testes de interface** (M) | Testes de componentes (Entrada, Anunciar, Ficha); fixtures sintéticas para os testes pulados | Melhorias 3, 4 | Zero testes pulados por dependência externa |
 | **M4 · Desempenho e instalação** (M) | Carregamento sob demanda; verificação de requisitos nas Configurações; atualização automática | Melhorias 6–8 | Bundle principal abaixo de 500 kB; instalador testado em máquina limpa |

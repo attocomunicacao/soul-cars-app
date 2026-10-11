@@ -41,7 +41,6 @@ flowchart TD
    - **Raiz de dados**: a pasta que contém `ESTOQUE` e `dados` (não é a própria `ESTOQUE`).
    - Dados da loja (nome, telefone, etc.).
    - **Campanha modelo**: o nome da campanha que você duplica no Gerenciador de Anúncios.
-   - Chave da IA (opcional). Sem ela, o app usa o modo "prompt pronto".
 3. Para as automações (ler documento, recortar fundo, editar vídeo), clique em **Instalar / reparar motor Python**. Peça ajuda ao responsável técnico se faltar algum programa (uv, Tesseract ou FFmpeg).
 
 ## Etapa 1: Atualizar o estoque
@@ -77,7 +76,7 @@ Em **Studio**, abra o veículo.
 1. Revise os dados da ficha.
 2. **Documento:** o app detecta o PDF na pasta (DOC.pdf tem prioridade). Clique em **Ler documento e preencher ficha**; se o PDF tiver senha, informe-a. Isso gera `DOC.md`.
 3. **Ficha técnica:** busque pelo Carros na Web (escolhendo a versão, com equipamentos de série) ou cole a ficha / transcreva de um print.
-4. **Descrição:** gere o `DES.md` (padrão) ou reescreva os textos com IA. O app mantém preço, km e ano da ficha.
+4. **Descrição:** gere o `DES.md` (padrão) ou use **Textos pelo chat (prompt pronto)**: o app monta o prompt, você cola no chat que já usa (Claude, ChatGPT…), cola a resposta de volta e o app valida. Sem chave e sem custo. O app mantém preço, km e ano da ficha.
 5. Salve.
 
 ## Etapa 4: Produção

@@ -151,14 +151,7 @@ def fotos_organizar(params):
     return fotos.organizar(params, progresso)
 
 
-def gerar_textos(params):
-    import ia
-
-    return ia.gerar_textos(params)
-
-
 METHODS = {
-    "gerar_textos": gerar_textos,
     "ping": ping,
     "ler_crlv": ler_crlv,
     "ocr_equipamentos": ocr_equipamentos,

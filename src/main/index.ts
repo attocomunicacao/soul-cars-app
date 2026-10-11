@@ -7,6 +7,7 @@
  *   ipc.ts     a lista de comandos que a interface pode pedir
  */
 import { BrowserWindow, app, shell, dialog } from "electron";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as caminhos from "./caminhos";
@@ -18,10 +19,25 @@ import {
 } from "./ipc";
 import { reiniciarMotor } from "./studio/motor";
 import { importarLegado } from "./studio/legado";
-import { migrarSegredos } from "./segredos-sistema";
+import { apagarArquivoDeSegredos, removerConfigIa } from "./limpeza-ia";
 import { encerrarInstagram } from "./studio/instagram";
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
+
+/** O app não usa serviço pago: apaga qualquer chave que versões antigas tenham guardado. */
+function limparRestosDoModoApi() {
+  let backups: string[] = [];
+  try {
+    backups = fs
+      .readdirSync(caminhos.PASTA_BACKUPS())
+      .filter((n) => n.endsWith(".db"))
+      .map((n) => path.join(caminhos.PASTA_BACKUPS(), n));
+  } catch {
+    /* sem backups ainda */
+  }
+  removerConfigIa([caminhos.BANCO(), ...backups]);
+  apagarArquivoDeSegredos(caminhos.userData());
+}
 
 function criarJanela() {
   const janela = new BrowserWindow({
@@ -84,7 +100,7 @@ if (!app.requestSingleInstanceLock()) {
     .then(async () => {
       app.setAppUserModelId("com.soulcars.app");
       await importarLegado();
-      migrarSegredos();
+      limparRestosDoModoApi();
       registrarIpc();
       criarJanela();
       iniciarEntrada();

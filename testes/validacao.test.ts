@@ -198,8 +198,18 @@ describe("validação de argumentos", () => {
     ).toEqual({ contas: { Caixa: { Banco: 10 } } });
   });
 
-  it("o segredo só aceita texto e config só os campos permitidos", () => {
-    expect(() => chamar("segredo_definir", { nome: "x", valor: 12 })).toThrow();
+  it("não há mais nada de IA paga: sem comandos de segredo e sem o método gerar_textos", () => {
+    expect(esquemas.segredo_definir).toBeUndefined();
+    expect(esquemas.segredo_existe).toBeUndefined();
+    expect(() => chamar("engine_call", { method: "gerar_textos" })).toThrow(
+      /method/,
+    );
+    expect(() =>
+      chamar("db_config_salvar", { chave: "anthropic_api_key", valor: "x" }),
+    ).toThrow(/chave/);
+  });
+
+  it("config só aceita os campos permitidos", () => {
     const r = chamar("config_gravar", {
       patch: { raizDados: "C:/Dados", legadoImportado: "falso" },
     });

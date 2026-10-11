@@ -18,7 +18,7 @@ Regras que valem para todas as fases:
 - [ ] (`git init` feito em 11/10/2026, sem commit; falta o commit inicial e a cópia privada fora do notebook) Confirmar que o `soul-cars-app` está sob Git no notebook e que há cópia fora dele (repositório privado, conforme `docs/06-github.md`). Não publicar dados da loja.
 - [ ] Medir o baseline: cronometrar 3 carros no fluxo manual atual (baixar do WhatsApp, mover para a pasta, preparar e subir o anúncio). Sem esse número não dá para saber o ganho real.
 - [ ] Configurar o Windows para não suspender com o carregador ligado durante a fila e manter o notebook ventilado.
-- [x] Prompt 1: modo "prompt pronto" para os textos do anúncio, ao lado do modo API (que fica desligado por padrão).
+- [x] Prompt 1: modo "prompt pronto" para os textos do anúncio. (O modo API que existia ao lado dele foi **removido** em 11/10/2026: o app não tem nenhuma aplicação paga.)
 - [ ] Decidir o serviço de pasta compartilhada (Google Drive ou OneDrive) e a convenção de nomes (ver Fase 1).
 
 **Passa quando:** um texto de anúncio é gerado sem usar nenhuma chave de API e o baseline está anotado.

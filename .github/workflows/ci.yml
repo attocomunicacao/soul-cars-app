@@ -41,7 +41,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: engine/uv.lock
       # Só os grupos que os testes usam; recorte e transcrição (modelos grandes) ficam de fora.
-      - run: uv sync --group documentos --group textos
+      - run: uv sync --group documentos
         working-directory: engine
       # O FFmpeg faz rodarem os testes da versão leve do vídeo.
       - run: choco install ffmpeg -y --no-progress
@@ -64,7 +64,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: engine/uv.lock
       - run: npm ci
-      - run: uv sync --group documentos --group textos
+      - run: uv sync --group documentos
         working-directory: engine
       - run: npm run build
       - run: npm run smoke

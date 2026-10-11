@@ -22,7 +22,7 @@ Autoria: Atto Comunicação (projeto privado).
 
 - Login real no BNDV e atualização com dados reais pela janela do app.
 - Publicação real no Instagram (os seletores só foram validados contra uma página simulada).
-- Chamadas de IA paga (chave Anthropic) e download dos modelos de recorte/visão/transcrição.
+- Download dos modelos de recorte/visão/transcrição (a IA paga foi removida do app).
 - Geração de vídeo com o Editor Mágico em arquivo real da loja e a qualidade visual da versão leve.
 - Instalação do `.exe` em outro computador.
 - Entrada de arquivos com a pasta real do Google Drive.
@@ -35,7 +35,7 @@ Gravidade: 🔴 alta · 🟠 média · 🟡 baixa.
 | ID | Gravidade | Erro | Evidência | Sugestão |
 |---|---|---|---|---|
 | E1 | 🟠 | **Acentos corrompidos nas mensagens do motor Python.** O Python no Windows usa `cp1252` no stdout/stdin quando é um pipe, e o Electron lê como UTF-8. | `main.py` devolveu o byte `0xE9` (`é` em cp1252) em `"Método desconhecido"`; `motor.ts` não define `PYTHONUTF8`/`PYTHONIOENCODING`. Os logs do teste de vídeo também aparecem com `�`. Caracteres fora do cp1252 podem até gerar erro ao escrever. | Em `src/main/studio/motor.ts`, acrescentar `PYTHONUTF8: "1"` e `PYTHONIOENCODING: "utf-8"` ao `env` do `spawn`, e `sys.stdout.reconfigure(encoding="utf-8")` em `engine/main.py`. ✅ **Corrigido em 11/10/2026** (`motor.ts`, `engine/main.py` e teste `engine/tests/test_utf8.py`). |
-| E2 | 🟠 | **Chave da IA (Anthropic) guardada em texto simples no SQLite** (`config`, chave `anthropic_api_key`). Qualquer pessoa com acesso ao `soul.db` ou aos backups lê a chave. | `Configuracoes.tsx` → `salvarConfig("anthropic_api_key", …)`. | ✅ **Corrigido em 11/10/2026:** a chave fica em `segredos.json` cifrada com `safeStorage` (DPAPI do Windows); a interface só grava/apaga/pergunta se existe; a migração remove qualquer chave antiga do `soul.db` e dos backups. |
+| E2 | ✅ | **Chave da IA (Anthropic) guardada em texto simples no SQLite** (`config`, chave `anthropic_api_key`). Qualquer pessoa com acesso ao `soul.db` ou aos backups lê a chave. | `Configuracoes.tsx` → `salvarConfig("anthropic_api_key", …)`. | ✅ **Corrigido em 11/10/2026:** a chave fica em `segredos.json` cifrada com `safeStorage` (DPAPI do Windows); a interface só grava/apaga/pergunta se existe; a migração remove qualquer chave antiga do `soul.db` e dos backups. |
 | E3 | ✅ | **(Corrigido)** Versão do app exibida sempre "1.0.0" no instalado. O preload lê `process.env.npm_package_version`, que só existe quando rodado via `npm`. | `src/preload/index.ts`, bloco `versoes.app`. | Expor a versão pelo main (`app.getVersion()`). |
 | E4 | ✅ | **(Corrigido)** Aviso `ResourceWarning: unclosed file`** ao gerar a versão leve do vídeo. Os pipes do `ffmpeg` não são fechados explicitamente. | Saída de `npm run test:engine` (`leve.py:84` → `run_ffmpeg`). | ✅ **Corrigido:** `run_ffmpeg` (`video/render.py`) usa `with subprocess.Popen(...)`; teste de regressão em `engine/tests/test_video.py`. |
 | E5 | 🟡 | **README tinha caminho pessoal** (`C:\Users\gusta\...`), contra a regra do `AGENTS.md`. | README anterior, linha 10. | ✅ Corrigido neste README. |
@@ -100,7 +100,7 @@ Riscos de segurança observados (sem exploração conhecida):
 | Funcionalidade | 8,5 | Cobre o fluxo inteiro do estoque ao anúncio; partes dependem de serviços externos sem validação real |
 | Qualidade do código | 8 | Organizado e legível; alguns arquivos grandes e sem ESLint |
 | Testes | 8 | Muito bons na regra de negócio e smoke; sem testes de componentes e com testes pulados |
-| Segurança | 7,5 | Base sólida; chave de IA em texto simples e `sandbox: false` são os pontos principais |
+| Segurança | 9 | Chave de IA, sandbox e IPC foram resolvidos (o recurso pago foi removido); resta só o `npm audit` moderado do empacotador |
 | Documentação | 9 | Completa e atualizada |
 | Manutenibilidade | 8 | Estrutura clara; divisão de módulos grandes e CI mais completo ajudariam |
 | Prontidão para uso | 7,5 | Precisa de validação real (BNDV, Instagram, instalador) antes de depender dele |
@@ -147,9 +147,12 @@ Auditoria das 64 dependências do `engine/uv.lock` (metadados instalados), dos m
 - **Instalador:** o `electron-builder --dir` confirmou `THIRD_PARTY_NOTICES.md` em `resources/`, o `Lato-OFL.txt` dentro do `engine/` e os avisos do Electron/Chromium (`LICENSE.electron.txt`, `LICENSES.chromium.html`).
 - **Pendente (decisão sua):** `TRILHA.flac` (trilha do vídeo) e os logos não têm licença registrada. A trilha precisa de direitos para uso em anúncio e redes. Antes de qualquer distribuição pública, confirme a origem e a autorização.
 
-## 9. Modelo da IA (`engine/ia.py`)
+## 9. Remoção da API da Anthropic (11/10/2026)
 
-- `MODELO` era `claude-opus-5`. Esse ID é válido, mas já não é o atual: o Opus atual é `claude-opus-5-5` (mesma janela de 1M, mais barato: US$ 4 / 20 por milhão de tokens contra US$ 5 / 25). Trocado.
-- A chamada já era compatível com o Opus 5.5: não envia `thinking`, `temperature`, `top_p`, `tool_choice` forçado nem prefill (todos dão erro 400 nele), usa saída estruturada, `effort: medium` (o padrão dele) e o fallback do servidor (`fallbacks: "default"`). Os testes novos em `engine/tests/test_ia.py` (cliente de mentira, sem chamar a API) travam isso.
-- As mensagens de erro mandavam configurar a chave "na tela Sistema"; a tela se chama **Configurações**. Corrigido (e um comentário em `caminhos.ts`).
-- Não foi testado com uma chave real da Anthropic: confirme gerando os textos de um veículo no modo API.
+Decisão do projeto: **o app não tem nenhuma aplicação paga**. Foi removido tudo o que dependia da API da Anthropic:
+
+- `engine/ia.py`, seu teste e o método `gerar_textos` do motor; o grupo `textos` (pacote `anthropic` e dependências) saiu do `pyproject.toml` e do `uv.lock` (de 64 para 52 pacotes; `THIRD_PARTY_NOTICES.md` regenerado) e do CI.
+- Toda a infraestrutura de segredos (`segredos.ts`, cofre do Windows, comandos `segredo_*`), que existia só para a chave. As seções 2 (E2) e 8 do histórico acima descrevem o que havia antes.
+- Na interface: o campo de chave, o modo API em Configurações e o botão "Gerar textos com IA (API paga)" na Ficha. **Fica o prompt pronto** (Ficha › Textos pelo chat), que não chama serviço nenhum.
+- Na abertura, `main/limpeza-ia.ts` apaga qualquer chave guardada por versões anteriores (tabela `config` do banco e dos backups, e o `segredos.json`). No seu computador não havia chave guardada.
+- Os dados antigos `des_ia` (textos do prompt pronto) continuam sendo usados; nenhuma migração de banco foi alterada.

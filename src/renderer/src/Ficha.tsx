@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   atualizarVeiculo,
   obterLoja,
-  obterConfig,
   type Veiculo,
   type Editavel,
 } from "./lib/db";
@@ -12,7 +11,6 @@ import {
   buscarCnw,
   fichaCnw,
   ocrEquipamentos,
-  engine,
   type VersaoCnw,
 } from "./lib/engine";
 import {
@@ -66,7 +64,6 @@ export function Ficha({
   const [copiaNumero, setCopiaNumero] = useState<Record<string, number>>({});
   const [baixarInstagram, setBaixarInstagram] = useState(false);
   const [copiados, setCopiados] = useState<Record<string, string>>({});
-  const [modoApi, setModoApi] = useState(false);
   const [mostrarPrompt, setMostrarPrompt] = useState(false);
   function ficha(): FichaDes {
     return Object.fromEntries(
@@ -76,17 +73,8 @@ export function Ficha({
       ]),
     ) as FichaDes;
   }
-  useEffect(() => {
-    let ativo = true;
-    void obterConfig("ia_modo_api")
-      .then((c) => ativo && setModoApi(c === "1"))
-      .catch((e) => ativo && setAviso(String(e)));
-    return () => {
-      ativo = false;
-    };
-  }, []);
-  /** `ia`: false = só a ficha; true = modo API (se ligado); ou textos já validados do prompt pronto. */
-  async function descricao(ia: boolean | TextosIA = false) {
+  /** `ia`: sem valor = só a ficha; ou os textos já validados do prompt pronto (chat do usuário, sem custo). */
+  async function descricao(ia: TextosIA | false = false) {
     if (
       v.des_md &&
       !window.confirm("Substituir o DES.md atual pelos textos gerados?")
@@ -94,17 +82,7 @@ export function Ficha({
       return;
     await salvar();
     const loja = await obterLoja();
-    let textos: TextosIA | null = typeof ia === "object" ? ia : null;
-    if (ia === true) {
-      if ((await obterConfig("ia_modo_api")) !== "1")
-        throw new Error(
-          "O modo API está desligado. Use o prompt pronto ou ative o modo API em Configurações.",
-        );
-      textos = await engine<TextosIA>("gerar_textos", {
-        ficha: ficha(),
-        loja: loja.loja,
-      });
-    }
+    const textos: TextosIA | null = ia || null;
     const md = gerarDes(ficha(), loja, textos);
     const patch = {
       des_md: md,
@@ -282,14 +260,6 @@ export function Ficha({
             >
               Textos pelo chat (prompt pronto)
             </button>
-            {modoApi && (
-              <button
-                disabled={ocupado}
-                onClick={() => tarefa(() => descricao(true))}
-              >
-                Gerar textos com IA (API paga)
-              </button>
-            )}
             <button
               disabled={ocupado}
               onClick={() =>
