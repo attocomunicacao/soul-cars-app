@@ -12,7 +12,7 @@
     "start": "electron-vite preview",
     "build": "electron-vite build",
     "tipos": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "lint": "eslint . --max-warnings 2",
+    "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
     "empacotar": "electron-vite build && electron-builder --win --publish never",
     "postinstall": "electron-builder install-app-deps",

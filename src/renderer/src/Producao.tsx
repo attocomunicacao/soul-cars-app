@@ -71,6 +71,8 @@ export function Producao({
     };
   }, [pasta]);
 
+  // Muda quando a lista de fotos da pasta muda (nomes/ordem), disparando a releitura das prévias.
+  const chaveFotos = status?.fotos.join("|");
   useEffect(() => {
     if (!pasta) return;
     let ativo = true;
@@ -93,7 +95,7 @@ export function Producao({
     return () => {
       ativo = false;
     };
-  }, [pasta, status?.fotos.join("|")]);
+  }, [pasta, chaveFotos]);
 
   async function verificar() {
     if (pasta) setStatus(await statusProducao(pasta));

@@ -99,7 +99,7 @@ Também é possível iniciar por `scripts\iniciar.cmd`. Para o motor Python, exe
 |---|---|
 | `npm run dev` | Abre o app em desenvolvimento |
 | `npm run build` / `npm start` | Gera e abre o build (verifica `file://`) |
-| `npm run lint` | ESLint (promessas esquecidas, hooks do React, erros comuns) |
+| `npm run lint` | ESLint, sem nenhum aviso aceito (promessas esquecidas, hooks do React, erros comuns) |
 | `npm run tipos` | TypeScript (main/preload e React) |
 | `npm test` | Vitest |
 | `npm run test:engine` | Testes Python do motor |
