@@ -132,6 +132,7 @@ Veja [docs/04-dados-e-backup.md](docs/04-dados-e-backup.md).
 - [Manual do Desenvolvedor](docs/12-manual-do-desenvolvedor.md): fluxo técnico, roadmap de manutenção e receitas.
 - [Avaliação: erros, melhorias e pontos fortes](docs/10-avaliacao-erros-melhorias.md): resultado dos testes de 11/10/2026.
 - [Roadmap do produto](docs/planejamento/02-roadmap.md).
+- [Avisos de terceiros](THIRD_PARTY_NOTICES.md): licenças das dependências do motor, modelos e arquivos embutidos.
 
 ## Estado atual
 

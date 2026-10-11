@@ -116,7 +116,7 @@ Os smokes criam estoque e banco temporários; não fazem login no BNDV, não cha
 
 ## 7. Publicar uma versão
 
-1. Atualize `version` em `package.json` (e o `CHANGELOG`, quando existir).
+1. Atualize `version` em `package.json` (e o `CHANGELOG`, quando existir). Se mudou alguma dependência do motor (`engine/pyproject.toml` ou `uv.lock`), rode `engine/.venv/Scripts/python.exe scripts/gerar-avisos-licencas.py` para atualizar `THIRD_PARTY_NOTICES.md`, que o instalador leva em `resources/`. O teste `engine/tests/test_licencas.py` falha se a lista ficar desatualizada ou se entrar uma dependência GPL/AGPL/LGPL.
 2. Rode todas as verificações da seção 6.
 3. `npm run empacotar` → instalador NSIS x64 em `dist/` (não versionado; vai em *Releases* do repositório privado).
 4. Teste o instalador numa máquina limpa (ainda pendente) e o botão **Instalar / reparar motor Python**.

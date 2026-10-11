@@ -1,6 +1,9 @@
 [project]
 name = "soul-engine"
 version = "0.1.0"
+description = "Motor de automações do SOUL Cars (OCR, recorte, visão, vídeo e textos)"
+license = "LicenseRef-Proprietary"
+authors = [{ name = "Atto Comunicação" }]
 requires-python = ">=3.12"
 dependencies = []
 

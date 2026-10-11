@@ -71,6 +71,10 @@
           "!**/__pycache__/**",
           "!**/*.pyc"
         ]
+      },
+      {
+        "from": "THIRD_PARTY_NOTICES.md",
+        "to": "THIRD_PARTY_NOTICES.md"
       }
     ],
     "win": {
