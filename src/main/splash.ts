@@ -11,9 +11,14 @@ import * as caminhos from "./caminhos";
 
 const MINIMO_MS = 1200;
 
+/**
+ * A animação é o próprio indicador de carregamento, então não é desligada pela opção
+ * "reduzir movimento" do sistema (que deixava a tela parada). É lenta e discreta.
+ */
 function html(logo: string) {
   return `<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><style>
+  @property --giro { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
   * { margin: 0; box-sizing: border-box; }
   html, body { height: 100%; overflow: hidden; background: #131110; cursor: default; user-select: none; }
   body {
@@ -23,19 +28,24 @@ function html(logo: string) {
     border: 1px solid rgba(210, 171, 85, 0.14);
     -webkit-app-region: drag;
   }
-  main { display: grid; justify-items: center; gap: 30px; animation: entrar 900ms cubic-bezier(.2,.7,.2,1) both; }
-  img { width: 92px; height: 92px; border-radius: 22px; display: block;
-        box-shadow: 0 0 0 1px rgba(210,171,85,.18), 0 18px 48px rgba(0,0,0,.55), 0 0 60px rgba(210,171,85,.07); }
-  .fio { position: relative; width: 132px; height: 1px; background: rgba(210,171,85,.16); overflow: hidden; }
-  .fio::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 44px;
-    background: linear-gradient(90deg, transparent, #d2ab55, transparent);
-    animation: correr 1.7s cubic-bezier(.45,.05,.35,1) infinite; }
-  p { font-size: 10.5px; letter-spacing: .34em; text-transform: uppercase; color: #8d8473; padding-left: .34em; }
+  main { display: grid; justify-items: center; gap: 34px; animation: entrar 800ms cubic-bezier(.2,.7,.2,1) both; }
+  /* Um feixe dourado percorre a borda da marca, em volta, sem parar. */
+  .marca {
+    padding: 2.5px; border-radius: 27px;
+    background: conic-gradient(from var(--giro), rgba(210,171,85,.10) 0deg, rgba(210,171,85,.10) 130deg, #d2ab55 350deg, #f3dfa6 360deg);
+    box-shadow: 0 18px 48px rgba(0,0,0,.55), 0 0 64px rgba(210,171,85,.10);
+    animation: girar 2.4s linear infinite;
+  }
+  img { width: 96px; height: 96px; border-radius: 24px; display: block; }
+  .vazio { width: 96px; height: 96px; border-radius: 24px; background: #1b1916; }
+  p { font-size: 10.5px; letter-spacing: .34em; text-transform: uppercase; color: #9a9080; padding-left: .34em; }
+  p i { font-style: normal; opacity: .2; animation: ponto 1.4s ease-in-out infinite; }
+  p i:nth-child(2) { animation-delay: .2s; } p i:nth-child(3) { animation-delay: .4s; }
   @keyframes entrar { from { opacity: 0; transform: translateY(6px) scale(.985); } to { opacity: 1; transform: none; } }
-  @keyframes correr { from { transform: translateX(-60px); } to { transform: translateX(150px); } }
-  @media (prefers-reduced-motion: reduce) { main, .fio::after { animation: none; } .fio::after { left: 44px; } }
+  @keyframes girar { to { --giro: 360deg; } }
+  @keyframes ponto { 0%, 100% { opacity: .2; } 40% { opacity: 1; } }
 </style></head><body>
-  <main>${logo ? `<img alt="" src="${logo}">` : ""}<div class="fio"></div><p>Carregando</p></main>
+  <main><div class="marca">${logo ? `<img alt="" src="${logo}">` : '<div class="vazio"></div>'}</div><p>Carregando<i>.</i><i>.</i><i>.</i></p></main>
 </body></html>`;
 }
 
