@@ -53,11 +53,11 @@ Riscos de segurança observados (sem exploração conhecida):
 ## 3. Pontos que podem ser melhores
 
 ### Qualidade e automação
-1. **CI mais completo.** Hoje o `ci.yml` roda tipos, testes, build e formatação. Falta `npm run test:engine`, `npm run smoke` e `npm audit` (o smoke exige janela; dá para rodar no runner Windows).
-2. **Linter.** Não há ESLint; só Prettier e TypeScript. Regras como `no-floating-promises` e `react-hooks/exhaustive-deps` pegariam bugs de efeitos e listeners.
+1. ✅ **(Feito)** **CI mais completo.** Hoje o `ci.yml` roda tipos, testes, build e formatação. Falta `npm run test:engine`, `npm run smoke` e `npm audit` (o smoke exige janela; dá para rodar no runner Windows).
+2. ✅ **(Feito)** **Linter.** Não há ESLint; só Prettier e TypeScript. Regras como `no-floating-promises` e `react-hooks/exhaustive-deps` pegariam bugs de efeitos e listeners.
 3. **Testes de interface.** Nenhum componente React tem teste; só `lib/`, `compartilhado/` e os smokes. Um `@testing-library/react` nas telas Entrada, Anunciar e Ficha cobriria regressões de fluxo.
 4. **Testes pulados.** 2 (Vitest) + 5 (Python) dependem de arquivos reais. Criar fixtures sintéticas (PDF de CRLV fictício) permitiria rodá-los no CI.
-5. **Dependabot/Renovate** e a atualização do `electron-builder` quando sair a correção da cadeia vulnerável.
+5. ✅ **(Feito, Dependabot)** **Dependabot/Renovate** e a atualização do `electron-builder` quando sair a correção da cadeia vulnerável.
 
 ### Desempenho e empacotamento
 6. **Bundle único de ~796 kB.** Carregar sob demanda (`React.lazy`) as telas Instagram, Relatórios e o gerador XLSX.
@@ -127,3 +127,9 @@ Soul Cars/
 - `src/main/caminhos.ts` passou a procurar `dados-loja` (e `legado/estoque-python`) antes do caminho antigo.
 - `.gitignore` ignora `/dados-loja/` e `/legado/`; os dois projetos antigos mantêm seus próprios repositórios Git locais (ficam fora do GitHub).
 - O executável antigo `legado/estoque-python/SOUL Cars Estoque.exe` procura `ESTOQUE/` e `dados/` ao lado dele, que agora estão em `dados-loja`. Use-o só como referência.
+
+## 7. CI e ESLint (11/10/2026)
+
+- **ESLint** (`eslint.config.js`, `npm run lint`): regras recomendadas do ESLint e do typescript-eslint, mais `no-floating-promises`, `no-misused-promises` e `await-thenable` (com tipos) e as regras de hooks do React. A primeira passada achou 29 problemas, todos tratados: promessas sem `void`/`catch` (`index.ts`, `Criativos.tsx`), erro relançado sem `cause` (`ipc.ts`), atribuições mortas (`vendas.ts`, `entrada.ts`), BOM invisível numa expressão regular (`sync.ts`), importação sem uso, e uma expressão regular dentro de um texto do smoke que escapava o ponto de forma errada. Sobram 2 avisos `exhaustive-deps` (`Criativos.tsx`, `Producao.tsx`), deixados de propósito: os efeitos usam refs e dependências estreitas. O editor em `src/renderer/public` não é verificado.
+- **Dependência do motor:** o `ocr.py` importa `numpy`, mas o grupo `documentos` não o declarava (só funcionava porque o grupo `recorte` o trazia). Foi declarado e o `uv.lock` atualizado; assim os testes rodam só com `documentos` e `textos`, como no CI.
+- **CI** (`.github/workflows/ci.yml`): jobs `app`, `motor` e `smoke` (veja o manual do desenvolvedor, seção 8). **Ainda não rodou no GitHub**: os mesmos comandos foram executados localmente (lint, tipos, formatação, 125 testes Vitest, build, `npm audit --audit-level=high`, 39 testes Python com os dois grupos e os dois smokes), mas o ambiente do runner (FFmpeg pelo Chocolatey, Electron sem tela dedicada) só será confirmado na primeira execução.

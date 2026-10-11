@@ -13,12 +13,7 @@ vi.mock("../src/main/caminhos", () => ({
   CSV_VENDAS: () => path.join(raiz, "vendas.csv"),
   garantir: () => {},
 }));
-import {
-  selecionar,
-  lerCsv,
-  ehConsignado,
-  ficha,
-} from "../src/main/estoque/sync";
+import { selecionar, lerCsv, ehConsignado } from "../src/main/estoque/sync";
 import { dadosBndv } from "../src/main/estoque/balanco";
 import { ultimasVendas } from "../src/main/estoque/vendas";
 import {

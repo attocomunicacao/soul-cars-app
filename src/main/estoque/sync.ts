@@ -73,7 +73,7 @@ export function lerCsv(arquivo: string): LinhaCsv[] {
       `Não encontrei ${path.basename(arquivo)}.\nRode a atualização primeiro.`,
     );
   }
-  const texto = fs.readFileSync(arquivo, "utf8").replace(/^﻿/, "");
+  const texto = fs.readFileSync(arquivo, "utf8").replace(/^\uFEFF/, "");
   const linhas: string[][] = [];
   let campo = "";
   let linha: string[] = [];

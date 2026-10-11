@@ -12,20 +12,22 @@
     "start": "electron-vite preview",
     "build": "electron-vite build",
     "tipos": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "lint": "eslint . --max-warnings 2",
     "test": "vitest run",
     "empacotar": "electron-vite build && electron-builder --win --publish never",
     "postinstall": "electron-builder install-app-deps",
     "test:engine": "cd engine && uv run --all-groups python -m unittest discover -s tests -p \"test_*.py\"",
     "smoke": "electron scripts/smoke.cjs",
     "smoke:instagram": "node scripts/preparar-smoke-instagram.cjs && electron scripts/smoke-instagram.cjs",
-    "formatar": "prettier --write \"src/main/**/*.ts\" \"src/preload/**/*.ts\" \"src/compartilhado/**/*.ts\" \"src/renderer/src/**/*.{ts,tsx,css}\" \"*.{ts,json}\" \"testes/**/*.{ts,mjs}\" \"scripts/*.cjs\"",
-    "formatar:check": "prettier --check \"src/main/**/*.ts\" \"src/preload/**/*.ts\" \"src/compartilhado/**/*.ts\" \"src/renderer/src/**/*.{ts,tsx,css}\" \"*.{ts,json}\" \"testes/**/*.{ts,mjs}\" \"scripts/*.cjs\""
+    "formatar": "prettier --write \"src/main/**/*.ts\" \"src/preload/**/*.ts\" \"src/compartilhado/**/*.ts\" \"src/renderer/src/**/*.{ts,tsx,css}\" \"*.{ts,js,json}\" \"testes/**/*.{ts,mjs}\" \"scripts/*.cjs\"",
+    "formatar:check": "prettier --check \"src/main/**/*.ts\" \"src/preload/**/*.ts\" \"src/compartilhado/**/*.ts\" \"src/renderer/src/**/*.{ts,tsx,css}\" \"*.{ts,js,json}\" \"testes/**/*.{ts,mjs}\" \"scripts/*.cjs\""
   },
   "dependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -34,9 +36,13 @@
     "electron": "^44.7.0",
     "electron-builder": "^26.0.0",
     "electron-vite": "^4.0.0",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
     "prettier": "^3.9.9",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0",
+    "typescript-eslint": "^8.71.1",
     "vite": "^7.0.0",
     "vitest": "^5.0.3"
   },

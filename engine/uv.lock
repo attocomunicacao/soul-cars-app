@@ -1537,6 +1537,7 @@ source = { virtual = "." }
 
 [package.dev-dependencies]
 documentos = [
+    { name = "numpy" },
     { name = "pdfplumber" },
     { name = "pillow" },
     { name = "pytesseract" },
@@ -1557,6 +1558,7 @@ video = [
 
 [package.metadata.requires-dev]
 documentos = [
+    { name = "numpy", specifier = ">=1.26" },
     { name = "pdfplumber", specifier = ">=0.11.10" },
     { name = "pillow", specifier = ">=12.3.0" },
     { name = "pytesseract", specifier = ">=0.3.13" },

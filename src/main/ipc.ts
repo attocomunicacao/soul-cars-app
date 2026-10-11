@@ -434,7 +434,9 @@ export function registrarIpc() {
         const v = validarChamada(comando, esquema, args, decodificados, corpo);
         return await executar(v.args, v.corpo, v.cabecalhos);
       } catch (erro) {
-        throw new Error(erro instanceof Error ? erro.message : String(erro));
+        throw new Error(erro instanceof Error ? erro.message : String(erro), {
+          cause: erro,
+        });
       }
     },
   );

@@ -51,7 +51,7 @@ function criarJanela() {
 
   // Link externo abre no navegador do sistema, não numa janela do app.
   janela.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:/.test(url)) shell.openExternal(url);
+    if (/^https?:/.test(url)) void shell.openExternal(url);
     return { action: "deny" };
   });
   janela.webContents.on("will-navigate", (evento, url) => {
@@ -59,8 +59,10 @@ function criarJanela() {
   });
 
   const devUrl = process.env.ELECTRON_RENDERER_URL;
-  if (devUrl) janela.loadURL(devUrl);
-  else janela.loadFile(path.join(aqui, "../renderer/index.html"));
+  const carregada = devUrl
+    ? janela.loadURL(devUrl)
+    : janela.loadFile(path.join(aqui, "../renderer/index.html"));
+  carregada.catch((erro) => dialog.showErrorBox("SOUL Cars", String(erro)));
 
   return janela;
 }

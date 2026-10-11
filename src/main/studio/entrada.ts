@@ -88,7 +88,7 @@ const ehPasta = (p: string) => {
 /** Placa → pastas do ESTOQUE que a têm no nome. */
 export function mapaPlacas(estoque: string): Map<string, string[]> {
   const mapa = new Map<string, string[]>();
-  let nomes: string[] = [];
+  let nomes: string[];
   try {
     nomes = fs
       .readdirSync(estoque, { withFileTypes: true })
@@ -108,7 +108,7 @@ export function mapaPlacas(estoque: string): Map<string, string[]> {
 type Item = { caminho: string; nome: string; tamanho: number; mtime: number };
 
 function listarItens(dir: string, nivel = 0): Item[] {
-  let entradas: fs.Dirent[] = [];
+  let entradas: fs.Dirent[];
   try {
     entradas = fs.readdirSync(dir, { withFileTypes: true });
   } catch {

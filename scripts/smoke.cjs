@@ -1,5 +1,5 @@
 // Executado pelo Electron real, com banco e estoque temporários.
-const { app, BrowserWindow, nativeImage } = require("electron");
+const { app, nativeImage } = require("electron");
 const fs = require("node:fs");
 const path = require("node:path");
 const os = require("node:os");
@@ -112,7 +112,7 @@ app.on("browser-window-created", (_e, w) => {
         let pacote=[];
         for(let i=0;i<100;i++){
           const status=await window.soul.invocar('producao_status',{pasta:estoque+'/123_FORD_FIESTA_ABC1D23'});
-          pacote=status.criativos.filter(n=>/-(carrossel-[123]|trafego-pago)\.png$/.test(n));
+          pacote=status.criativos.filter(n=>/-(carrossel-[123]|trafego-pago)\\.png$/.test(n));
           if(pacote.length===4)break;
           await new Promise(r=>setTimeout(r,500));
         }

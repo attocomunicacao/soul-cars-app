@@ -170,8 +170,10 @@ export function Criativos({
           post({ type: "soul:export-result", ok: false, message: String(e) });
       }
     }
-    window.addEventListener("message", receber);
-    return () => window.removeEventListener("message", receber);
+    // O tratamento de erro já está dentro de `receber`.
+    const aoReceber = (event: MessageEvent) => void receber(event);
+    window.addEventListener("message", aoReceber);
+    return () => window.removeEventListener("message", aoReceber);
   }, [
     prepararInstagram,
     v.id,

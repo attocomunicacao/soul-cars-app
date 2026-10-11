@@ -105,7 +105,7 @@ Chaves e tokens nunca vão para o SQLite nem para o renderer. Use `src/main/segr
 
 | Mudança | Rode |
 |---|---|
-| Qualquer | `npm run tipos`, `npm test`, `npm run formatar:check` |
+| Qualquer | `npm run lint`, `npm run tipos`, `npm test`, `npm run formatar:check` |
 | Build/`file://` | `npm run build` e `npm start` |
 | IPC, preload, editor, disco | `npm run smoke` |
 | Instagram | `npm run smoke:instagram` + validação manual |
@@ -124,7 +124,7 @@ Os smokes criam estoque e banco temporários; não fazem login no BNDV, não cha
 
 ## 8. Repositório privado (GitHub)
 
-Repositório **privado** sob a conta da Atto Comunicação. Versione código, recursos, fontes e licenças, `engine`, lockfiles, testes e documentação. Não versione `dados-loja/`, `legado/`, bancos, CSVs, documentos, fotos, sessões ou chaves. Antes de cada push: `git status --short` e `git diff --cached --stat`. Passo a passo em [06 · GitHub](06-github.md). O CI (`.github/workflows/ci.yml`) roda tipos, testes, build e formatação em `windows-latest`.
+Repositório **privado** sob a conta da Atto Comunicação. Versione código, recursos, fontes e licenças, `engine`, lockfiles, testes e documentação. Não versione `dados-loja/`, `legado/`, bancos, CSVs, documentos, fotos, sessões ou chaves. Antes de cada push: `git status --short` e `git diff --cached --stat`. Passo a passo em [06 · GitHub](06-github.md). O CI (`.github/workflows/ci.yml`, em `windows-latest`) tem três jobs: **app** (ESLint, tipos, formatação, Vitest, build e `npm audit --audit-level=high`), **motor** (testes Python com FFmpeg, só os grupos `documentos` e `textos`) e **smoke** (os dois smokes em Electron real, depois do job app). O Dependabot (`.github/dependabot.yml`) sugere atualizações de npm, uv e GitHub Actions. O ESLint usa `--max-warnings 2` (os 2 avisos de `exhaustive-deps` atuais); corrigir um aviso é uma boa hora para baixar esse número.
 
 ## 9. Roadmap de manutenção técnica
 
@@ -134,7 +134,7 @@ Derivado da [avaliação](10-avaliacao-erros-melhorias.md); o roadmap do produto
 |---|---|---|---|
 | **M0 · Correções** (P) | ~~Acentos do motor (E1)~~, ~~versão do app (E3)~~, ~~`ResourceWarning` (E4)~~, ~~licença (E8)~~ | — | Fase concluída |
 | **M1 · Segurança** ~~(feito)~~ | ~~Chave da IA cifrada (E2)~~, ~~`sandbox: true`~~, ~~esquema de argumentos do IPC~~, ~~SQL livre trocado por comandos `db_*`~~ | riscos da seção 2 | Fase concluída |
-| **M2 · CI e qualidade** (M) | `test:engine`, `smoke` e `audit` no CI; ESLint; Dependabot | Melhorias 1, 2, 5 | CI vermelho quando qualquer suíte quebra |
+| **M2 · CI e qualidade** ~~(feito)~~ | ~~`test:engine`, `smoke` e `audit` no CI; ESLint; Dependabot~~ | Melhorias 1, 2, 5 | Falta rodar o CI no GitHub pela primeira vez (ainda não foi executado) |
 | **M3 · Testes de interface** (M) | Testes de componentes (Entrada, Anunciar, Ficha); fixtures sintéticas para os testes pulados | Melhorias 3, 4 | Zero testes pulados por dependência externa |
 | **M4 · Desempenho e instalação** (M) | Carregamento sob demanda; verificação de requisitos nas Configurações; atualização automática | Melhorias 6–8 | Bundle principal abaixo de 500 kB; instalador testado em máquina limpa |
 | **M5 · Operação** (M) | Tela de diagnóstico, log em arquivo, exportar backup completo | Melhorias 10, 12, 17 | Um erro de campo é diagnosticado sem acesso remoto |

@@ -17,7 +17,7 @@ export type UltimasVendas = {
 
 export function ultimasVendas(): UltimasVendas {
   const arquivo = caminhos.CSV_VENDAS();
-  let atualizadoEm: string | null = null;
+  let atualizadoEm: string;
   try {
     atualizadoEm = fs.statSync(arquivo).mtime.toISOString();
   } catch {
