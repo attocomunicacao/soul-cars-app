@@ -39,6 +39,21 @@ def log(msg: str) -> None:
     print(msg, flush=True)
 
 
+NOMES_TRILHA = ("TRILHA.wav", "TRILHA.flac", "TRILHA.mp3")
+
+
+def pasta_trilha_do_app() -> Path | None:
+    """Pasta `trilha` dentro dos dados do app: a trilha padrão do usuário (o instalador não leva trilha)."""
+    dados = os.environ.get("SOUL_DATA_DIR")
+    return Path(dados) / "trilha" if dados else None
+
+
+def localizar_trilha(assets: Path) -> Path | None:
+    """Trilha do vídeo: a da pasta ASSETS do veículo, depois a do app (dados do usuário), depois uma cópia local em engine/assets."""
+    pastas = [assets, pasta_trilha_do_app(), ENGINE / "assets"]
+    return next((p for base in pastas if base for n in NOMES_TRILHA if (p := base / n).is_file()), None)
+
+
 def progresso(pct: float, texto: str) -> None:
     """Linha lida pelo app para mover a barra: PROGRESSO <0-100> <texto>."""
     log(f"PROGRESSO {max(0, min(100, pct)):.0f} {texto}")
@@ -245,8 +260,7 @@ def main(folder: str, veiculo: str, motor: str, preco: str) -> None:
         root = root.parent
     assets = proj / "ASSETS"
     # A trilha do app vai em FLAC (mesmo áudio da WAV, arquivo menor); a da pasta ASSETS tem prioridade.
-    trilha_nomes = ["TRILHA.wav", "TRILHA.flac"]
-    trilha = next((p for base in (assets, ENGINE / "assets") for n in trilha_nomes if (p := base / n).exists()), None)
+    trilha = localizar_trilha(assets)
     logo = next((p for p in [assets / "LOGO_SOUL.jpg", ENGINE / "assets/LOGO_SOUL.jpg"] if p.exists()), None)
     model = (root.name.split("_") + ["SAIDA", "SAIDA"])[1]
     out = root / f"VIDEO_{model}.mp4"

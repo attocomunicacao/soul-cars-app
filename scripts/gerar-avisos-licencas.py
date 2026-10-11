@@ -93,10 +93,11 @@ Os modelos **não ficam no repositório nem no instalador**: são baixados no pr
 EMBUTIDOS = """| Arquivo | Licença | Texto da licença |
 |---|---|---|
 | `engine/tessdata/por.traineddata` (Tesseract, português) | Apache-2.0 | `engine/tessdata/LICENSE-tesseract.txt` |
-| `engine/video/assets/Lato-Black.ttf` | SIL Open Font License 1.1 (© tyPoland Lukasz Dziedzic; nome reservado "Lato") | `engine/video/assets/Lato-OFL.txt` |
+| `engine/video/assets/Lato-Black.ttf` (v1.104, sem modificação) | SIL Open Font License 1.1 (© 2010-2011 tyPoland Lukasz Dziedzic; nome reservado "Lato"), conforme o próprio arquivo da fonte | `engine/video/assets/Lato-OFL.txt` (acompanha a fonte no repositório e no instalador) |
 | Fontes do editor (Montserrat, Barlow Condensed, Roboto Condensed) em `src/renderer/public/criativo/assets` | SIL Open Font License 1.1 | `*-LICENSE.txt` na mesma pasta |
 | `html-to-image` (editor de criativos) | MIT | `src/renderer/public/criativo/assets/html-to-image-LICENSE.txt` |
-| `engine/video/assets/TRILHA.flac` e logos (`LOGO_SOUL.jpg`, `logo-soul.*`) | **Sem licença registrada no projeto.** Marca e trilha pertencem aos titulares; confirmar os direitos antes de qualquer distribuição pública | — |
+| `LOGO_SOUL.jpg` e `logo-soul.*` | Marca da SOUL Cars; pertence à loja | — |
+| Trilha do vídeo (`TRILHA.flac`) | **Não é distribuída**: fica fora do Git (`.gitignore`) e fora do instalador. Origem e licença não documentadas; cada computador usa a sua trilha (veja `docs/08-fluxo-studio.md`) | — |
 
 O ffmpeg e o Tesseract (programas) **não são distribuídos** com o app: o usuário os instala à parte (veja `docs/05-motor-python.md`)."""
 

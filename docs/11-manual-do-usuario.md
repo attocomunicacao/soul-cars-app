@@ -84,7 +84,7 @@ Em **Studio**, abra o veículo.
 Aba **Produção** (a primeira ao abrir o carro). A tela atualiza a cada 5 segundos; use **Verificar documento / fotos / vídeo** para forçar.
 
 - **Fotos:** arraste para mudar a posição ou use as setas. **Sugerir ordem das fotos** (opcional, usa o motor). **Renomear pela ordem do painel** aplica 1, 2, 3… sem sobrescrever originais.
-- **Vídeo:** deixe **um único** vídeo bruto em `PROJETO`, `VIDEO` ou na raiz da pasta. Clique em **Editor Mágico** para gerar `VIDEO_<MARCA>.mp4` com tarjas, legendas e trilha.
+- **Vídeo:** deixe **um único** vídeo bruto em `PROJETO`, `VIDEO` ou na raiz da pasta. Clique em **Editor Mágico** para gerar `VIDEO_<MARCA>.mp4` com tarjas, legendas e trilha. **O app não traz música:** coloque a sua em `%APPDATA%/soul-cars-app/trilha/TRILHA.flac` (vale para todos os carros) ou em `PROJETO/ASSETS/TRILHA.*` do carro. Sem trilha, o vídeo sai só com a voz. Use só música que você possa usar em anúncios.
 - **Versão leve para anúncio:** **Gerar versão leve para anúncio** cria `ANUNCIO/ANUNCIO_<MARCA>.mp4` (cerca de 10 Mbps; meta: abaixo de 100 MB). O vídeo original não muda. Só um vídeo é gerado por vez.
 
 ## Etapa 5: Criativos

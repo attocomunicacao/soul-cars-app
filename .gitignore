@@ -24,3 +24,7 @@ docs/smoke-instagram.json
 # Dados da loja e projetos anteriores (locais, nunca vão para o GitHub)
 /dados-loja/
 /legado/
+
+# Trilha do vídeo: origem/licença não documentada, não é redistribuída. Coloque a sua em
+# %APPDATA%/soul-cars-app/trilha/TRILHA.flac (ou em PROJETO/ASSETS do veículo).
+engine/video/assets/TRILHA.*

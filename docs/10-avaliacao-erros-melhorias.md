@@ -145,7 +145,8 @@ Auditoria das 64 dependências do `engine/uv.lock` (metadados instalados), dos m
   2. O `engine/pyproject.toml` não declarava licença nem autor. Agora: `LicenseRef-Proprietary`, Atto Comunicação.
   3. Não havia lista de avisos de terceiros. Criado `THIRD_PARTY_NOTICES.md` (gerado por `scripts/gerar-avisos-licencas.py`), incluído no instalador e conferido pelo teste `engine/tests/test_licencas.py` (sem copyleft forte, sem licença não identificada, lista em dia com o `uv.lock`).
 - **Instalador:** o `electron-builder --dir` confirmou `THIRD_PARTY_NOTICES.md` em `resources/`, o `Lato-OFL.txt` dentro do `engine/` e os avisos do Electron/Chromium (`LICENSE.electron.txt`, `LICENSES.chromium.html`).
-- **Pendente (decisão sua):** `TRILHA.flac` (trilha do vídeo) e os logos não têm licença registrada. A trilha precisa de direitos para uso em anúncio e redes. Antes de qualquer distribuição pública, confirme a origem e a autorização.
+- **Trilha (resolvido em 11/10/2026):** a `TRILHA.flac` não tem metadado de autor nem licença e a origem não é conhecida, então deixou de ser redistribuída: saiu do Git (`git rm --cached` + `.gitignore`) e do instalador (filtro em `package.json`). O arquivo continua na máquina e foi copiado para `%APPDATA%/soul-cars-app/trilha/`, de onde o vídeo passa a ler a trilha padrão (`render.py › localizar_trilha`; também aceita `PROJETO/ASSETS` do carro). **Atenção:** a trilha ainda existe no histórico local do Git (commit inicial); se for subir para o GitHub, avise para limpar o histórico antes. Confirmar de onde veio a música continua sendo sua responsabilidade para uso em anúncios.
+- **Lato (resolvido):** `Lato-OFL.txt` acompanha a fonte (repositório e instalador); copyright e nome reservado conferidos no próprio arquivo da fonte; a fonte é usada sem modificação.
 
 ## 9. Remoção da API da Anthropic (11/10/2026)
 

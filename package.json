@@ -69,7 +69,8 @@
           "**/*",
           "!.venv/**",
           "!**/__pycache__/**",
-          "!**/*.pyc"
+          "!**/*.pyc",
+          "!video/assets/TRILHA.*"
         ]
       },
       {

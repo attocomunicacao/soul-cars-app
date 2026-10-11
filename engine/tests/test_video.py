@@ -69,7 +69,7 @@ class TestAssets(unittest.TestCase):
                     render.localizar_video(root)
 
     def test_arquivos_empacotados_existem(self):
-        for nome in ("render.py", "transcribe.py", "correcoes.txt", "leve.py", "assets/TRILHA.flac", "assets/LOGO_SOUL.jpg", "assets/Lato-Black.ttf"):
+        for nome in ("render.py", "transcribe.py", "correcoes.txt", "leve.py", "assets/LOGO_SOUL.jpg", "assets/Lato-Black.ttf", "assets/Lato-OFL.txt"):
             self.assertTrue((VIDEO / nome).is_file(), nome)
 
     def test_fonte_encontrada(self):
@@ -164,6 +164,35 @@ class TestVersaoLeve(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 leve.gerar(str(root), [("inexistente", ["-c:v", "codificador_que_nao_existe"])])
             self.assertEqual(list((root / "ANUNCIO").iterdir()), [])
+
+
+class TestTrilha(unittest.TestCase):
+    def test_ordem_de_busca_veiculo_depois_app_e_sem_trilha_embutida(self):
+        with tempfile.TemporaryDirectory() as d, mock.patch.dict("os.environ", {"SOUL_DATA_DIR": d}):
+            dados = Path(d)
+            assets = dados / "veiculo" / "ASSETS"
+            assets.mkdir(parents=True)
+            with mock.patch.object(render, "ENGINE", dados / "engine"):  # sem cópia local
+                self.assertIsNone(render.localizar_trilha(assets))
+                (dados / "trilha").mkdir()
+                do_app = dados / "trilha" / "TRILHA.flac"
+                do_app.write_bytes(b"app")
+                self.assertEqual(render.localizar_trilha(assets), do_app)
+                do_veiculo = assets / "TRILHA.wav"
+                do_veiculo.write_bytes(b"veiculo")
+                self.assertEqual(render.localizar_trilha(assets), do_veiculo)
+
+    def test_sem_variavel_de_dados_nao_quebra(self):
+        with tempfile.TemporaryDirectory() as d, mock.patch.dict("os.environ", {}, clear=False):
+            import os
+
+            os.environ.pop("SOUL_DATA_DIR", None)
+            with mock.patch.object(render, "ENGINE", Path(d)):
+                self.assertIsNone(render.localizar_trilha(Path(d) / "ASSETS"))
+
+    def test_trilha_nao_vai_no_repositorio(self):
+        raiz = Path(__file__).resolve().parents[2]
+        self.assertIn("TRILHA", (raiz / ".gitignore").read_text(encoding="utf-8"))
 
 
 class TestRunFfmpeg(unittest.TestCase):
