@@ -166,5 +166,25 @@ class TestVersaoLeve(unittest.TestCase):
             self.assertEqual(list((root / "ANUNCIO").iterdir()), [])
 
 
+class TestRunFfmpeg(unittest.TestCase):
+    @unittest.skipUnless(TEM_FFMPEG, "ffmpeg não encontrado")
+    def test_nao_deixa_pipes_abertos(self):
+        import gc
+        import warnings
+
+        cmd = ["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "anullsrc", "-t", "0.2", "-f", "null", "-"]
+        with warnings.catch_warnings(record=True) as avisos:
+            warnings.simplefilter("always")
+            render.run_ffmpeg(cmd, 0.2, 0, 100, "teste")
+            gc.collect()
+        recursos = [a for a in avisos if issubclass(a.category, ResourceWarning)]
+        self.assertEqual(recursos, [])
+
+    @unittest.skipUnless(TEM_FFMPEG, "ffmpeg não encontrado")
+    def test_erro_do_ffmpeg_continua_subindo(self):
+        with self.assertRaises(RuntimeError):
+            render.run_ffmpeg(["ffmpeg", "-v", "error", "-i", "nao-existe.mp4", "-f", "null", "-"], 1, 0, 100, "x")
+
+
 if __name__ == "__main__":
     unittest.main()

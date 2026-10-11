@@ -47,18 +47,19 @@ def progresso(pct: float, texto: str) -> None:
 def run_ffmpeg(cmd: list, segundos_totais: float, inicio: float, fim: float, texto: str) -> None:
     """Roda o ffmpeg mostrando o avanço real (out_time do -progress) entre inicio% e fim%."""
     completo = [cmd[0], "-progress", "pipe:1", "-nostats", *cmd[1:]]
-    proc = subprocess.Popen(completo, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-                            encoding="utf-8", errors="replace")
     erros = []
-    leitor = threading.Thread(target=lambda: erros.append(proc.stderr.read()), daemon=True)
-    leitor.start()
-    for linha in proc.stdout:
-        chave, _, valor = linha.strip().partition("=")
-        if chave == "out_time_us" and valor.isdigit() and segundos_totais > 0:
-            fracao = min(1.0, int(valor) / 1_000_000 / segundos_totais)
-            progresso(inicio + (fim - inicio) * fracao, texto)
-    codigo = proc.wait()
-    leitor.join(timeout=5)
+    # O `with` fecha stdout/stderr (e espera o processo) mesmo se algo falhar no meio.
+    with subprocess.Popen(completo, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                          encoding="utf-8", errors="replace") as proc:
+        leitor = threading.Thread(target=lambda: erros.append(proc.stderr.read()), daemon=True)
+        leitor.start()
+        for linha in proc.stdout:
+            chave, _, valor = linha.strip().partition("=")
+            if chave == "out_time_us" and valor.isdigit() and segundos_totais > 0:
+                fracao = min(1.0, int(valor) / 1_000_000 / segundos_totais)
+                progresso(inicio + (fim - inicio) * fracao, texto)
+        codigo = proc.wait()
+        leitor.join(timeout=5)
     if codigo != 0:
         detalhe = (erros[0] if erros else "")[-2500:]
         raise RuntimeError(f"Falha ao executar ffmpeg:\n{detalhe}")

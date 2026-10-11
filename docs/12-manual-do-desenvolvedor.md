@@ -132,7 +132,7 @@ Derivado da [avaliação](10-avaliacao-erros-melhorias.md); o roadmap do produto
 
 | Fase | Entrega | Itens | Passa quando |
 |---|---|---|---|
-| **M0 · Correções** (P) | ~~Acentos do motor (E1, feito)~~, versão do app, `ResourceWarning`, licença | E3, E4, E8 | Versão aparece certa no instalado; sem avisos no teste do vídeo |
+| **M0 · Correções** (P) | ~~Acentos do motor (E1)~~, ~~versão do app (E3)~~, ~~`ResourceWarning` (E4)~~, licença | E8 | Falta só decidir a licença (proprietária ou MIT) |
 | **M1 · Segurança** ~~(feito)~~ | ~~Chave da IA cifrada (E2)~~, ~~`sandbox: true`~~, ~~esquema de argumentos do IPC~~ | riscos da seção 2 | Próximo passo de segurança: tirar o SQL livre da interface (comandos de banco nomeados) |
 | **M2 · CI e qualidade** (M) | `test:engine`, `smoke` e `audit` no CI; ESLint; Dependabot | Melhorias 1, 2, 5 | CI vermelho quando qualquer suíte quebra |
 | **M3 · Testes de interface** (M) | Testes de componentes (Entrada, Anunciar, Ficha); fixtures sintéticas para os testes pulados | Melhorias 3, 4 | Zero testes pulados por dependência externa |
