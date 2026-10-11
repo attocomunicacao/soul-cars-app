@@ -157,7 +157,7 @@ describe("cartão da campanha", () => {
 const anuncio = (p: Partial<AnuncioRegistrado> = {}): AnuncioRegistrado => ({
   id: 1,
   veiculo_id: 10,
-  estoque_id: 1550592,
+  estoque_id: 1000001,
   modelo: "Jeep Renegade",
   campanha: "[VENDA] JEEP RENEGADE 2020",
   criado_dia: "2026-10-05",
@@ -166,7 +166,7 @@ const anuncio = (p: Partial<AnuncioRegistrado> = {}): AnuncioRegistrado => ({
 });
 
 describe("lembrete de pausa", () => {
-  const vendas = { "1550592": "2026-10-09T00:00:00.000" };
+  const vendas = { "1000001": "2026-10-09T00:00:00.000" };
   it("avisa quando o veículo foi vendido depois do anúncio", () => {
     const r = anunciosParaPausar([anuncio()], vendas);
     expect(r).toHaveLength(1);

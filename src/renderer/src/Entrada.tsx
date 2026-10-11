@@ -7,6 +7,7 @@ type Estado = {
   pausado: boolean;
   verificando: boolean;
   copiando: { arquivo: string; bytes: number; total: number } | null;
+  aguardandoVideo: boolean;
   ultimaVerificacao: string | null;
   erro: string | null;
   copiadosNoCiclo: number;
@@ -137,11 +138,13 @@ export function Entrada() {
     ? "Sem pasta configurada"
     : e.pausado
       ? "Pausado"
-      : e.copiando
-        ? `Copiando ${e.copiando.arquivo} (${pct}%)`
-        : e.verificando
-          ? "Verificando…"
-          : "Observando";
+      : e.aguardandoVideo
+        ? "Aguardando o vídeo terminar de ser gerado"
+        : e.copiando
+          ? `Copiando ${e.copiando.arquivo} (${pct}%)`
+          : e.verificando
+            ? "Verificando…"
+            : "Observando";
 
   return (
     <section className="panel">

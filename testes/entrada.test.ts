@@ -66,6 +66,7 @@ describe("entrada por pasta sincronizada", () => {
   let raiz: string, estoque: string, nuvem: string;
   let db: DatabaseSync;
   let agora: number;
+  let videoOcupado = false;
   let eventos: string[];
 
   const mover = (p: string) => path.join(raiz, p);
@@ -92,6 +93,7 @@ describe("entrada por pasta sincronizada", () => {
       emitir: (n) => eventos.push(n),
       estoque: () => estoque,
       agora: () => agora,
+      videoOcupado: () => videoOcupado,
     });
   /** Dois ciclos: o primeiro observa, o segundo (10 s depois) copia o que ficou estável. */
   const ciclos = async (e: ReturnType<typeof novo>, n = 2) => {
@@ -113,6 +115,7 @@ describe("entrada por pasta sincronizada", () => {
     fs.mkdirSync(estoque);
     fs.mkdirSync(nuvem);
     agora = Date.now();
+    videoOcupado = false;
     eventos = [];
     db = new DatabaseSync(":memory:");
     db.exec("CREATE TABLE config (chave TEXT PRIMARY KEY, valor TEXT)");
@@ -305,6 +308,27 @@ describe("entrada por pasta sincronizada", () => {
     e.pausar(true);
     await ciclos(e);
     expect(fs.readdirSync(path.join(toro, "FOTOS"))).toEqual([]);
+  });
+
+  it("espera um vídeo em geração terminar antes de copiar", async () => {
+    const toro = veiculo("1_FIAT_TORO_ABC1D23");
+    escrever(path.join(nuvem, "TORO - ABC1D23", "a.jpg"), "x");
+    const e = novo();
+    await ciclos(e); // copia normalmente
+    expect(fs.existsSync(path.join(toro, "FOTOS", "a.jpg"))).toBe(true);
+
+    escrever(path.join(nuvem, "TORO - ABC1D23", "b.jpg"), "y");
+    await ciclos(e, 1); // observa b.jpg
+    videoOcupado = true;
+    await ciclos(e, 3);
+    expect(fs.existsSync(path.join(toro, "FOTOS", "b.jpg"))).toBe(false);
+    expect(e.obterEstado().estado.aguardandoVideo).toBe(true);
+    expect(e.copiandoAgora()).toBe(false);
+
+    videoOcupado = false;
+    await ciclos(e);
+    expect(fs.existsSync(path.join(toro, "FOTOS", "b.jpg"))).toBe(true);
+    expect(e.obterEstado().estado.aguardandoVideo).toBe(false);
   });
 
   it("sem pasta configurada ou inexistente mostra erro", async () => {

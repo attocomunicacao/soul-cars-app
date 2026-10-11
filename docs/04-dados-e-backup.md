@@ -17,7 +17,7 @@ Entrada por pasta sincronizada: a pasta escolhida fica no banco (`config`, chave
 
 Se o banco novo não existir e `%APPDATA%\com.soulcars.studio\soul.db` existir, o app verifica integridade, cria snapshot SQLite e copia fotos. A origem é aberta somente para leitura. O snapshot inclui registros no WAL; não é uma cópia simples de arquivo aberto. O registro fica no config.json. Um banco novo existente nunca é substituído.
 
-As cinco migrações reconhecem colunas já presentes e rodam em transações. Na importação do estoque, veículos cujo caminho mudou são ligados pelo ID BNDV.
+As migrações (cinco históricas, mais a 6 da entrada e a 7 dos anúncios) reconhecem colunas e tabelas já presentes e rodam em transações. Na importação do estoque, veículos cujo caminho mudou são ligados pelo ID BNDV.
 
 O código antigo é preservado. Quando a raiz do Estoque antigo é adotada, **Atualizar BNDV** atualiza INFO.md/INFO.txt, índice e CSVs nessa raiz. Para trabalhar isolado, copie ESTOQUE/dados para outra pasta e escolha essa raiz.
 

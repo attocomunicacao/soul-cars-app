@@ -12,6 +12,7 @@ Uso: python leve.py <pasta_do_veiculo>
 """
 import os
 import re
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -61,6 +62,9 @@ def gerar(folder: str, codificadores: list = None) -> Path:
     root = Path(folder)
     if not root.is_dir():
         raise RuntimeError(f"Pasta do veículo não encontrada: {root}")
+    for ferramenta in ("ffmpeg", "ffprobe"):
+        if not shutil.which(ferramenta):
+            raise RuntimeError(f"{ferramenta} não foi encontrado. Instale o ffmpeg e deixe-o no PATH do Windows.")
     final = localizar_final(root)
     destino = root / PASTA_SAIDA
     destino.mkdir(exist_ok=True)

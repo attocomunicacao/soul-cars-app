@@ -35,6 +35,8 @@ export type DepsEntrada = {
   /** Pasta ESTOQUE (uma subpasta por veículo). */
   estoque: () => string;
   agora?: () => number;
+  /** Há um vídeo sendo gerado? Enquanto houver, a entrada não copia nada. */
+  videoOcupado?: () => boolean;
 };
 
 export type EstadoEntrada = {
@@ -42,6 +44,7 @@ export type EstadoEntrada = {
   pausado: boolean;
   verificando: boolean;
   copiando: { arquivo: string; bytes: number; total: number } | null;
+  aguardandoVideo: boolean;
   ultimaVerificacao: string | null;
   erro: string | null;
   copiadosNoCiclo: number;
@@ -171,6 +174,7 @@ export function criarEntrada(deps: DepsEntrada) {
     pausado: false,
     verificando: false,
     copiando: null,
+    aguardandoVideo: false,
     ultimaVerificacao: null,
     erro: null,
     copiadosNoCiclo: 0,
@@ -421,6 +425,10 @@ export function criarEntrada(deps: DepsEntrada) {
 
     for (const item of itens) {
       if (estado.pausado) return;
+      if (deps.videoOcupado?.()) {
+        estado.aguardandoVideo = true;
+        return;
+      }
       const anterior = vistos.get(item.caminho);
       const mudou =
         !anterior ||
@@ -458,6 +466,13 @@ export function criarEntrada(deps: DepsEntrada) {
   /** Uma passada pela pasta de entrada. Só uma roda por vez. */
   async function verificar(): Promise<void> {
     if (rodando || estado.pausado) return;
+    if (deps.videoOcupado?.()) {
+      const antes = estado.aguardandoVideo;
+      estado.aguardandoVideo = true;
+      if (!antes) deps.emitir("entrada:estado", obterEstado());
+      return;
+    }
+    estado.aguardandoVideo = false;
     rodando = true;
     estado.verificando = true;
     estado.erro = null;
@@ -604,6 +619,8 @@ export function criarEntrada(deps: DepsEntrada) {
   return {
     verificar,
     obterEstado,
+    /** Está no meio da cópia de um arquivo? */
+    copiandoAgora: () => estado.copiando !== null,
     liberar,
     pausar(pausar: boolean) {
       estado.pausado = pausar;

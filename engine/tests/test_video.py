@@ -6,6 +6,7 @@ import sys
 import unittest
 import tempfile
 from pathlib import Path
+from unittest import mock
 
 VIDEO = Path(__file__).resolve().parents[1] / "video"
 sys.path.insert(0, str(VIDEO))
@@ -96,6 +97,15 @@ def codec_video(arquivo: Path) -> str:
 class TestVersaoLeve(unittest.TestCase):
     def test_nome_da_saida_acompanha_o_final(self):
         self.assertEqual(leve.nome_saida(Path("VIDEO_JEEP.mp4")), "ANUNCIO_JEEP.mp4")
+
+    def test_mensagem_clara_quando_falta_o_ffmpeg(self):
+        with tempfile.TemporaryDirectory() as pasta:
+            root = Path(pasta)
+            (root / "VIDEO_A.mp4").write_bytes(b"x")
+            with mock.patch("leve.shutil.which", return_value=None):
+                with self.assertRaisesRegex(RuntimeError, "ffmpeg não foi encontrado"):
+                    leve.gerar(str(root))
+            self.assertFalse((root / "ANUNCIO").exists())
 
     def test_exige_exatamente_um_video_final(self):
         with tempfile.TemporaryDirectory() as pasta:

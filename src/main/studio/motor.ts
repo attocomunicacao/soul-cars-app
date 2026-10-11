@@ -14,7 +14,11 @@
  * relatório, publicação, relatórios do Meta Ads e o editor de criativos não
  * dependem dele. Só as automações de documento, foto e vídeo precisam.
  */
-import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
+import {
+  type ChildProcess,
+  type ChildProcessWithoutNullStreams,
+  spawn,
+} from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { app } from "electron";
@@ -252,6 +256,24 @@ type VideoPronto = { caminho: string; segundos: number };
 
 /** Um vídeo por vez: o render e a versão leve disputam CPU e disco (16 GB, sem GPU). */
 let videoEmAndamento = false;
+let processoVideo: ChildProcess | null = null;
+let videoCancelado = false;
+
+export const videoEmExecucao = () => videoEmAndamento;
+
+/** Interrompe o vídeo em geração (o ffmpeg filho também). Devolve false se não há nenhum. */
+export function cancelarVideo(): boolean {
+  const p = processoVideo;
+  if (!p || p.pid == null) return false;
+  videoCancelado = true;
+  if (process.platform === "win32") {
+    // /T derruba também o ffmpeg que o Python abriu.
+    spawn("taskkill", ["/pid", String(p.pid), "/t", "/f"], {
+      windowsHide: true,
+    }).on("error", () => p.kill());
+  } else p.kill("SIGTERM");
+  return true;
+}
 
 function executarVideo(
   script: string,
@@ -269,7 +291,7 @@ function executarVideo(
     throw new Error("Já há um vídeo sendo gerado. Aguarde terminar.");
 
   const inicio = Date.now();
-  videoEmAndamento = true;
+  // A trava só liga depois que o processo existe: se o spawn falhar, nada fica preso.
   const p = spawn(
     exe,
     ["-u", path.join(pasta, "video", script), ...argumentos],
@@ -278,6 +300,13 @@ function executarVideo(
       windowsHide: true,
     },
   );
+  videoEmAndamento = true;
+  processoVideo = p;
+  videoCancelado = false;
+  const liberar = () => {
+    videoEmAndamento = false;
+    if (processoVideo === p) processoVideo = null;
+  };
 
   return new Promise((resolver, rejeitar) => {
     let ultima = "";
@@ -291,11 +320,13 @@ function executarVideo(
     p.stdout.on("data", ler);
     p.stderr.on("data", ler);
     p.on("error", (erro) => {
-      videoEmAndamento = false;
+      liberar();
       rejeitar(erro);
     });
     p.on("close", (codigo) => {
-      videoEmAndamento = false;
+      liberar();
+      if (videoCancelado)
+        return rejeitar(new Error("Geração do vídeo cancelada."));
       if (codigo) return rejeitar(new Error(ultima || "Falha ao gerar vídeo."));
       resolver({
         caminho: ultima.split(": ").at(-1)?.trim() ?? "",

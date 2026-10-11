@@ -329,7 +329,14 @@ export function statusProducao(pasta: string): StatusProducao {
         ext(p) === ".mp4" &&
         !path.basename(p).toLowerCase().endsWith(".parcial.mp4"),
     ) ?? null;
-  const bytes = (p: string | null) => (p ? fs.statSync(p).size : null);
+  const bytes = (p: string | null) => {
+    if (!p) return null;
+    try {
+      return fs.statSync(p).size;
+    } catch {
+      return null; // sumiu entre a listagem e a leitura
+    }
+  };
   return {
     doc_pdf: naPasta.some((p) => ext(p) === ".pdf"),
     doc_md: fs.existsSync(path.join(pasta, "DOC.md")),

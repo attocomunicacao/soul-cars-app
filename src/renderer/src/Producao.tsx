@@ -35,6 +35,16 @@ export function Producao({
   const [ocupado, setOcupado] = useState(false);
   const [aviso, setAviso] = useState("");
   const [arrastada, setArrastada] = useState<string | null>(null);
+  const [gerandoVideo, setGerandoVideo] = useState(false);
+  /** Marca o trabalho como vídeo para mostrar o botão Cancelar enquanto ele roda. */
+  const comoVideo = (fn: () => Promise<unknown>) => async () => {
+    setGerandoVideo(true);
+    try {
+      return await fn();
+    } finally {
+      setGerandoVideo(false);
+    }
+  };
 
   useEffect(() => {
     let ativo = true;
@@ -309,7 +319,9 @@ export function Producao({
           <button
             className="primary"
             disabled={ocupado || !status?.video_bruto}
-            onClick={() => tarefa(video, "Vídeo editado pelo Editor Mágico.")}
+            onClick={() =>
+              tarefa(comoVideo(video), "Vídeo editado pelo Editor Mágico.")
+            }
           >
             {ocupado ? "Aguarde…" : "Editor Mágico"}
           </button>
@@ -324,12 +336,21 @@ export function Producao({
                   ))
                 )
                   return false;
-                await videoLeve();
+                await comoVideo(videoLeve)();
               }, "Versão leve para anúncio gerada em ANUNCIO.")
             }
           >
             Gerar versão leve para anúncio
           </button>
+          {gerandoVideo && (
+            <button
+              onClick={() =>
+                void invoke("video_cancelar").catch((e) => setAviso(String(e)))
+              }
+            >
+              Cancelar geração do vídeo
+            </button>
+          )}
         </div>
         {status?.video_final_bytes != null && (
           <p>

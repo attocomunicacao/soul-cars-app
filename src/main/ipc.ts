@@ -57,7 +57,17 @@ const entrada = criarEntrada({
   executar: bancoStudio.executar,
   emitir,
   estoque: caminhos.ESTOQUE,
+  // Um trabalho pesado por vez: a entrada espera o vídeo terminar.
+  videoOcupado: motor.videoEmExecucao,
 });
+
+/** Vídeo e cópia da entrada não rodam juntos (16 GB de RAM, sem GPU). */
+const semCopiaEmAndamento = () => {
+  if (entrada.copiandoAgora())
+    throw new Error(
+      "A entrada está copiando arquivos. Aguarde terminar e tente de novo.",
+    );
+};
 export const iniciarEntrada = () => entrada.iniciar();
 export const pararEntrada = () => entrada.parar();
 
@@ -239,13 +249,21 @@ const COMANDOS: Record<string, Comando> = {
   engine_reiniciar: () => motor.reiniciarMotor(),
   motor_estado: () => motor.estadoMotor(),
   motor_instalar: () => motor.instalarMotor(emitir),
-  video_gerar: (a) =>
-    motor.gerarVideo(a as Parameters<typeof motor.gerarVideo>[0], emitir),
-  video_leve: (a) =>
-    motor.gerarVideoLeve(
+  video_gerar: (a) => {
+    semCopiaEmAndamento();
+    return motor.gerarVideo(
+      a as Parameters<typeof motor.gerarVideo>[0],
+      emitir,
+    );
+  },
+  video_leve: (a) => {
+    semCopiaEmAndamento();
+    return motor.gerarVideoLeve(
       a as Parameters<typeof motor.gerarVideoLeve>[0],
       emitir,
-    ),
+    );
+  },
+  video_cancelar: () => ({ cancelado: motor.cancelarVideo() }),
 
   // ---- sistema ----
   copiar_texto: (a) => clipboard.writeText(String(a.texto ?? "")),
