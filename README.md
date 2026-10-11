@@ -138,4 +138,4 @@ Versão **1.0.0**. Em 11/10/2026: tipos sem erros, 101 testes Vitest e 36 testes
 
 ## Licença e autoria
 
-Desenvolvido e assinado pela **Atto Comunicação**, para uso privado da SOUL Cars. Código sob licença MIT conforme o arquivo [LICENSE](LICENSE); os avisos das fontes e bibliotecas embutidas permanecem. Confirme os direitos de marca, logo e trilha antes de qualquer distribuição pública.
+Desenvolvido e assinado pela **Atto Comunicação**, para uso privado da SOUL Cars. **Todos os direitos reservados** (veja [LICENSE](LICENSE)); bibliotecas, fontes e modelos de terceiros seguem as suas próprias licenças, e os avisos delas permanecem. Confirme os direitos de marca, logo e trilha antes de qualquer distribuição pública.

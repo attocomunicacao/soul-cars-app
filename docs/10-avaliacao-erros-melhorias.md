@@ -41,7 +41,7 @@ Gravidade: 🔴 alta · 🟠 média · 🟡 baixa.
 | E5 | 🟡 | **README tinha caminho pessoal** (`C:\Users\gusta\...`), contra a regra do `AGENTS.md`. | README anterior, linha 10. | ✅ Corrigido neste README. |
 | E6 | 🟡 | **Documentação cita uma pasta `vendas`** que não existe neste workspace e manda nunca alterá-la. Pode confundir quem chega novo. | `README`, `AGENTS.md`, docs 04 e 06. | ✅ Corrigido: menções removidas/trocadas em `AGENTS.md` e docs 04 e 06. |
 | E7 | 🟡 | **Pastas vazias** `src/renderer/src/componentes`, `estoque` e `studio` (restos da migração; o Git não as rastreia). | Listagem de diretórios. | ✅ Removidas na reorganização. |
-| E8 | 🟡 | **Licença incoerente:** o repositório é privado, mas `LICENSE` é MIT ("SOUL CARS") e o `package.json` declara `MIT`. A autoria é da Atto Comunicação. | `LICENSE`, `package.json`. | Trocar por aviso proprietário ("Todos os direitos reservados — Atto Comunicação") ou manter MIT conscientemente. |
+| E8 | ✅ | **Licença incoerente:** o repositório é privado, mas `LICENSE` é MIT ("SOUL CARS") e o `package.json` declara `MIT`. A autoria é da Atto Comunicação. | `LICENSE`, `package.json`. | ✅ **Corrigido:** `LICENSE` agora é "Todos os direitos reservados — Atto Comunicação" e o `package.json` declara `UNLICENSED`. |
 | E9 | 🟡 | **Fragilidade de caminho:** o app adotava a raiz de dados procurando `../soul-cars-estoque` ao lado do código. Mover a pasta quebrava o app em silêncio. | `src/main/caminhos.ts`, `raizDados()`. | ✅ Tratado na reorganização (agora procura `dados-loja/` primeiro). |
 
 Riscos de segurança observados (sem exploração conhecida):

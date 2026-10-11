@@ -4,7 +4,7 @@
   "private": true,
   "description": "SOUL Cars — Estoque e Studio em um app só (Electron + React + TypeScript + Vite)",
   "author": "Atto Comunicação",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "main": "./out/main/index.js",
   "type": "module",
   "scripts": {

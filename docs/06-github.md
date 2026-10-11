@@ -18,4 +18,4 @@ Revise o status antes de commitar: não inclua dados reais, credenciais, .venv, 
 
 Versione código, recursos, fontes/licenças, engine, lockfiles, testes e documentação. Binários vão em Releases. `.github/workflows/ci.yml` verifica tipos/testes/build a cada push/PR. Evidências geradas docs/smoke.* são ignoradas.
 
-O projeto conserva MIT e avisos das fontes. Antes de distribuir publicamente, confirme direitos da marca/logo/trilha. Para nova versão, altere package.json, confira testes e gere o instalador NSIS Windows x64, por usuário.
+O projeto é proprietário (todos os direitos reservados, Atto Comunicação); os avisos das licenças de terceiros (fontes, bibliotecas, Tesseract) permanecem. Antes de distribuir publicamente, confirme direitos da marca/logo/trilha. Para nova versão, altere package.json, confira testes e gere o instalador NSIS Windows x64, por usuário.
