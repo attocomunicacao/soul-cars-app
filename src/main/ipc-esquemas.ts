@@ -201,6 +201,7 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
     // ---- Estoque ----
     estoque_atualizar: { args: { todos: opcional(booleano) } },
     bndv_abrir: vazio,
+    estoque_vitrine: vazio,
     estoque_resumo: vazio,
     anuncios_vendas: vazio,
     balanco_carregar: vazio,

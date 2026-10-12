@@ -6,9 +6,12 @@
 export const MENSAGEM_ALTURA = "soul:relatorio-altura";
 
 const SCRIPT = `<script>(function(){
-  document.documentElement.style.overflow = "hidden";
   var enviar = function () {
-    parent.postMessage({ tipo: "${MENSAGEM_ALTURA}", altura: Math.ceil(document.documentElement.offsetHeight) }, "*");
+    var altura = Math.ceil(document.documentElement.offsetHeight);
+    // Sem altura (janela escondida ou ainda sem layout), a página continua rolável por dentro.
+    if (!(altura > 0)) return;
+    document.documentElement.style.overflow = "hidden";
+    parent.postMessage({ tipo: "${MENSAGEM_ALTURA}", altura: altura }, "*");
   };
   addEventListener("load", enviar);
   addEventListener("resize", enviar);

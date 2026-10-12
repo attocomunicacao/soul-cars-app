@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke, open, openPath } from "./lib/desktop";
 import { alturaDaMensagem, comAvisoDeAltura } from "./lib/relatorio-frame";
+import { Vitrine } from "./Vitrine";
 import { importarEstoque } from "./lib/importacao";
 import { type Veiculo, manutencaoBanco } from "./lib/db";
 import type { Balanco, Contas } from "./types";
@@ -29,6 +30,8 @@ export function App() {
   const [relatorio, setRelatorio] = useState("");
   const [alturaRelatorio, setAlturaRelatorio] = useState<number | null>(null);
   const quadroRelatorio = useRef<HTMLIFrameElement>(null);
+  // Se a página do relatório não informar a altura, o quadro volta a rolar por dentro (nada fica preso).
+  const [semAlturaRelatorio, setSemAlturaRelatorio] = useState(false);
   async function carregar() {
     const b = await invoke<Balanco>("balanco_montar");
     setBalanco(b);
@@ -61,6 +64,12 @@ export function App() {
     window.addEventListener("message", aoReceber);
     return () => window.removeEventListener("message", aoReceber);
   }, []);
+  useEffect(() => {
+    setSemAlturaRelatorio(false);
+    if (aba !== "completo" || alturaRelatorio) return;
+    const t = setTimeout(() => setSemAlturaRelatorio(true), 2500);
+    return () => clearTimeout(t);
+  }, [aba, alturaRelatorio, relatorio]);
   useEffect(() => {
     const off = window.soul.ouvir<{ texto: string }>("estoque:log", (v) =>
       setLogs((l) => [...l.slice(-199), v.texto]),
@@ -266,16 +275,28 @@ export function App() {
           <>
             <div className="metrics">
               {[
-                ["Veículos", balanco?.bndv?.estoqueN ?? lista.length],
+                ["Estoque", balanco?.bndv?.estoqueN ?? lista.length],
                 ["Custo do estoque", moeda(balanco?.bndv?.estoqueCusto ?? 0)],
                 ["Receita de vendas", moeda(balanco?.bndv?.receita ?? 0)],
                 ["Margem bruta", moeda(balanco?.bndv?.margem ?? 0)],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <small>{label}</small>
-                  <strong>{value}</strong>
-                </div>
-              ))}
+              ].map(([label, value]) =>
+                label === "Estoque" ? (
+                  <button
+                    key={label}
+                    className="metric-link"
+                    title="Ver os veículos em estoque"
+                    onClick={() => setAba("vitrine")}
+                  >
+                    <small>{label}</small>
+                    <strong>{value}</strong>
+                  </button>
+                ) : (
+                  <div key={label}>
+                    <small>{label}</small>
+                    <strong>{value}</strong>
+                  </div>
+                ),
+              )}
             </div>
             <nav>
               <button
@@ -319,7 +340,17 @@ export function App() {
             </button>
           </nav>
         )}
-        {aba === "completo" && pagina === "estoque" ? (
+        {aba === "vitrine" && pagina === "estoque" ? (
+          <Vitrine
+            lista={lista}
+            voltar={() => setAba("veiculos")}
+            abrir={(veiculo) => {
+              setPagina("studio");
+              setAba("veiculos");
+              setSelecionado(veiculo);
+            }}
+          />
+        ) : aba === "completo" && pagina === "estoque" ? (
           <section className="panel">
             <div className="actions">
               <h2>Relatório completo</h2>
@@ -332,8 +363,14 @@ export function App() {
               className="relatorio-completo"
               title="Relatório completo do estoque"
               sandbox="allow-scripts"
-              scrolling="no"
-              style={alturaRelatorio ? { height: alturaRelatorio } : undefined}
+              scrolling={semAlturaRelatorio ? "yes" : "no"}
+              style={
+                alturaRelatorio
+                  ? { height: alturaRelatorio }
+                  : semAlturaRelatorio
+                    ? { height: "calc(100vh - 220px)" }
+                    : undefined
+              }
               srcDoc={comAvisoDeAltura(relatorio)}
             />
           </section>

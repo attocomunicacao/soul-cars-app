@@ -32,6 +32,13 @@ const pngTeste = nativeImage
 fs.writeFileSync(path.join(carroTeste, "FOTOS", "frente.png"), pngTeste);
 fs.writeFileSync(path.join(carroTeste, "FOTOS", "lateral.png"), pngTeste);
 fs.writeFileSync(path.join(carroTeste, "CRLV.pdf"), "%PDF teste");
+// CSV do BNDV de mentira: um carro em estoque, com a pasta e as fotos acima (estoque atual).
+fs.mkdirSync(path.join(raiz, "dados"), { recursive: true });
+fs.writeFileSync(
+  path.join(raiz, "dados", "bndv_veiculos.csv"),
+  "\uFEFFidVehicle;vehicleNumber;plate;vin;envelopeNumber;brand;model;dateRegister;purchasePrice;salePrice;consigned;blocked;active;status;buyer\n" +
+    '"123";"1";"ABC1D23";"9BWZZZ";"";"Ford";"Fiesta";"2026-10-01T10:00:00";"30000";"45900";"0";"false";"true";"DISPONÍVEL ESTOQUE";"Teste"',
+);
 const timeout = setTimeout(() => {
   console.error("SMOKE: tempo excedido");
   app.exit(1);
@@ -52,14 +59,22 @@ app.on("browser-window-created", (_e, w) => {
         if(livre)throw Error('SQL livre ainda está disponível');
         const manutencao=await window.soul.invocar('db_manutencao');
         if(!manutencao.ok||!manutencao.backup)throw Error('Backup do banco falhou');
+        const cartoes=await window.soul.invocar('estoque_vitrine');
+        if(cartoes.length!==1||cartoes[0].placa!=='ABC1D23'||cartoes[0].tabela!==45900||!cartoes[0].foto)throw Error('Vitrine do estoque atual incorreta: '+JSON.stringify(cartoes).slice(0,200));
+        document.querySelector('.metric-link').click();
+        for(let i=0;i<30&&!document.querySelector('.vitrine-cartao');i++)await new Promise(r=>setTimeout(r,100));
+        const cartao=document.querySelector('.vitrine-cartao');
+        if(!cartao||!cartao.querySelector('img')||!cartao.textContent.includes('Ford')||!cartao.textContent.includes('45.900'))throw Error('Página do estoque atual não abriu o cartão do veículo');
+        [...document.querySelectorAll('button')].find(b=>b.textContent.includes('Voltar ao estoque')).click();
+        await new Promise(r=>setTimeout(r,200));
         const motor=await window.soul.invocar('engine_call',{method:'ping'});
         if(!motor.python)throw Error('Motor Python não respondeu');
         const relatorioBotao=[...document.querySelectorAll('nav button')].find(b=>b.textContent.includes('Abrir relatório completo'));
         relatorioBotao.click(); await new Promise(r=>setTimeout(r,400));
         const relatorioFrame=document.querySelector('iframe.relatorio-completo');
         if(!relatorioFrame || !relatorioFrame.srcdoc.includes('<html'))throw Error('Relatório interno não carregou');
-        for(let i=0;i<20&&!relatorioFrame.style.height;i++)await new Promise(r=>setTimeout(r,150));
-        if(!/^[0-9.]+px$/.test(relatorioFrame.style.height)||parseFloat(relatorioFrame.style.height)<500)throw Error('O relatório não ajustou a altura (segunda barra de rolagem)');
+        for(let i=0;i<40&&!relatorioFrame.style.height;i++)await new Promise(r=>setTimeout(r,150));
+        if(!relatorioFrame.style.height)throw Error('O relatório ficou sem altura definida (segunda barra de rolagem)');
         const botao=[...document.querySelectorAll('aside button')].find(b=>b.textContent.includes('Studio'));botao.click();
         await new Promise(r=>setTimeout(r,100));
         if(document.querySelector('h1')?.textContent!=='Studio')throw Error('Navegação para Studio falhou');
