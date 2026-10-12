@@ -208,3 +208,10 @@ Decisão do projeto: **o app não tem nenhuma aplicação paga**. Foi removido t
 - **Medido de ponta a ponta pelo motor** (foto 1600×1200): antes, ~13 s de bibliotecas + ~15 s de modelo + 35–63 s de recorte na primeira foto, e 35–63 s em cada seguinte; agora, **14 s na primeira** (sem aquecer) e **4,7 s nas seguintes**.
 - **Aquecimento:** ao abrir a aba Produção de um veículo, o app já carrega o modelo em segundo plano (`aquecer_recorte`, uma vez por sessão); com isso o primeiro recorte também leva ~5 s.
 - **Sem baixar de novo:** o app apontava o rembg para `AppData/soul-cars-app/modelos/rembg`, que está vazia, e isso faria baixar o modelo (179 MB, ou 900 MB no BiRefNet) na primeira vez. Agora ele reaproveita `~/.rembg` quando já tem modelos (`studio/modelos.ts`, com teste); só usa a pasta do app em computadores sem modelos.
+
+### Ajuste: o ISNet cortava o teto (11/10/2026)
+
+- Na Mercedes GLA, o recorte com ISNet **cortou o teto solar e o vidro escuro** (fundo escuro parecido). O BiRefNet completo não tinha o problema, mas leva 35 a 60 s.
+- Aprovado o download do **BiRefNet-lite** (`BiRefNet-general-bb_swin_v1_tiny-epoch_232.onnx`, do release oficial do rembg, ~224 MB, MIT): medido sem outros processos, **5 s para carregar e 14 a 24 s por foto**, com teto e vidros completos (conferido na foto 1). Virou o **modelo padrão**; ISNet ficou como `MODELO_RAPIDO` e o completo como `MODELO_QUALIDADE`.
+- **Botão novo na Produção: Recortar imagens 1, 2 e 4** (as do carrossel): recorta as três em sequência, mostra "Recortando a imagem 2 (2 de 3)…" e avisa se faltar alguma imagem. Medido de ponta a ponta pelo motor, com o modelo já aquecido: 26 s, 33 s e 18 s (**76 s para as três**, média de 25 s por imagem, já com a gravação do PNG).
+- Notas: a variação entre fotos (14 a 62 s numa medição com o computador ocupado) vem da carga do processador; fechar outros programas pesados ajuda.

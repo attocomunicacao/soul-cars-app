@@ -17,9 +17,11 @@ class TestFundo(unittest.TestCase):
 
         self.fundo = fundo
 
-    def test_modelo_padrao_e_o_rapido(self):
-        # Medido: ~3 s por foto contra ~40 s do BiRefNet (35 a 60 s) no processador.
-        self.assertEqual(self.fundo.MODELO, "isnet-general-use")
+    def test_modelo_padrao_e_o_lite(self):
+        # Medido: lite 14 a 24 s por foto (mantém teto e vidros escuros), completo 35 a 60 s,
+        # ISNet 2 a 4 s mas corta teto solar. O padrão não pode voltar para o ISNet sem rever isso.
+        self.assertEqual(self.fundo.MODELO, "birefnet-general-lite")
+        self.assertEqual(self.fundo.MODELO_RAPIDO, "isnet-general-use")
         self.assertEqual(self.fundo.MODELO_QUALIDADE, "birefnet-general")
 
     def test_limpar_mascara_mantem_o_maior_objeto_e_fecha_buracos(self):

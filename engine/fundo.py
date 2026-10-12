@@ -3,9 +3,10 @@
 Porta do antigo remover_fundo.py: mantém só o maior objeto (o carro) e preenche buracos internos,
 para que vidros e para-brisa não fiquem transparentes.
 
-Modelo padrão: ISNet (~170 MB), cerca de 15 vezes mais rápido que o BiRefNet no processador (medido:
-2 a 4 s contra 35 a 60 s por foto de 1600x1200, mais 2 s contra 28 s para carregar). O BiRefNet
-(~900 MB) continua disponível como `MODELO_QUALIDADE`, pedindo `modelo="birefnet-general"`.
+Modelo padrão: BiRefNet-lite (~224 MB). Medido em foto de 1600x1200, só no processador:
+  - BiRefNet completo (~900 MB): 35 a 60 s por foto; recorta bem o teto e os vidros escuros;
+  - BiRefNet-lite: 14 a 24 s por foto, com a mesma qualidade nos vidros e no teto solar;
+  - ISNet (~180 MB): 2 a 4 s por foto, mas pode cortar vidros escuros e teto solar (MODELO_RAPIDO).
 O modelo é baixado no primeiro uso.
 """
 
@@ -19,8 +20,9 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 
-MODELO = "isnet-general-use"
-MODELO_QUALIDADE = "birefnet-general"  # mais lento (~900 MB); só se o recorte padrão falhar numa foto
+MODELO = "birefnet-general-lite"
+MODELO_RAPIDO = "isnet-general-use"  # ~4 s, mas pode cortar vidro escuro e teto solar
+MODELO_QUALIDADE = "birefnet-general"  # ~45 s; só se o recorte padrão falhar numa foto
 MAX_PIXELS = 50_000_000
 
 

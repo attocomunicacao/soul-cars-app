@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ask, invoke, open } from "./lib/desktop";
 import { aquecerRecorte } from "./lib/engine";
+import { localizarFotosVitrine } from "./lib/arquivos";
 import {
   copiarComoDoc,
   documentoNaPasta,
@@ -118,6 +119,25 @@ export function Producao({
     } finally {
       setOcupado(false);
       onBusy(false);
+    }
+  }
+  /** Recorta as imagens 1, 2 e 4 (carrossel), uma de cada vez, mostrando o andamento. */
+  async function recortarCarrossel() {
+    if (!pasta) throw new Error("Vincule a pasta do veículo.");
+    const { fotos, pastaFotos } = await localizarFotosVitrine(pasta);
+    const faltam = fotos.filter((f) => !f.origem).map((f) => f.numero);
+    if (faltam.length)
+      throw new Error(
+        `Faltam as imagens ${faltam.join(" e ")}. Renomeie as fotos pela ordem do painel (1, 2, 3…) e tente de novo.`,
+      );
+    for (const [i, foto] of fotos.entries()) {
+      setAviso(
+        `Recortando a imagem ${foto.numero} (${i + 1} de ${fotos.length})…`,
+      );
+      await recortarArquivo(
+        foto.origem!,
+        `${pastaFotos}\\${foto.numero}_sem_fundo.png`,
+      );
     }
   }
   function mover(nome: string, destino: number) {
@@ -296,10 +316,13 @@ export function Producao({
           Renomear pela ordem do painel
         </button>
         <button
-          disabled={ocupado || !status?.principal}
-          onClick={() => tarefa(() => recortarArquivo(status!.principal!))}
+          disabled={ocupado || !pasta}
+          title="Recorta o fundo das imagens 1, 2 e 4 (as do carrossel)"
+          onClick={() =>
+            tarefa(recortarCarrossel, "Imagens 1, 2 e 4 recortadas.")
+          }
         >
-          Recortar foto principal
+          Recortar imagens 1, 2 e 4
         </button>
       </fieldset>
       <fieldset>
