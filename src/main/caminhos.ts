@@ -96,8 +96,6 @@ export const PERFIL_BNDV = () => path.join(raizDados(), ".perfil-bndv");
 export const CSV_VEICULOS = () => path.join(DADOS(), "bndv_veiculos.csv");
 export const CSV_VENDAS = () => path.join(DADOS(), "bndv_vendas.csv");
 export const BALANCO_JSON = () => path.join(DADOS(), "balanco.json");
-/** Fotos de capa baixadas do BNDV (reserva para a vitrine do estoque atual). */
-export const FOTOS_BNDV = () => path.join(DADOS(), "fotos-bndv");
 export const RELATORIO_HTML = () => path.join(DADOS(), "RELATORIO.html");
 export const INDICE_CSV = () => path.join(ESTOQUE(), "_INDICE.csv");
 

@@ -1,6 +1,6 @@
 /**
  * Descobre, pela introspecção da API GraphQL do BNDV, quais campos existem para km, cor,
- * câmbio, combustível, ano, versão e foto do veículo, e monta a seleção para pedi-los.
+ * câmbio, combustível, ano e versão do veículo, e monta a seleção para pedi-los.
  *
  * Os nomes não são fixos: o app pergunta ao BNDV a cada atualização e escolhe o que existir
  * (por nome conhecido, em português ou inglês). Cada campo pedido ganha um apelido `x_<papel>`,
@@ -10,14 +10,7 @@
 import { consultar, type Opcoes } from "./graphql";
 
 export type PapelExtra =
-  | "km"
-  | "cor"
-  | "cambio"
-  | "combustivel"
-  | "anoModelo"
-  | "anoFab"
-  | "versao"
-  | "foto";
+  "km" | "cor" | "cambio" | "combustivel" | "anoModelo" | "anoFab" | "versao";
 
 export const PAPEIS: PapelExtra[] = [
   "km",
@@ -27,7 +20,6 @@ export const PAPEIS: PapelExtra[] = [
   "anoModelo",
   "anoFab",
   "versao",
-  "foto",
 ];
 
 /** Nomes de campo que cada papel aceita (sem diferenciar maiúsculas). */
@@ -40,7 +32,6 @@ const NOMES: Record<PapelExtra, RegExp> = {
   anoFab:
     /^(yearmanufacture|manufactureyear|yearmanufacturing|yearfabrication|anofabricacao|yearfab|manufacturingyear)$/i,
   versao: /^(version|versionname|versao|trim)$/i,
-  foto: /^(photo|mainphoto|image|mainimage|picture|mainpicture|thumbnail|thumb|photourl|imageurl|urlphoto|urlimage|coverimage|cover|photos|images|pictures)$/i,
 };
 
 /** Dentro de um objeto (ex.: `color { name }`), o primeiro destes campos de texto é o escolhido. */
@@ -213,7 +204,7 @@ export async function descobrirExtras(
     if (!tipoItens) throw new Error(`não achei o tipo dos itens de ${raiz}`);
 
     const campos = await camposDoTipo(api, tipoItens);
-    // Tipos-objeto que podem esconder o texto (cor, combustível, foto…).
+    // Tipos-objeto que podem esconder o texto (cor, combustível…).
     const tipos: Record<string, CampoGql[]> = {};
     for (const papel of PAPEIS) {
       for (const c of campos) {

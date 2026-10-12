@@ -53,7 +53,7 @@ Dê um duplo clique no atalho **SOUL Cars** (pasta `Soul Cars`). Não aparece te
 2. Uma janela do BNDV abre. Na primeira vez, faça login; nas próximas, o app entra sozinho.
 3. Aguarde cerca de 1 minuto. O app baixa veículos e vendas e cria uma pasta para cada carro novo:
    `ESTOQUE/<ID>_<MARCA>_<MODELO>_<PLACA>/` com `INFO.md`, `CRIATIVO`, `FOTOS` e `VIDEO`.
-4. Clique no cartão **Estoque** (o primeiro, no topo) para ver o **estoque atual em cartões**, como na lista do BNDV: foto, marca e modelo, placa, preço de tabela, dias em estoque e, quando a ficha do Studio estiver preenchida, versão, ano, quilometragem, cor, câmbio e combustível (o que faltar aparece como —). O botão **Abrir no Studio** leva à ficha do veículo. A foto vem da pasta `FOTOS` do veículo.
+4. Clique no cartão **Estoque** (o primeiro, no topo) para ver o **estoque atual em cartões**, como na lista do BNDV: foto, marca e modelo, placa, preço de tabela, dias em estoque e, quando a ficha do Studio estiver preenchida, versão, ano, quilometragem, cor, câmbio e combustível (o que faltar aparece como —). O botão **Abrir no Studio** leva à ficha do veículo. A foto do cartão é a **imagem 2** do painel de fotos do Studio (a segunda na ordem das fotos); se o carro tiver uma foto só, é ela. Se o BNDV expirar o login, o **Atualizar BNDV** mostra a janela do BNDV para você entrar de novo.
 5. Confira a lista de veículos e o **Balanço** (patrimônio, lucro, giro e margem). **Abrir relatório completo** mostra os gráficos dentro do app.
 
 Boas práticas:

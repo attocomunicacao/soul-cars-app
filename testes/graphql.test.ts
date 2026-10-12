@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  SessaoExpirada,
   campoInexistente,
+  consultar,
+  ehErroDeSessao,
   montarConsulta,
   podarCampoDoErro,
   puxar,
@@ -241,5 +244,65 @@ describe("consulta ao BNDV", () => {
       puxar(opcoes(buscar), "vehicles", "idVehicle", campos, "idVehicle"),
     ).rejects.toThrow();
     expect(chamadas.length).toBeLessThan(40);
+  });
+});
+
+describe("sessão expirada no BNDV", () => {
+  const api = (buscar: typeof fetch) => ({
+    url: "https://exemplo.test/graphql",
+    cabecalhos: {},
+    buscar,
+  });
+  const expirada = servidor(() => ({
+    status: 400,
+    corpo: {
+      errors: [
+        {
+          message:
+            "Context creation failed: Authentication token is invalid, please log in",
+        },
+      ],
+    },
+  }));
+
+  it("reconhece a mensagem do BNDV e os status 401/403", () => {
+    expect(
+      ehErroDeSessao(
+        "Context creation failed: Authentication token is invalid, please log in",
+        400,
+      ),
+    ).toBe(true);
+    expect(ehErroDeSessao("Unauthorized", 401)).toBe(true);
+    expect(ehErroDeSessao("qualquer", 403)).toBe(true);
+    expect(ehErroDeSessao('Cannot query field "foo" on type "V".', 400)).toBe(
+      false,
+    );
+    expect(ehErroDeSessao("Pagination invalid.", 400)).toBe(false);
+  });
+
+  it("consultar e puxar viram SessaoExpirada (e não tentam podar nem refazer)", async () => {
+    await expect(
+      consultar(api(expirada.buscar), "query { __typename }"),
+    ).rejects.toBeInstanceOf(SessaoExpirada);
+    await expect(
+      puxar(api(expirada.buscar), "vehicles", "idVehicle", "km", "idVehicle"),
+    ).rejects.toThrow(/sessão no BNDV expirou/);
+    expect(expirada.chamadas.length).toBe(2);
+  });
+
+  it("um 401 sem corpo também é sessão expirada", async () => {
+    const { buscar } = servidor(() => ({ status: 401, corpo: "" }));
+    await expect(
+      consultar(api(buscar), "query { __typename }"),
+    ).rejects.toBeInstanceOf(SessaoExpirada);
+  });
+
+  it("consulta normal continua devolvendo os dados", async () => {
+    const { buscar } = servidor(() => ({
+      status: 200,
+      corpo: { data: { __typename: "Query" } },
+    }));
+    const r = await consultar(api(buscar), "query { __typename }");
+    expect(r.data).toEqual({ __typename: "Query" });
   });
 });

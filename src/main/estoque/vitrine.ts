@@ -7,7 +7,6 @@ import { banco } from "../studio/banco";
 import * as repo from "../studio/repositorio";
 import { listarEstoque } from "../studio/arquivos";
 import { dadosBndv } from "./balanco";
-import { fotoBaixada } from "./bndv-fotos";
 import {
   montarVitrine,
   type CartaoVitrine,
@@ -48,12 +47,5 @@ export function vitrine(): CartaoVitrine[] {
     ),
   }));
   const fichas = repo.listarVeiculos(banco()) as unknown as FichaMin[];
-  return montarVitrine(
-    dados.linhas,
-    pastas,
-    fichas,
-    reduzirFoto,
-    new Date(),
-    (id) => fotoBaixada(caminhos.FOTOS_BNDV(), id),
-  );
+  return montarVitrine(dados.linhas, pastas, fichas, reduzirFoto, new Date());
 }

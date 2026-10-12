@@ -18,9 +18,15 @@ import fs from "node:fs";
 import path from "node:path";
 import * as caminhos from "../caminhos";
 
-import { puxar, type Log, type Pagina, type Registro } from "./graphql";
+import {
+  SessaoExpirada,
+  consultar,
+  puxar,
+  type Log,
+  type Pagina,
+  type Registro,
+} from "./graphql";
 import { descobrirExtras, textoDoValor, tipoBase } from "./bndv-esquema";
-import { baixarFotosBndv } from "./bndv-fotos";
 
 export type { Log };
 
@@ -59,7 +65,6 @@ export const COLUNAS_VEICULOS = [
   "cambio",
   "combustivel",
   "versao",
-  "foto",
 ] as const;
 export const COLUNAS_VENDAS = [
   "idSale",
@@ -180,6 +185,7 @@ const PARECE_LOGIN = (url: string) => /login|auth|signin/i.test(url);
 async function capturarToken(
   log: Log,
   segundos = 300,
+  opcoes: { invalidos?: Set<string>; mostrar?: boolean } = {},
 ): Promise<Record<string, string>> {
   const particao = session.fromPartition("persist:bndv", { cache: true });
   let cabecalhos: Record<string, string> | null = null;
@@ -192,7 +198,12 @@ async function capturarToken(
           const achado = Object.entries(detalhes.requestHeaders).find(
             ([k]) => k.toLowerCase() === "authorization",
           );
-          if (achado && !cabecalhos) {
+          // Token que o BNDV já recusou não vale: espera o que aparecer depois do login.
+          if (
+            achado &&
+            !cabecalhos &&
+            !opcoes.invalidos?.has(String(achado[1]))
+          ) {
             cabecalhos = {
               Authorization: String(achado[1]),
               "Content-Type": "application/json",
@@ -227,6 +238,10 @@ async function capturarToken(
     log(motivo, "aviso");
   };
 
+  if (opcoes.mostrar)
+    mostrar(
+      "Sua sessão no BNDV expirou. Faça o login na janela; eu continuo sozinho.",
+    );
   try {
     await janela.loadURL(caminhos.URL_BNDV);
     for (let tentativa = 0; tentativa * 0.5 < segundos; tentativa++) {
@@ -243,6 +258,17 @@ async function capturarToken(
         mostrar(
           "O BNDV está demorando. Confira a janela aberta — talvez precise de login.",
         );
+      }
+      // Sessão expirada que o BNDV não renova sozinho: depois de 30 s, apaga a sessão antiga
+      // (cookies e armazenamento) e recarrega, para o BNDV mostrar a tela de login.
+      if (opcoes.mostrar && tentativa === 60) {
+        await particao
+          .clearStorageData({
+            storages: ["cookies", "localstorage", "indexdb"],
+          })
+          .catch(() => {});
+        log("Limpei a sessão antiga do BNDV; faça o login na janela.", "aviso");
+        await janela.loadURL(caminhos.URL_BNDV).catch(() => {});
       }
       // De vez em quando a página fica em outra rota: volta para a lista,
       // que é a tela que dispara a consulta de onde vem o token.
@@ -305,18 +331,34 @@ export async function extrair(
   aoAutenticar?: () => void,
 ): Promise<ResultadoExtracao> {
   log("Abrindo o BNDV…");
-  const cabecalhos = await capturarToken(log);
+  // O token capturado pode já ter expirado: confere antes de usar e, se preciso, pede o login.
+  const invalidos = new Set<string>();
+  let cabecalhos = await capturarToken(log);
+  for (let tentativa = 0; ; tentativa++) {
+    try {
+      await consultar(
+        { url: caminhos.API_BNDV, cabecalhos },
+        "query { __typename }",
+      );
+      break;
+    } catch (erro) {
+      if (!(erro instanceof SessaoExpirada) || tentativa >= 2) throw erro;
+      invalidos.add(cabecalhos.Authorization);
+      log("O BNDV recusou a sessão salva (expirada).", "aviso");
+      cabecalhos = await capturarToken(log, 300, { invalidos, mostrar: true });
+    }
+  }
   log("Sessão autenticada.", "ok");
   aoAutenticar?.();
 
   log("Consultando veículos e vendas…");
   const api = { url: caminhos.API_BNDV, cabecalhos, log };
-  // Km, cor, câmbio, combustível, ano, versão e foto: os nomes são descobertos a cada atualização.
+  // Km, cor, câmbio, combustível, ano e versão: os nomes são descobertos a cada atualização.
   const extras = await descobrirExtras(api, "vehicles_web_app");
   registrarCampos(extras);
   if (extras.erro)
     log(
-      `Não consegui descobrir os campos extras do BNDV (${extras.erro}); seguindo sem km, cor, câmbio e foto.`,
+      `Não consegui descobrir os campos extras do BNDV (${extras.erro}); seguindo sem km, cor, câmbio e ano.`,
       "aviso",
     );
   else if (extras.escolhas.length)
@@ -344,18 +386,5 @@ export async function extrair(
   log(`veículos: ${veiculos.itens.length} de ${veiculos.total}`);
   log(`vendas  : ${vendas.itens.length} de ${vendas.total}`);
   gravarCsvs(veiculos.itens, vendas.itens);
-  if (extras.selecao.includes("x_foto")) {
-    const fotos = await baixarFotosBndv(
-      veiculos.itens,
-      (item) => textoDoValor(item.x_foto),
-      {
-        pasta: caminhos.FOTOS_BNDV(),
-        urlDaApi: caminhos.API_BNDV,
-        cabecalhos,
-        log,
-      },
-    );
-    if (fotos.baixadas) log(`Fotos do BNDV baixadas: ${fotos.baixadas}.`, "ok");
-  }
   return { veiculos, vendas, incompleto };
 }

@@ -4,7 +4,7 @@
  * Parte pura (sem Electron, testável). Junta três fontes, cada uma com o que ela sabe:
  *  - BNDV (CSVs): marca, modelo, placa, preço de tabela, entrada, consignação;
  *  - Studio (banco): versão, ano, quilometragem, cor, câmbio e combustível, quando a ficha foi preenchida;
- *  - pasta do veículo: a primeira foto, reduzida para a tela.
+ *  - pasta do veículo: a imagem 2 do painel de fotos do Studio (a mesma que vai para os criativos), reduzida para a tela.
  * O que nenhuma fonte tem aparece como "—" na interface (nunca inventado).
  */
 import type { CartaoVitrine } from "../../compartilhado/vitrine";
@@ -44,6 +44,16 @@ export function diasDesde(entrada: string, hoje = new Date()): number | null {
   return Math.max(0, Math.round((agora - dia) / 86_400_000));
 }
 
+/**
+ * Qual foto mostrar: a **imagem 2** do painel de fotos do Studio (a segunda na ordem natural, ignorando
+ * os recortes `_sem_fundo`). Se só houver uma, ela; se a 2 não abrir (ex.: HEIC), as seguintes e por fim a 1.
+ */
+export function ordemDeFotos(fotos: string[]): string[] {
+  const reais = fotos.filter((f) => !/_sem_fundo\.[a-z]+$/i.test(f));
+  if (reais.length < 2) return reais;
+  return [reais[1], ...reais.slice(2), reais[0]];
+}
+
 /** Parte pura: só junta os dados. `reduzir` devolve a foto pronta para a tela. */
 export function montarVitrine(
   linhas: LinhaVeiculo[],
@@ -51,8 +61,6 @@ export function montarVitrine(
   fichas: FichaMin[],
   reduzir: (arquivo: string) => string | null,
   hoje = new Date(),
-  /** Foto de reserva baixada do BNDV (arquivo), se houver. */
-  fotoDoBndv: (idBndv: string) => string | null = () => null,
 ): CartaoVitrine[] {
   return linhas
     .filter((l) => !l.vendido)
@@ -68,14 +76,9 @@ export function montarVitrine(
         ) ??
         null;
       let foto: string | null = null;
-      for (const arquivo of pasta?.fotos ?? []) {
-        if (/_sem_fundo\.[a-z]+$/i.test(arquivo)) continue;
+      for (const arquivo of ordemDeFotos(pasta?.fotos ?? [])) {
         foto = reduzir(arquivo);
         if (foto) break;
-      }
-      if (!foto) {
-        const reserva = fotoDoBndv(l.id);
-        foto = reserva ? reduzir(reserva) : null;
       }
       const anoBndv =
         l.anoFab && l.anoModelo && l.anoFab !== l.anoModelo

@@ -10,6 +10,27 @@
  *     a falha não puder ser ligada a um campo.
  */
 
+/** O BNDV recusou o token: a sessão expirou e é preciso entrar de novo. */
+export class SessaoExpirada extends Error {
+  constructor() {
+    super(
+      "Sua sessão no BNDV expirou. Clique em Entrar no BNDV, faça o login e tente atualizar de novo.",
+    );
+    this.name = "SessaoExpirada";
+  }
+}
+
+/** Reconhece, pelo status ou pela mensagem, a recusa do BNDV por token inválido ou expirado. */
+export function ehErroDeSessao(mensagem: string, status = 0): boolean {
+  return (
+    status === 401 ||
+    status === 403 ||
+    /token.{0,40}(invalid|expired|expirad|inv.lid)|please log ?in|not authenticated|unauthori[sz]ed|context creation failed/i.test(
+      mensagem,
+    )
+  );
+}
+
 export type Log = (
   texto: string,
   tom?: "normal" | "aviso" | "erro" | "ok",
@@ -128,6 +149,13 @@ export async function consultar(
   } catch {
     /* corpo que não é JSON */
   }
+  if (resposta.status === 401 || resposta.status === 403)
+    throw new SessaoExpirada();
+  if (
+    json?.errors?.length &&
+    ehErroDeSessao(json.errors[0].message, resposta.status)
+  )
+    throw new SessaoExpirada();
   if (!json)
     throw new Error(
       `O BNDV respondeu HTTP ${resposta.status}: ${texto.replace(/\s+/g, " ").trim().slice(0, 200)}`,
@@ -165,6 +193,13 @@ export async function puxar(
     } catch {
       /* corpo que não é JSON */
     }
+    if (
+      resposta.status === 401 ||
+      resposta.status === 403 ||
+      (json?.errors?.length &&
+        ehErroDeSessao(json.errors[0].message, resposta.status))
+    )
+      throw new SessaoExpirada();
     if (!resposta.ok && !Array.isArray(json?.errors))
       throw new Error(
         `O BNDV respondeu HTTP ${resposta.status}` +

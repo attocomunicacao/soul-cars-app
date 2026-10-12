@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   diasDesde,
   montarVitrine,
+  ordemDeFotos,
   type FichaMin,
 } from "../src/main/estoque/vitrine-dados";
 import type { LinhaVeiculo } from "../src/main/estoque/balanco";
@@ -101,11 +102,23 @@ describe("vitrine do estoque atual", () => {
     expect(r[1].dias).toBe(10);
   });
 
-  it("usa a primeira foto de verdade (ignora o recorte) e aceita carro sem foto", () => {
+  it("a foto do cartão é a imagem 2 do Studio (ignora o recorte) e aceita carro sem foto", () => {
     const pedidas: string[] = [];
+    const doisFotos = [
+      {
+        ...pastas[0],
+        fotos: [
+          "C:/e/10/FOTOS/1.jpg",
+          "C:/e/10/FOTOS/1_sem_fundo.png",
+          "C:/e/10/FOTOS/2.jpg",
+          "C:/e/10/FOTOS/3.jpg",
+        ],
+      },
+      pastas[1],
+    ];
     const r = montarVitrine(
       linhas,
-      pastas,
+      doisFotos,
       [],
       (arquivo) => {
         pedidas.push(arquivo);
@@ -113,9 +126,19 @@ describe("vitrine do estoque atual", () => {
       },
       hoje,
     );
-    expect(pedidas).toEqual(["C:/e/10/FOTOS/1.jpg"]);
+    expect(pedidas).toEqual(["C:/e/10/FOTOS/2.jpg"]);
     expect(r[0].foto).toBe("data:foto");
     expect(r[1].foto).toBeNull();
+  });
+
+  it("com uma foto só, usa ela", () => {
+    expect(ordemDeFotos(["C:/f/1.jpg"])).toEqual(["C:/f/1.jpg"]);
+    expect(ordemDeFotos([])).toEqual([]);
+    expect(ordemDeFotos(["C:/f/1.jpg", "C:/f/2.jpg", "C:/f/3.jpg"])).toEqual([
+      "C:/f/2.jpg",
+      "C:/f/3.jpg",
+      "C:/f/1.jpg",
+    ]);
   });
 
   it("pula foto que não abre e usa a próxima", () => {
@@ -124,14 +147,16 @@ describe("vitrine do estoque atual", () => {
       [
         {
           ...pastas[0],
-          fotos: ["C:/e/10/FOTOS/1.heic", "C:/e/10/FOTOS/2.jpg"],
+          fotos: ["C:/e/10/FOTOS/1.jpg", "C:/e/10/FOTOS/2.heic"],
         },
       ],
       [],
-      (arquivo) => (arquivo.endsWith(".heic") ? null : "data:ok"),
+      (arquivo) => (arquivo.endsWith(".heic") ? null : "data:" + arquivo),
       hoje,
     );
-    expect(r.find((c) => c.placa === "KHR2I22")?.foto).toBe("data:ok");
+    expect(r.find((c) => c.placa === "KHR2I22")?.foto).toBe(
+      "data:C:/e/10/FOTOS/1.jpg",
+    );
   });
 
   it("liga a ficha do Studio pela pasta ou pela placa e deixa o resto vazio", () => {
@@ -211,7 +236,7 @@ describe("vitrine do estoque atual", () => {
     expect(com.detalhes.cambio).toBe("Manual");
   });
 
-  it("ano igual vira um só; foto do BNDV só entra se a pasta não tem foto", () => {
+  it("ano igual do BNDV vira um só", () => {
     const l = linha({
       id: "50",
       placa: "AAA1A11",
@@ -221,29 +246,6 @@ describe("vitrine do estoque atual", () => {
     expect(montarVitrine([l], [], [], () => null, hoje)[0].detalhes.ano).toBe(
       "2020",
     );
-    const reduzidas: string[] = [];
-    const reduzir = (a: string) => {
-      reduzidas.push(a);
-      return "data:" + a;
-    };
-    const reserva = () => "C:/dados/fotos-bndv/50-abc.jpg";
-    const semPasta = montarVitrine([l], [], [], reduzir, hoje, reserva)[0];
-    expect(semPasta.foto).toBe("data:C:/dados/fotos-bndv/50-abc.jpg");
-    const comFoto = montarVitrine(
-      [l],
-      [
-        {
-          nome: "50_X_AAA1A11",
-          caminho: "C:/e/50",
-          fotos: ["C:/e/50/FOTOS/1.jpg"],
-        },
-      ],
-      [],
-      reduzir,
-      hoje,
-      reserva,
-    )[0];
-    expect(comFoto.foto).toBe("data:C:/e/50/FOTOS/1.jpg");
   });
 });
 
