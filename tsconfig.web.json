@@ -35,6 +35,7 @@
     "testes/relatorio-impressao.test.ts",
     "testes/config-json.test.ts",
     "testes/modelos.test.ts",
+    "testes/gpu.test.ts",
     "testes/repositorio.test.ts"
   ]
 }

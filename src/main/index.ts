@@ -22,6 +22,7 @@ import { importarLegado } from "./studio/legado";
 import { apagarArquivoDeSegredos, removerConfigIa } from "./limpeza-ia";
 import { fecharJanelaBndv } from "./estoque/bndv-janela";
 import { mostrarSplash, type Splash } from "./splash";
+import { iniciarDiagnostico, registrar } from "./diagnostico";
 import { encerrarInstagram } from "./studio/instagram";
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
@@ -64,6 +65,22 @@ function criarJanela(splash: Splash | null) {
   });
 
   definirJanela(janela);
+  // Vigia: se a janela não chegar a ficar pronta, mostra mesmo assim em vez de o app "não abrir".
+  const vigia = setTimeout(() => {
+    if (janela.isDestroyed() || janela.isVisible()) return;
+    registrar(
+      "A janela principal não ficou pronta em 15 s; mostrando mesmo assim.",
+    );
+    janela.show();
+    splash?.fechar();
+  }, 15_000);
+  janela.once("show", () => {
+    clearTimeout(vigia);
+    registrar("Janela principal visível.");
+  });
+  janela.webContents.on("did-fail-load", (_e, codigo, descricao, url) =>
+    registrar(`Falha ao carregar ${url}: ${descricao} (${codigo})`),
+  );
   janela.on("closed", encerrarInstagram);
   // Com tela de carregamento, ela decide o momento (tempo mínimo) de mostrar a janela.
   janela.once("ready-to-show", () =>
@@ -92,11 +109,25 @@ function criarJanela(splash: Splash | null) {
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
+  iniciarDiagnostico();
+  // Clicar no atalho de novo: traz a janela do app; se não houver nenhuma visível (processo
+  // "preso" sem janela), mostra ou recria uma, em vez de não fazer nada.
   app.on("second-instance", () => {
-    const [janela] = BrowserWindow.getAllWindows();
-    if (janela) {
-      if (janela.isMinimized()) janela.restore();
-      janela.focus();
+    const janelas = BrowserWindow.getAllWindows().filter(
+      (j) => !j.isDestroyed(),
+    );
+    const visivel = janelas.find((j) => j.isVisible());
+    if (visivel) {
+      if (visivel.isMinimized()) visivel.restore();
+      visivel.focus();
+    } else if (janelas.length) {
+      registrar(
+        "Segundo clique no atalho com o app sem janela visível: mostrando.",
+      );
+      janelas[janelas.length - 1].show();
+    } else if (app.isReady()) {
+      registrar("Segundo clique no atalho sem nenhuma janela: abrindo outra.");
+      criarJanela(null);
     }
   });
 
@@ -125,6 +156,14 @@ if (!app.requestSingleInstanceLock()) {
 
   app.on("window-all-closed", () => {
     if (process.platform !== "darwin") app.quit();
+  });
+  // Ao fechar, o app precisa sair mesmo se algum encerramento travar (senão fica um processo
+  // invisível que impede o atalho de abrir de novo).
+  app.on("before-quit", () => {
+    setTimeout(() => {
+      registrar("O encerramento demorou mais de 5 s; saindo à força.");
+      app.exit(0);
+    }, 5000).unref();
   });
   app.on("before-quit", pararEntrada);
   app.on("before-quit", reiniciarMotor);

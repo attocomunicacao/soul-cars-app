@@ -215,3 +215,14 @@ Decisão do projeto: **o app não tem nenhuma aplicação paga**. Foi removido t
 - Aprovado o download do **BiRefNet-lite** (`BiRefNet-general-bb_swin_v1_tiny-epoch_232.onnx`, do release oficial do rembg, ~224 MB, MIT): medido sem outros processos, **5 s para carregar e 14 a 24 s por foto**, com teto e vidros completos (conferido na foto 1). Virou o **modelo padrão**; ISNet ficou como `MODELO_RAPIDO` e o completo como `MODELO_QUALIDADE`.
 - **Botão novo na Produção: Recortar imagens 1, 2 e 4** (as do carrossel): recorta as três em sequência, mostra "Recortando a imagem 2 (2 de 3)…" e avisa se faltar alguma imagem. Medido de ponta a ponta pelo motor, com o modelo já aquecido: 26 s, 33 s e 18 s (**76 s para as três**, média de 25 s por imagem, já com a gravação do PNG).
 - Notas: a variação entre fotos (14 a 62 s numa medição com o computador ocupado) vem da carga do processador; fechar outros programas pesados ajuda.
+
+## 18. "O app não está abrindo" (11/10/2026)
+
+- **O que se viu:** havia um processo do app vivo (22:13) **sem nenhuma janela**. Com ele rodando, o atalho não faz nada, porque o app só aceita uma instância. Não achei erro nem arquivo de queda; abrindo de novo pelo atalho (3 vezes) o app abriu normalmente, então a causa exata daquele travamento não foi reproduzida.
+- **Proteções adicionadas** (`main/diagnostico.ts`, `main/gpu.ts`, `main/index.ts`):
+  - **Registro de abertura** em `%APPDATA%/soul-cars-app/app.log` (abertura, janela visível, erros não tratados, queda de tela ou processo, falha de carregamento; no máximo ~200 KB). Se acontecer de novo, esse arquivo mostra o motivo.
+  - **Vigia da janela:** se a janela principal não ficar pronta em 15 s, ela é mostrada mesmo assim.
+  - **GPU:** se o processo de vídeo do Chromium cair de verdade, o app se reabre uma vez sem aceleração (`--sem-gpu`).
+  - **Clicar no atalho com o app "preso" sem janela** agora mostra ou recria a janela, em vez de não fazer nada.
+  - **Encerramento:** se fechar travar por mais de 5 s, o app sai à força, para não sobrar processo invisível. Conferido: fechar a janela encerra todos os processos em menos de 1 s.
+- **Se acontecer de novo:** abra o Gerenciador de Tarefas, encerre os processos "electron" (ou "SOUL Cars"), abra pelo atalho e me envie o `app.log`.
