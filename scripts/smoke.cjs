@@ -75,6 +75,7 @@ app.on("browser-window-created", (_e, w) => {
         if(!relatorioFrame || !relatorioFrame.srcdoc.includes('<html'))throw Error('Relatório interno não carregou');
         for(let i=0;i<40&&!relatorioFrame.style.height;i++)await new Promise(r=>setTimeout(r,150));
         if(!relatorioFrame.style.height)throw Error('O relatório ficou sem altura definida (segunda barra de rolagem)');
+        const botaoPdf=[...document.querySelectorAll('button')].find(b=>b.textContent==='PDF'||b.textContent==='Gerando PDF…');if(!botaoPdf)throw Error('Falta o botão PDF no relatório completo');
         const botao=[...document.querySelectorAll('aside button')].find(b=>b.textContent.includes('Studio'));botao.click();
         await new Promise(r=>setTimeout(r,100));
         if(document.querySelector('h1')?.textContent!=='Studio')throw Error('Navegação para Studio falhou');

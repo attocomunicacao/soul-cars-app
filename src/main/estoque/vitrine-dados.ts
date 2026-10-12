@@ -51,6 +51,8 @@ export function montarVitrine(
   fichas: FichaMin[],
   reduzir: (arquivo: string) => string | null,
   hoje = new Date(),
+  /** Foto de reserva baixada do BNDV (arquivo), se houver. */
+  fotoDoBndv: (idBndv: string) => string | null = () => null,
 ): CartaoVitrine[] {
   return linhas
     .filter((l) => !l.vendido)
@@ -71,6 +73,14 @@ export function montarVitrine(
         foto = reduzir(arquivo);
         if (foto) break;
       }
+      if (!foto) {
+        const reserva = fotoDoBndv(l.id);
+        foto = reserva ? reduzir(reserva) : null;
+      }
+      const anoBndv =
+        l.anoFab && l.anoModelo && l.anoFab !== l.anoModelo
+          ? `${l.anoFab}/${l.anoModelo}`
+          : l.anoModelo || l.anoFab || null;
       return {
         idBndv: l.id,
         marca: l.marca,
@@ -82,17 +92,15 @@ export function montarVitrine(
         entrada: l.entrada,
         pasta: pasta?.caminho ?? null,
         foto,
-        estudio: ficha
-          ? {
-              id: ficha.id,
-              versao: texto(ficha.versao),
-              ano: texto(ficha.ano),
-              km: numero(ficha.km),
-              cor: texto(ficha.cor),
-              cambio: texto(ficha.cambio),
-              combustivel: texto(ficha.combustivel),
-            }
-          : null,
+        detalhes: {
+          km: numero(ficha?.km) ?? numero(l.km),
+          cor: texto(ficha?.cor) ?? texto(l.cor),
+          cambio: texto(ficha?.cambio) ?? texto(l.cambio),
+          combustivel: texto(ficha?.combustivel) ?? texto(l.combustivel),
+          ano: texto(ficha?.ano) ?? anoBndv,
+          versao: texto(ficha?.versao) ?? texto(l.versao),
+        },
+        estudio: ficha ? { id: ficha.id } : null,
       };
     })
     .sort((a, b) =>

@@ -17,6 +17,7 @@
  */
 import { app } from "electron";
 import fs from "node:fs";
+import { lerConfigJson } from "./config-json";
 import path from "node:path";
 
 export const URL_BNDV = "https://app.bndv.com.br/vehicles/search";
@@ -35,12 +36,24 @@ let cache: Config | null = null;
 
 export function lerConfig(): Config {
   if (cache) return cache;
+  let texto: string | null = null;
   try {
-    cache = JSON.parse(fs.readFileSync(ARQUIVO_CONFIG(), "utf8")) as Config;
+    texto = fs.readFileSync(ARQUIVO_CONFIG(), "utf8");
   } catch {
-    cache = {};
+    /* primeira execução: ainda não há config.json */
   }
-  return cache;
+  if (texto === null) return (cache = {});
+  const lido = lerConfigJson(texto);
+  if (!lido) {
+    // Arquivo estragado: guarda uma cópia antes de recomeçar, para nada ser perdido em silêncio
+    // (a raiz de dados e outras escolhas estão aqui dentro).
+    try {
+      fs.copyFileSync(ARQUIVO_CONFIG(), ARQUIVO_CONFIG() + ".invalido");
+    } catch {
+      /* sem permissão: segue mesmo assim */
+    }
+  }
+  return (cache = (lido ?? {}) as Config);
 }
 
 export function gravarConfig(patch: Config) {
@@ -83,6 +96,8 @@ export const PERFIL_BNDV = () => path.join(raizDados(), ".perfil-bndv");
 export const CSV_VEICULOS = () => path.join(DADOS(), "bndv_veiculos.csv");
 export const CSV_VENDAS = () => path.join(DADOS(), "bndv_vendas.csv");
 export const BALANCO_JSON = () => path.join(DADOS(), "balanco.json");
+/** Fotos de capa baixadas do BNDV (reserva para a vitrine do estoque atual). */
+export const FOTOS_BNDV = () => path.join(DADOS(), "fotos-bndv");
 export const RELATORIO_HTML = () => path.join(DADOS(), "RELATORIO.html");
 export const INDICE_CSV = () => path.join(ESTOQUE(), "_INDICE.csv");
 

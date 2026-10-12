@@ -26,6 +26,7 @@ import * as balanco from "./estoque/balanco";
 import { extrair } from "./estoque/extracao";
 import { abrirJanelaBndv } from "./estoque/bndv-janela";
 import { vitrine } from "./estoque/vitrine";
+import { exportarRelatorioPdf } from "./estoque/relatorio-pdf";
 import { gerarHtml } from "./estoque/relatorio";
 import { lerCsv, sincronizar } from "./estoque/sync";
 import { ultimasVendas } from "./estoque/vendas";
@@ -223,6 +224,7 @@ const COMANDOS: Record<string, Comando> = {
   estoque_atualizar: (a) => atualizarEstoque(a),
   bndv_abrir: () => abrirJanelaBndv(janela),
   estoque_vitrine: () => vitrine(),
+  relatorio_pdf: () => exportarRelatorioPdf(janela),
   estoque_resumo: () => resumoEstoque(),
   anuncios_vendas: () => ultimasVendas(),
   balanco_carregar: () => ({

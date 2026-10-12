@@ -31,6 +31,9 @@
     "testes/validacao.test.ts",
     "testes/graphql.test.ts",
     "testes/vitrine.test.ts",
+    "testes/bndv-extras.test.ts",
+    "testes/relatorio-impressao.test.ts",
+    "testes/config-json.test.ts",
     "testes/repositorio.test.ts"
   ]
 }

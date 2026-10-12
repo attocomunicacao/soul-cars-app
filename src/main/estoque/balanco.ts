@@ -20,6 +20,7 @@
  */
 import fs from "node:fs";
 import * as caminhos from "../caminhos";
+import { ordenarPorEntrada } from "./ordem";
 import {
   diasEntre,
   ehAtivo,
@@ -140,6 +141,8 @@ const lerCsvOpcional = (arquivo: string) => {
 
 // ------------------------------------------------------------------ cálculo
 export type LinhaVeiculo = {
+  /** Data e hora do cadastro no BNDV (ISO), usada para ordenar do mais recente ao mais antigo. */
+  registroEm: string;
   placa: string;
   marca: string;
   modelo: string;
@@ -159,6 +162,14 @@ export type LinhaVeiculo = {
   margemPct: number | null;
   vendido: boolean;
   nVendas: number;
+  /** Extras que o BNDV informa (texto; vazio se não vieram). */
+  km: string;
+  anoModelo: string;
+  anoFab: string;
+  cor: string;
+  cambio: string;
+  combustivel: string;
+  versao: string;
 };
 
 export type DadosBndv = {
@@ -236,6 +247,7 @@ export function dadosBndv(): DadosBndv | null {
       placa: (v.plate || "").toUpperCase(),
       marca: v.brand ?? "",
       modelo: v.model ?? "",
+      registroEm: v.dateRegister || "",
       entrada: (v.dateRegister || "").slice(0, 10),
       custo,
       consignado: consig,
@@ -252,6 +264,13 @@ export function dadosBndv(): DadosBndv | null {
       margemPct: null,
       vendido: vs.length > 0,
       nVendas: vs.length,
+      km: (v.km ?? "").trim(),
+      anoModelo: (v.anoModelo ?? "").trim(),
+      anoFab: (v.anoFab ?? "").trim(),
+      cor: (v.cor ?? "").trim(),
+      cambio: (v.cambio ?? "").trim(),
+      combustivel: (v.combustivel ?? "").trim(),
+      versao: (v.versao ?? "").trim(),
     };
 
     if (vs.length) {
@@ -303,7 +322,7 @@ export function dadosBndv(): DadosBndv | null {
     custoVendido,
     margem: receita - custoVendido,
     porMes: porMesOrdenado,
-    linhas: linhas.sort((a, b) => b.entrada.localeCompare(a.entrada)),
+    linhas: ordenarPorEntrada(linhas),
   };
 }
 

@@ -5,8 +5,10 @@ import {
   type FichaMin,
 } from "../src/main/estoque/vitrine-dados";
 import type { LinhaVeiculo } from "../src/main/estoque/balanco";
+import { ordenarPorEntrada } from "../src/main/estoque/ordem";
 
 const linha = (extra: Partial<LinhaVeiculo>): LinhaVeiculo => ({
+  registroEm: "2026-10-01T10:00:00",
   placa: "",
   marca: "",
   modelo: "",
@@ -26,6 +28,13 @@ const linha = (extra: Partial<LinhaVeiculo>): LinhaVeiculo => ({
   margemPct: null,
   vendido: false,
   nVendas: 0,
+  km: "",
+  anoModelo: "",
+  anoFab: "",
+  cor: "",
+  cambio: "",
+  combustivel: "",
+  versao: "",
   ...extra,
 });
 const ficha = (extra: Partial<FichaMin>): FichaMin => ({
@@ -138,8 +147,8 @@ describe("vitrine do estoque atual", () => {
       ficha({ id: 8, placa: "axi5j53", combustivel: "Flex" }),
     ];
     const r = montarVitrine(linhas, pastas, fichas, () => null, hoje);
-    expect(r[0].estudio).toEqual({
-      id: 7,
+    expect(r[0].estudio).toEqual({ id: 7 });
+    expect(r[0].detalhes).toEqual({
       versao: "MAXX 1.0",
       ano: "2006",
       km: 82000,
@@ -148,8 +157,8 @@ describe("vitrine do estoque atual", () => {
       combustivel: null,
     });
     expect(r[1].estudio?.id).toBe(8);
-    expect(r[1].estudio?.combustivel).toBe("Flex");
-    expect(r[1].estudio?.km).toBeNull();
+    expect(r[1].detalhes.combustivel).toBe("Flex");
+    expect(r[1].detalhes.km).toBeNull();
     expect(
       montarVitrine(linhas, pastas, [], () => null, hoje)[0].estudio,
     ).toBeNull();
@@ -164,5 +173,91 @@ describe("vitrine do estoque atual", () => {
       hoje,
     );
     expect(r[0].pasta).toBe("C:/e/01");
+  });
+
+  it("usa os dados do BNDV quando a ficha do Studio não tem (e a ficha tem prioridade quando tem)", () => {
+    const doBndv = linha({
+      id: "40",
+      marca: "Fiat",
+      modelo: "Argo",
+      placa: "RNO1I20",
+      km: "35000",
+      cor: "Prata",
+      cambio: "Manual",
+      combustivel: "Flex",
+      anoFab: "2021",
+      anoModelo: "2022",
+      versao: "ARGO 1.0 6V FLEX.",
+    });
+    const sem = montarVitrine([doBndv], [], [], () => null, hoje)[0];
+    expect(sem.detalhes).toEqual({
+      km: 35000,
+      cor: "Prata",
+      cambio: "Manual",
+      combustivel: "Flex",
+      ano: "2021/2022",
+      versao: "ARGO 1.0 6V FLEX.",
+    });
+    expect(sem.estudio).toBeNull();
+    const com = montarVitrine(
+      [doBndv],
+      [],
+      [ficha({ id: 9, placa: "RNO1I20", cor: "Cinza", km: 41000 })],
+      () => null,
+      hoje,
+    )[0];
+    expect(com.detalhes.cor).toBe("Cinza");
+    expect(com.detalhes.km).toBe(41000);
+    expect(com.detalhes.cambio).toBe("Manual");
+  });
+
+  it("ano igual vira um só; foto do BNDV só entra se a pasta não tem foto", () => {
+    const l = linha({
+      id: "50",
+      placa: "AAA1A11",
+      anoFab: "2020",
+      anoModelo: "2020",
+    });
+    expect(montarVitrine([l], [], [], () => null, hoje)[0].detalhes.ano).toBe(
+      "2020",
+    );
+    const reduzidas: string[] = [];
+    const reduzir = (a: string) => {
+      reduzidas.push(a);
+      return "data:" + a;
+    };
+    const reserva = () => "C:/dados/fotos-bndv/50-abc.jpg";
+    const semPasta = montarVitrine([l], [], [], reduzir, hoje, reserva)[0];
+    expect(semPasta.foto).toBe("data:C:/dados/fotos-bndv/50-abc.jpg");
+    const comFoto = montarVitrine(
+      [l],
+      [
+        {
+          nome: "50_X_AAA1A11",
+          caminho: "C:/e/50",
+          fotos: ["C:/e/50/FOTOS/1.jpg"],
+        },
+      ],
+      [],
+      reduzir,
+      hoje,
+      reserva,
+    )[0];
+    expect(comFoto.foto).toBe("data:C:/e/50/FOTOS/1.jpg");
+  });
+});
+
+describe("ordem do balanço por veículo", () => {
+  it("do mais recente ao mais antigo, com hora e ID para desempatar o mesmo dia", () => {
+    const l = (id: string, registroEm: string) =>
+      linha({ id, placa: "P" + id, registroEm });
+    const r = ordenarPorEntrada([
+      l("1", "2026-10-08T13:43:13"),
+      l("2", "2026-09-30T09:00:00"),
+      l("3", "2026-10-08T15:45:46"),
+      l("4", "2026-10-08T15:45:46"),
+      l("5", ""),
+    ]);
+    expect(r.map((x) => x.id)).toEqual(["4", "3", "1", "2", "5"]);
   });
 });

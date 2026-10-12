@@ -35,7 +35,7 @@ export function Vitrine({
     const termo = busca.trim().toLowerCase();
     if (!termo || !cartoes) return cartoes ?? [];
     return cartoes.filter((c) =>
-      [c.marca, c.modelo, c.placa, c.estudio?.versao, c.estudio?.cor]
+      [c.marca, c.modelo, c.placa, c.detalhes.versao, c.detalhes.cor]
         .filter(Boolean)
         .join(" ")
         .toLowerCase()
@@ -78,11 +78,11 @@ export function Vitrine({
           const ficha = lista.find((v) => v.id === c.estudio?.id) ?? null;
           const detalhes: [string, string][] = [
             ["Placa", c.placa || "—"],
-            ["Quilometragem", km(c.estudio?.km ?? null)],
-            ["Cor", c.estudio?.cor ?? "—"],
-            ["Câmbio", c.estudio?.cambio ?? "—"],
-            ["Combustível", c.estudio?.combustivel ?? "—"],
-            ["Ano", c.estudio?.ano ?? "—"],
+            ["Quilometragem", km(c.detalhes.km)],
+            ["Cor", c.detalhes.cor ?? "—"],
+            ["Câmbio", c.detalhes.cambio ?? "—"],
+            ["Combustível", c.detalhes.combustivel ?? "—"],
+            ["Ano", c.detalhes.ano ?? "—"],
           ];
           return (
             <article key={c.idBndv} className="vitrine-cartao">
@@ -93,7 +93,7 @@ export function Vitrine({
                 <em>{c.consignado ? "CONSIGNADO" : "ESTOQUE"}</em>
               </header>
               <small className="vitrine-versao">
-                {c.estudio?.versao ?? " "}
+                {c.detalhes.versao ?? " "}
               </small>
               <div className="vitrine-corpo">
                 <div className="vitrine-foto">

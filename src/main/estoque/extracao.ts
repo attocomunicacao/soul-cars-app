@@ -15,9 +15,12 @@
  */
 import { BrowserWindow, session } from "electron";
 import fs from "node:fs";
+import path from "node:path";
 import * as caminhos from "../caminhos";
 
 import { puxar, type Log, type Pagina, type Registro } from "./graphql";
+import { descobrirExtras, textoDoValor, tipoBase } from "./bndv-esquema";
+import { baixarFotosBndv } from "./bndv-fotos";
 
 export type { Log };
 
@@ -48,6 +51,15 @@ export const COLUNAS_VEICULOS = [
   "active",
   "status",
   "buyer",
+  // Extras descobertos no BNDV (vazios se o BNDV não os oferece):
+  "km",
+  "anoModelo",
+  "anoFab",
+  "cor",
+  "cambio",
+  "combustivel",
+  "versao",
+  "foto",
 ] as const;
 export const COLUNAS_VENDAS = [
   "idSale",
@@ -118,6 +130,14 @@ export function gravarCsvs(veiculos: Registro[], vendas: Registro[]) {
         r.active,
         campo(r, "vehicleStatus", "name"),
         campo(r, "buyer", "name"),
+        textoDoValor(r.x_km),
+        textoDoValor(r.x_anoModelo),
+        textoDoValor(r.x_anoFab),
+        textoDoValor(r.x_cor),
+        textoDoValor(r.x_cambio),
+        textoDoValor(r.x_combustivel),
+        textoDoValor(r.x_versao),
+        textoDoValor(r.x_foto),
       ]),
     ],
     [
@@ -251,6 +271,34 @@ export type ResultadoExtracao = {
   incompleto: boolean;
 };
 
+/** Guarda, em dados/bndv_campos.json, o que o BNDV oferece e o que o app escolheu (para conferir e ajustar). */
+function registrarCampos(extras: Awaited<ReturnType<typeof descobrirExtras>>) {
+  try {
+    caminhos.garantir();
+    fs.writeFileSync(
+      path.join(caminhos.DADOS(), "bndv_campos.json"),
+      JSON.stringify(
+        {
+          geradoEm: new Date().toISOString(),
+          tipoDosItens: extras.tipoDosItens,
+          erro: extras.erro ?? null,
+          escolhidos: extras.escolhas,
+          camposDoVeiculo: extras.campos.map((c) => ({
+            nome: c.name,
+            tipo: tipoBase(c.type).nome,
+            lista: tipoBase(c.type).lista,
+          })),
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+  } catch {
+    /* só diagnóstico */
+  }
+}
+
 /** Abre o BNDV, pega o token, consulta a API e grava os CSVs. */
 export async function extrair(
   log: Log,
@@ -263,11 +311,23 @@ export async function extrair(
 
   log("Consultando veículos e vendas…");
   const api = { url: caminhos.API_BNDV, cabecalhos, log };
+  // Km, cor, câmbio, combustível, ano, versão e foto: os nomes são descobertos a cada atualização.
+  const extras = await descobrirExtras(api, "vehicles_web_app");
+  registrarCampos(extras);
+  if (extras.erro)
+    log(
+      `Não consegui descobrir os campos extras do BNDV (${extras.erro}); seguindo sem km, cor, câmbio e foto.`,
+      "aviso",
+    );
+  else if (extras.escolhas.length)
+    log(
+      `Campos extras do BNDV: ${extras.escolhas.map((e) => e.papel).join(", ")}.`,
+    );
   const veiculos = await puxar(
     api,
     "vehicles_web_app",
     CAMPOS_VEICULOS,
-    "",
+    extras.selecao,
     "idVehicle",
   );
   const vendas = await puxar(
@@ -284,5 +344,18 @@ export async function extrair(
   log(`veículos: ${veiculos.itens.length} de ${veiculos.total}`);
   log(`vendas  : ${vendas.itens.length} de ${vendas.total}`);
   gravarCsvs(veiculos.itens, vendas.itens);
+  if (extras.selecao.includes("x_foto")) {
+    const fotos = await baixarFotosBndv(
+      veiculos.itens,
+      (item) => textoDoValor(item.x_foto),
+      {
+        pasta: caminhos.FOTOS_BNDV(),
+        urlDaApi: caminhos.API_BNDV,
+        cabecalhos,
+        log,
+      },
+    );
+    if (fotos.baixadas) log(`Fotos do BNDV baixadas: ${fotos.baixadas}.`, "ok");
+  }
   return { veiculos, vendas, incompleto };
 }

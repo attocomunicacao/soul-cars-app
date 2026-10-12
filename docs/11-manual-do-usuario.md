@@ -123,6 +123,10 @@ Aba **Pronto para anunciar**.
 3. Pause a campanha no Gerenciador e clique em **Marcar como pausada**.
 4. Se os dados do BNDV tiverem mais de 24 horas e houver anúncio no ar, o app avisa que estão velhos.
 
+## Relatório completo em PDF
+
+Em **Estoque › Abrir relatório completo**, o botão **PDF** gera o relatório inteiro em folhas A4, pronto para imprimir: escolha onde salvar (ele sugere a pasta `dados`) e o arquivo abre em seguida. O **Balanço por veículo** aparece do carro que entrou mais recentemente para o mais antigo.
+
 ## Relatórios
 
 **Studio › Relatórios** reúne os relatórios Meta Ads e a exportação em planilha (XLSX). O gráfico de **lucro por mês** mostra os últimos 12 meses e tem setas para navegar.

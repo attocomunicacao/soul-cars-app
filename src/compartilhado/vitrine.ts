@@ -13,14 +13,15 @@ export type CartaoVitrine = {
   pasta: string | null;
   /** Foto reduzida (data URL) ou null. */
   foto: string | null;
-  /** Dados da ficha do Studio, quando existe. */
-  estudio: {
-    id: number;
-    versao: string | null;
-    ano: string | null;
+  /** Detalhes mostrados: da ficha do Studio quando preenchida, senão do BNDV; null se nenhum tem. */
+  detalhes: {
     km: number | null;
     cor: string | null;
     cambio: string | null;
     combustivel: string | null;
-  } | null;
+    ano: string | null;
+    versao: string | null;
+  };
+  /** Ficha do Studio ligada ao veículo (para o botão Abrir no Studio), quando existe. */
+  estudio: { id: number } | null;
 };

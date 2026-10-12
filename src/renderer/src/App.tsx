@@ -28,6 +28,8 @@ export function App() {
     [motor, setMotor] = useState("");
   const [aba, setAba] = useState("veiculos");
   const [relatorio, setRelatorio] = useState("");
+  const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [avisoPdf, setAvisoPdf] = useState("");
   const [alturaRelatorio, setAlturaRelatorio] = useState<number | null>(null);
   const quadroRelatorio = useRef<HTMLIFrameElement>(null);
   // Se a página do relatório não informar a altura, o quadro volta a rolar por dentro (nada fica preso).
@@ -354,10 +356,31 @@ export function App() {
           <section className="panel">
             <div className="actions">
               <h2>Relatório completo</h2>
+              <button
+                className="primary"
+                disabled={gerandoPdf}
+                title="Gera o relatório inteiro em PDF, em folhas A4, pronto para imprimir"
+                onClick={() => {
+                  setGerandoPdf(true);
+                  setAvisoPdf("");
+                  setErro("");
+                  invoke<{ cancelado: boolean; caminho?: string }>(
+                    "relatorio_pdf",
+                  )
+                    .then((r) => {
+                      if (!r.cancelado) setAvisoPdf("PDF salvo e aberto.");
+                    })
+                    .catch((e) => setErro(String(e)))
+                    .finally(() => setGerandoPdf(false));
+                }}
+              >
+                {gerandoPdf ? "Gerando PDF…" : "PDF"}
+              </button>
               <button onClick={() => setAba("veiculos")}>
                 ← Voltar ao estoque
               </button>
             </div>
+            {avisoPdf && <p role="status">{avisoPdf}</p>}
             <iframe
               ref={quadroRelatorio}
               className="relatorio-completo"

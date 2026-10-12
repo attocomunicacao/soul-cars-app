@@ -46,6 +46,9 @@ export function campoInexistente(mensagem: string): string | null {
 export function removerCampoEm(selecao: string, pos: number): string {
   const nome = /^[A-Za-z_]\w*/.exec(selecao.slice(pos));
   if (!nome) return selecao;
+  // Campo com apelido ("x_km: km"): o apelido sai junto, senão sobra um "x_km:" solto.
+  const apelido = /([A-Za-z_]\w*)\s*:\s*$/.exec(selecao.slice(0, pos));
+  const inicio = apelido ? apelido.index : pos;
   let fim = pos + nome[0].length;
   let i = fim;
   while (selecao[i] === " " || selecao[i] === "\n") i++;
@@ -59,10 +62,10 @@ export function removerCampoEm(selecao: string, pos: number): string {
       }
     }
   }
-  let saida = selecao.slice(0, pos) + " " + selecao.slice(fim);
+  let saida = selecao.slice(0, inicio) + " " + selecao.slice(fim);
   // Um objeto sem nenhum campo dentro não é GraphQL válido: remove o pai também.
   for (;;) {
-    const vazio = /[A-Za-z_]\w*\s*\{\s*\}/.exec(saida);
+    const vazio = /(?:[A-Za-z_]\w*\s*:\s*)?[A-Za-z_]\w*\s*\{\s*\}/.exec(saida);
     if (!vazio) break;
     saida =
       saida.slice(0, vazio.index) +
@@ -106,6 +109,31 @@ export type Opcoes = {
   /** Para testes. */
   buscar?: typeof fetch;
 };
+
+/** Uma consulta avulsa (ex.: introspecção do esquema). Devolve o JSON, com ou sem `errors`. */
+export async function consultar(
+  opcoes: Opcoes,
+  query: string,
+): Promise<Resposta & { status: number }> {
+  const resposta = await (opcoes.buscar ?? fetch)(opcoes.url, {
+    method: "POST",
+    headers: opcoes.cabecalhos,
+    body: JSON.stringify({ query }),
+    signal: AbortSignal.timeout(60_000),
+  });
+  const texto = await resposta.text();
+  let json: Resposta | null = null;
+  try {
+    json = JSON.parse(texto) as Resposta;
+  } catch {
+    /* corpo que não é JSON */
+  }
+  if (!json)
+    throw new Error(
+      `O BNDV respondeu HTTP ${resposta.status}: ${texto.replace(/\s+/g, " ").trim().slice(0, 200)}`,
+    );
+  return { ...json, status: resposta.status };
+}
 
 export async function puxar(
   opcoes: Opcoes,
