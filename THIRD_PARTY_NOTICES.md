@@ -73,8 +73,8 @@ As bibliotecas **não são redistribuídas** no instalador nem no repositório: 
 
 | Modelo | Uso | Licença | Onde conferir |
 |---|---|---|---|
-| BiRefNet (`birefnet-general`, via rembg) | Recorte do carro (`engine/fundo.py`) | MIT | https://huggingface.co/ZhengPeng7/BiRefNet |
-| ISNet general use (`isnet-general-use`, via rembg) | Recorte rápido (alternativa) | Apache-2.0 | https://github.com/xuebinqin/DIS |
+| BiRefNet (`birefnet-general`, via rembg) | Recorte de qualidade, opcional e mais lento (`engine/fundo.py`, `MODELO_QUALIDADE`) | MIT | https://huggingface.co/ZhengPeng7/BiRefNet |
+| ISNet general use (`isnet-general-use`, via rembg) | Recorte do carro (padrão, rápido) | Apache-2.0 | https://github.com/xuebinqin/DIS |
 | CLIP ViT-B/32 em ONNX (`Xenova/clip-vit-base-patch32`) | Ordenar as fotos (`engine/visao.py`) | O repositório Xenova **não declara licença**; o modelo original, OpenAI CLIP, é MIT | https://github.com/openai/CLIP/blob/main/LICENSE |
 | Whisper large-v3-turbo em CTranslate2 (`mobiuslabsgmbh/faster-whisper-large-v3-turbo`) | Transcrição do vídeo (`engine/video/transcribe.py`) | MIT | https://huggingface.co/mobiuslabsgmbh/faster-whisper-large-v3-turbo |
 

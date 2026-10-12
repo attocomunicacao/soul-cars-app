@@ -18,7 +18,7 @@ Em desenvolvimento, o ambiente é engine/.venv. No app instalado, **Instalar / r
 |---|---|
 | CRLV textual | pdfplumber |
 | OCR | Pillow, pytesseract, Tesseract; tessdata/por.traineddata acompanha o app |
-| Recorte | rembg, ONNX Runtime, SciPy e BiRefNet |
+| Recorte | rembg, ONNX Runtime, SciPy e ISNet (padrão, rápido); BiRefNet opcional |
 | Fotos | modelo de visão local conforme visao.py |
 | Vídeo | FFmpeg/ffprobe, faster-whisper, Pillow; fonte e logo acompanham o app; a trilha é sua (veja o guia 08) |
 

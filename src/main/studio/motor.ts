@@ -20,9 +20,11 @@ import {
   spawn,
 } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { app } from "electron";
 import * as caminhos from "../caminhos";
+import { pastaDeModelos } from "./modelos";
 
 export type Emitir = (canal: string, carga: unknown) => void;
 
@@ -152,7 +154,7 @@ function garantirProcesso(emitir: Emitir) {
       PYTHONUTF8: "1",
       PYTHONIOENCODING: "utf-8",
       SOUL_DATA_DIR: caminhos.userData(),
-      U2NET_HOME: path.join(caminhos.userData(), "modelos", "rembg"),
+      U2NET_HOME: pastaDeModelos(caminhos.userData(), os.homedir()),
       HF_HOME: path.join(caminhos.userData(), "modelos", "huggingface"),
     },
   });

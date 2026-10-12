@@ -117,6 +117,14 @@ def remover_fundo(params):
     return {"png": base64.b64encode(png).decode("ascii")}
 
 
+def aquecer_recorte(params):
+    """Carrega as bibliotecas e o modelo de recorte agora, para o primeiro recorte não esperar (~10 s)."""
+    import fundo
+
+    fundo._sessao(fundo.MODELO)
+    return {"pronto": True, "modelo": fundo.MODELO}
+
+
 def gerar_doc_md(params):
     """DOC.md do CRLV, no mesmo formato do sistema antigo."""
     import crlv
@@ -156,6 +164,7 @@ METHODS = {
     "ler_crlv": ler_crlv,
     "ocr_equipamentos": ocr_equipamentos,
     "remover_fundo": remover_fundo,
+    "aquecer_recorte": aquecer_recorte,
     "gerar_doc_md": gerar_doc_md,
     "cnw_buscar": cnw_buscar,
     "cnw_ficha": cnw_ficha,

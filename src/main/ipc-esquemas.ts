@@ -29,6 +29,7 @@ export const METODOS_DO_MOTOR = [
   "ler_crlv",
   "ocr_equipamentos",
   "remover_fundo",
+  "aquecer_recorte",
   "gerar_doc_md",
   "cnw_buscar",
   "cnw_ficha",

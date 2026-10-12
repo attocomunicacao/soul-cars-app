@@ -72,6 +72,18 @@ export const ocrEquipamentos = async (
     },
   );
 
+let recorteAquecido = false;
+
+/** Carrega o modelo de recorte em segundo plano (uma vez por sessão), para o primeiro recorte sair mais rápido. */
+export function aquecerRecorte() {
+  if (recorteAquecido) return;
+  recorteAquecido = true;
+  // Sem o motor instalado isto falha em silêncio: o recorte avisa quando for usado.
+  void engine("aquecer_recorte").catch(() => {
+    recorteAquecido = false;
+  });
+}
+
 export async function removerFundo(foto: Blob, nome = "foto"): Promise<File> {
   const { png } = await engine<{ png: string }>("remover_fundo", {
     arquivo: await paraBase64(foto),

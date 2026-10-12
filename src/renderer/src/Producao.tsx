@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ask, invoke, open } from "./lib/desktop";
+import { aquecerRecorte } from "./lib/engine";
 import {
   copiarComoDoc,
   documentoNaPasta,
@@ -29,6 +30,10 @@ export function Producao({
   videoLeve: () => Promise<void>;
   onBusy: (valor: boolean) => void;
 }) {
+  // Já deixa o modelo de recorte pronto enquanto a pessoa confere a ficha.
+  useEffect(() => {
+    if (pasta) aquecerRecorte();
+  }, [pasta]);
   const [status, setStatus] = useState<StatusProducao | null>(null);
   const [fotos, setFotos] = useState<Foto[]>([]);
   const [senha, setSenha] = useState("");

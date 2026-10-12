@@ -1,8 +1,12 @@
 """Remoção de fundo local (rembg).
 
-Porta do antigo remover_fundo.py: usa o BiRefNet, mantém só o maior objeto (o carro) e
-preenche buracos internos, para que vidros e para-brisa não fiquem transparentes.
-O modelo (~900 MB) é baixado no primeiro uso.
+Porta do antigo remover_fundo.py: mantém só o maior objeto (o carro) e preenche buracos internos,
+para que vidros e para-brisa não fiquem transparentes.
+
+Modelo padrão: ISNet (~170 MB), cerca de 15 vezes mais rápido que o BiRefNet no processador (medido:
+2 a 4 s contra 35 a 60 s por foto de 1600x1200, mais 2 s contra 28 s para carregar). O BiRefNet
+(~900 MB) continua disponível como `MODELO_QUALIDADE`, pedindo `modelo="birefnet-general"`.
+O modelo é baixado no primeiro uso.
 """
 
 from __future__ import annotations
@@ -15,8 +19,8 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 
-MODELO = "birefnet-general"
-MODELO_RAPIDO = "isnet-general-use"  # alternativa leve (~170 MB), sem preenchimento tão bom
+MODELO = "isnet-general-use"
+MODELO_QUALIDADE = "birefnet-general"  # mais lento (~900 MB); só se o recorte padrão falhar numa foto
 MAX_PIXELS = 50_000_000
 
 
