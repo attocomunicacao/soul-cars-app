@@ -1,7 +1,7 @@
 """Edição da planilha de finanças (uma aba por mês, uma tabela por vencimento).
 
 Cada bloco é: linha de cabeçalho ("VENCIMENTO" na coluna B), contas e linha "TOTAL" (coluna C).
-O app só altera vencimento e valor das contas e cria o mês seguinte a partir do anterior; o resto
+O app só altera o valor das contas e cria o mês seguinte a partir do anterior; o resto
 (destinatário, chave, via, acesso, local) é da planilha. Estilos, tabelas do Excel, validações e
 links são mantidos. Antes de gravar, uma cópia do arquivo vai para a pasta de backups do app, e a
 gravação é atômica.
@@ -17,13 +17,13 @@ from collections import Counter
 from pathlib import Path
 
 COL_VENCIMENTO, COL_DESTINATARIO, COL_VALOR = 2, 3, 4
-COLUNAS_EDITAVEIS = (COL_VENCIMENTO, COL_VALOR)
+COLUNAS_EDITAVEIS = (COL_VALOR,)
 BACKUPS_MANTIDOS = 10
 MESES = [
     "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO",
     "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO",
 ]  # fmt: skip
-DIAS_PADRAO = (5, 20)  # vencimentos de cada bloco, quando a aba ainda não tem datas
+DIAS_VENCIMENTO = (5, 20)  # dia de vencimento de cada bloco
 
 
 def _sem_acento(texto) -> str:
@@ -65,15 +65,10 @@ def refazer_totais(ws) -> None:
 
 
 def ajustar_datas(ws, ano: int, mes: int) -> None:
-    """Põe o vencimento de cada conta no mês/ano da aba, mantendo o dia de cada bloco
-    (o dia que mais se repete; 5 e 20 se o bloco não tem datas) e acerta a data do TOTAL."""
+    """Vencimento é dado fixo: cada conta vence no mês/ano da aba, no dia do bloco
+    (primeiro bloco dia 5, segundo dia 20). A data do TOTAL acompanha."""
     for i, (cabecalho, total) in enumerate(_blocos(ws)):
-        dias = Counter(
-            ws.cell(l, COL_VENCIMENTO).value.day
-            for l in range(cabecalho + 1, total)
-            if isinstance(ws.cell(l, COL_VENCIMENTO).value, dt.datetime)
-        )
-        dia = dias.most_common(1)[0][0] if dias else DIAS_PADRAO[min(i, len(DIAS_PADRAO) - 1)]
+        dia = DIAS_VENCIMENTO[min(i, len(DIAS_VENCIMENTO) - 1)]
         for l in range(cabecalho + 1, total):
             ws.cell(l, COL_VENCIMENTO).value = dt.datetime(ano, mes, dia)
         ws.cell(total, COL_VENCIMENTO).value = f"{dia:02d}/{mes:02d}/{ano}"

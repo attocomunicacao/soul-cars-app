@@ -8,7 +8,7 @@ import type { Balanco } from "./types";
 import { Ficha } from "./Ficha";
 import { Configuracoes } from "./Configuracoes";
 import { Embutida } from "./Embutida";
-import { VisaoCrm } from "./VisaoCrm";
+import { LeadsSouliaIa } from "./LeadsSouliaIa";
 import { Financas } from "./Financas";
 import { AvisosAnuncio } from "./AvisosAnuncio";
 import { statusProducao, type StatusProducao } from "./lib/producao";
@@ -237,7 +237,7 @@ export function App() {
             setErro("");
           }}
         >
-          03 · Leads
+          03 · Leads e Soul IA
         </button>
         <button
           className={pagina === "bndv" ? "selected" : ""}
@@ -309,7 +309,7 @@ export function App() {
                 : pagina === "financas"
                   ? "Contas do mês a partir da planilha financeira."
                   : pagina === "leads"
-                    ? "Visão geral dos leads do CRM: quentes, esperando resposta e por etiqueta."
+                    ? "Painel do CRM com o desempenho do atendimento e, em aba à parte, a memória da Soul IA."
                     : "Ficha, produção, criativos e publicação em um só lugar."}
             </p>
           </div>
@@ -482,7 +482,7 @@ export function App() {
         {pagina === "financas" ? (
           <Financas aoErro={setErro} />
         ) : pagina === "leads" ? (
-          <VisaoCrm aoErro={setErro} />
+          <LeadsSouliaIa aoErro={setErro} />
         ) : aba === "vitrine" && pagina === "estoque" ? (
           <Vitrine
             lista={lista}

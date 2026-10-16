@@ -124,8 +124,6 @@ export const gerarVideo = (
   invoke<VideoPronto>("video_gerar", { pasta, veiculo, motor, preco, python });
 
 /** Recodifica o VIDEO_*.mp4 em ANUNCIO/ para subir em anúncio (cerca de 10 Mbps). */
-export const gerarVideoLeve = (pasta: string, python?: string | null) =>
-  invoke<VideoPronto>("video_leve", { pasta, python });
 
 /** Etapas do fluxo, na ordem, com o que falta em cada uma. */
 export type Etapa = {

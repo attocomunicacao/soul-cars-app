@@ -32,6 +32,7 @@ import {
 } from "./embutidas";
 import * as financas from "./financas";
 import * as utalk from "./utalk";
+import * as souliaIa from "./soulia/soulia";
 import { vitrine } from "./estoque/vitrine";
 import { exportarRelatorioPdf } from "./estoque/relatorio-pdf";
 import { gerarHtml } from "./estoque/relatorio";
@@ -241,8 +242,16 @@ const COMANDOS: Record<string, Comando> = {
   utalk_estado: () => utalk.estadoUtalk(),
   utalk_token_salvar: (a) => utalk.salvarTokenUtalk(String(a.token)),
   utalk_token_remover: () => utalk.removerTokenUtalk(),
-  utalk_metricas: () => utalk.metricasUtalk(),
   utalk_visao: () => utalk.visaoUtalk(),
+  // ---- Soul IA (memória das conversas do uTalk) ----
+  soulia_estado: () => souliaIa.estadoSouliaIa(),
+  soulia_sincronizar: (a) =>
+    souliaIa.sincronizarSouliaIa({ limite: a.limite }, emitir),
+  soulia_desempenho: () => souliaIa.desempenhoSouliaIa(),
+  soulia_cancelar: () => souliaIa.cancelarSouliaIa(),
+  soulia_exportar: () => souliaIa.exportarSouliaIa(emitir),
+  soulia_abrir_pasta: () => souliaIa.abrirPastaSouliaIa(),
+  soulia_esquecer: () => souliaIa.esquecerSouliaIa(),
   estoque_vitrine: () => vitrine(),
   // ---- Finanças (planilha mensal vinculada) ----
   financas_estado: () => financas.estadoFinancas(),
@@ -311,13 +320,6 @@ const COMANDOS: Record<string, Comando> = {
     semCopiaEmAndamento();
     return motor.gerarVideo(
       a as Parameters<typeof motor.gerarVideo>[0],
-      emitir,
-    );
-  },
-  video_leve: (a) => {
-    semCopiaEmAndamento();
-    return motor.gerarVideoLeve(
-      a as Parameters<typeof motor.gerarVideoLeve>[0],
       emitir,
     );
   },

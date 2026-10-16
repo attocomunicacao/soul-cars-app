@@ -8,8 +8,6 @@ import { slugInstagram } from "./instagram";
 
 /** Prefixo do nome da campanha de venda (o DES.md ainda gera [LEAD]; o cartão corrige). */
 export const PREFIXO_VENDA = "[VENDA]";
-/** Acima disso o vídeo deixa de ser "leve" para subir em anúncio. */
-export const LIMITE_VIDEO_LEVE_BYTES = 100 * 1024 * 1024;
 /** Dados do BNDV mais velhos que isso não garantem o aviso de venda. */
 export const HORAS_DADOS_ANTIGOS = 24;
 
@@ -23,8 +21,6 @@ export type EntradaChecklist = {
   des_md: boolean;
   fotos: string[];
   video_final: string | null;
-  video_leve: string | null;
-  video_leve_bytes: number | null;
   criativos: string[];
 };
 
@@ -38,9 +34,6 @@ export type ItemChecklist = {
 };
 
 const stem = (n: string) => n.replace(/\.[^.]+$/, "");
-const mb = (b: number) =>
-  (b / 1024 / 1024).toLocaleString("pt-BR", { maximumFractionDigits: 0 }) +
-  " MB";
 
 /** Fotos "de verdade" (sem os recortes `_sem_fundo`), na ordem em que estão. */
 function fotosDoVeiculo(nomes: string[]) {
@@ -97,8 +90,6 @@ export function fotoDoAnuncio(
 export function checklist(e: EntradaChecklist): ItemChecklist[] {
   const fotos = fotosNumeradas(e.fotos);
   const foto = fotoDoAnuncio(e.criativos, e.nome, e.ano);
-  const leveGrande =
-    e.video_leve_bytes != null && e.video_leve_bytes > LIMITE_VIDEO_LEVE_BYTES;
   return [
     {
       id: "documento",
@@ -126,16 +117,6 @@ export function checklist(e: EntradaChecklist): ItemChecklist[] {
       detalhe: e.video_final
         ? e.video_final.split(/[\\/]/).pop()!
         : "Gere o vídeo no Editor Mágico",
-      destino: "producao",
-    },
-    {
-      id: "leve",
-      titulo: "Versão leve para anúncio",
-      ok: !!e.video_leve,
-      detalhe: e.video_leve
-        ? `${e.video_leve.split(/[\\/]/).pop()} (${e.video_leve_bytes != null ? mb(e.video_leve_bytes) : "?"})` +
-          (leveGrande ? " · passa de 100 MB, confira antes de subir" : "")
-        : "Gere a versão leve na aba Produção",
       destino: "producao",
     },
     {

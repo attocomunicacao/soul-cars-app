@@ -38,6 +38,7 @@ export const METODOS_DO_MOTOR = [
   "ficha_web_ficha",
   "fotos_organizar",
   "planilha_aplicar",
+  "soulia_planilha",
 ] as const;
 
 /** Extensões que o Windows executaria ao "abrir" o arquivo. */
@@ -218,8 +219,14 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
     utalk_estado: vazio,
     utalk_token_salvar: { args: { token: texto({ max: 4000 }) } },
     utalk_token_remover: vazio,
-    utalk_metricas: vazio,
     utalk_visao: vazio,
+    soulia_estado: vazio,
+    soulia_sincronizar: { args: { limite: opcional(inteiro) } },
+    soulia_desempenho: vazio,
+    soulia_cancelar: vazio,
+    soulia_exportar: vazio,
+    soulia_abrir_pasta: vazio,
+    soulia_esquecer: vazio,
     estoque_vitrine: vazio,
     financas_estado: vazio,
     financas_vincular: { args: { origem: caminhoQualquer } },
@@ -236,7 +243,7 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
             coluna: opcional(inteiro),
             variaveis: opcional(lista(lista(texto({ max: 60 }), 50), 10)),
             valor: opcional(anulavel(texto({ max: 500, vazio: true }))),
-            tipo: opcional(umDe("texto", "data", "numero")),
+            tipo: opcional(umDe("numero")),
           }),
           200,
         ),
@@ -291,7 +298,6 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
         python: opcional(caminhoQualquer),
       },
     },
-    video_leve: { args: { pasta, python: opcional(caminhoQualquer) } },
     video_cancelar: vazio,
 
     // ---- sistema ----

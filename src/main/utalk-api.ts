@@ -3,6 +3,8 @@
  * Conta os leads (contatos) de cada etiqueta. Nada é alterado no CRM.
  */
 
+import { classificarEtiqueta } from "../compartilhado/crm-etiquetas";
+
 export const BASE_UTALK = "https://app-utalk.umbler.com/api";
 
 export type Buscar = (url: string, init: RequestInit) => Promise<Response>;
@@ -13,8 +15,6 @@ export type ContagemEtiqueta = {
   emoji: string | null;
   leads: number;
 };
-
-export type Temperatura = "quente" | "morno" | "frio";
 
 export type LeadResumo = {
   id: string;
@@ -27,20 +27,15 @@ export type VisaoGeral = {
   organizacao: string;
   atualizadoEm: string;
   totalLeads: number;
+  /** Leads sem FINALIZADO nem DESQUALIFICADO; `null` se essas etiquetas não existem. */
+  emAtendimento: number | null;
   conversasNovas7d: number;
   conversasAbertas: number;
   aguardando: number;
-  /** Leads por etiqueta de temperatura; `null` quando a etiqueta não existe no uTalk. */
-  temperatura: Record<Temperatura, number | null>;
+  /** Todas as etiquetas com o total de leads (a interface classifica e agrupa). */
+  etiquetas: ContagemEtiqueta[];
   listaAguardando: LeadResumo[];
   listaQuentes: LeadResumo[];
-};
-
-export type MetricasUtalk = {
-  organizacao: string;
-  totalLeads: number;
-  etiquetas: ContagemEtiqueta[];
-  atualizadoEm: string;
 };
 
 export type Pagina<T> = { items?: T[]; page?: { totalItems?: number } };
@@ -48,6 +43,7 @@ type Etiqueta = { id: string; name?: string; emoji?: string | null };
 
 const TOMADA = 100;
 const SIMULTANEAS = 4;
+const ESPERA_TENTATIVA_MS = 800;
 
 export class ErroUtalk extends Error {}
 
@@ -61,15 +57,35 @@ export async function pedir<T>(
   for (const [k, v] of Object.entries(consulta))
     for (const item of Array.isArray(v) ? v : [v])
       url.searchParams.append(k, item);
-  let r: Response;
-  try {
-    r = await buscar(url.toString(), {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-      signal: AbortSignal.timeout(30_000),
-    });
-  } catch {
+  const TENTATIVAS = 3;
+  let r: Response | undefined;
+  let falha: unknown;
+  for (let tentativa = 1; tentativa <= TENTATIVAS; tentativa++) {
+    try {
+      r = await buscar(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+        signal: AbortSignal.timeout(30_000),
+      });
+      // Erro do servidor costuma passar sozinho; as demais respostas seguem para a checagem abaixo.
+      if (r.status < 500 || tentativa === TENTATIVAS) break;
+    } catch (e) {
+      falha = e;
+      r = undefined;
+    }
+    if (tentativa < TENTATIVAS)
+      await new Promise((ok) =>
+        setTimeout(ok, ESPERA_TENTATIVA_MS * tentativa),
+      );
+  }
+  if (!r) {
+    const nome = falha instanceof Error ? falha.name : "";
     throw new ErroUtalk(
-      "Não consegui falar com o uTalk. Confira a internet e tente de novo.",
+      nome === "TimeoutError" || nome === "AbortError"
+        ? "O uTalk demorou demais para responder. Tente de novo em instantes."
+        : "Não consegui falar com o uTalk (tentei 3 vezes). Confira a internet, o firewall ou a VPN e tente de novo.",
     );
   }
   if (r.status === 401 || r.status === 403)
@@ -143,7 +159,7 @@ async function contarContatos(
     organizationId,
     Behavior: "CountOnly",
     Take: "1",
-    State: "Active",
+    State: "All",
   };
   if (etiquetaId) {
     consulta["Tags.Rule"] = "ContainsAny";
@@ -156,47 +172,6 @@ async function contarContatos(
     consulta,
   );
   return p.page?.totalItems ?? 0;
-}
-
-/** Leads por etiqueta (maior primeiro) e o total de contatos ativos. */
-export async function metricas(
-  buscar: Buscar,
-  token: string,
-): Promise<MetricasUtalk> {
-  const org = await descobrirOrganizacao(buscar, token);
-  const [etiquetas, totalLeads] = await Promise.all([
-    listarEtiquetas(buscar, token, org.id),
-    contarContatos(buscar, token, org.id),
-  ]);
-  const contadas = await emLotes(etiquetas, SIMULTANEAS, async (e) => ({
-    id: e.id,
-    nome: (e.name ?? "").trim() || "(sem nome)",
-    emoji: e.emoji ?? null,
-    leads: await contarContatos(buscar, token, org.id, e.id),
-  }));
-  contadas.sort(
-    (a, b) => b.leads - a.leads || a.nome.localeCompare(b.nome, "pt-BR"),
-  );
-  return {
-    organizacao: org.nome,
-    totalLeads,
-    etiquetas: contadas,
-    atualizadoEm: new Date().toISOString(),
-  };
-}
-
-const TEMPERATURAS: Temperatura[] = ["quente", "morno", "frio"];
-
-const semAcento = (s: string) =>
-  s
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase();
-
-/** Reconhece etiquetas como "QUENTE", "Lead quente" ou "🔥 Quente". */
-export function temperaturaDaEtiqueta(nome: string): Temperatura | null {
-  const n = semAcento(nome);
-  return TEMPERATURAS.find((t) => new RegExp(`\\b${t}\\b`).test(n)) ?? null;
 }
 
 type ContatoItem = {
@@ -216,19 +191,14 @@ type ConversaItem = {
 const nomesDasEtiquetas = (tags?: { name?: string }[]) =>
   (tags ?? []).map((e) => (e.name ?? "").trim()).filter(Boolean);
 
-/** Visão geral do CRM: cartões, quem espera resposta e os leads quentes. */
+/** Visão geral do CRM: totais, leads por etiqueta, quem espera resposta e os leads quentes. */
 export async function visaoGeral(
   buscar: Buscar,
   token: string,
   agora = new Date(),
 ): Promise<VisaoGeral> {
   const org = await descobrirOrganizacao(buscar, token);
-  const etiquetas = await listarEtiquetas(buscar, token, org.id);
-  const idTemperatura: Partial<Record<Temperatura, string>> = {};
-  for (const e of etiquetas) {
-    const t = temperaturaDaEtiqueta(e.name ?? "");
-    if (t && !idTemperatura[t]) idTemperatura[t] = e.id;
-  }
+  const todas = await listarEtiquetas(buscar, token, org.id);
 
   const sete = new Date(agora.getTime() - 7 * 86_400_000).toISOString();
   const conversas = (extra: Record<string, string | string[]>) =>
@@ -240,50 +210,68 @@ export async function visaoGeral(
   const contatos = (extra: Record<string, string | string[]>) =>
     pedir<Pagina<ContatoItem>>(buscar, token, "/v1/contacts/", {
       organizationId: org.id,
-      State: "Active",
+      State: "All",
       ...extra,
     });
   const total = (p: Pagina<unknown>) => p.page?.totalItems ?? 0;
 
-  const [totalLeads, novas, abertas, espera, listaEspera] = await Promise.all([
-    contarContatos(buscar, token, org.id),
-    conversas({
-      ChatState: "All",
-      DateStartCreatedAtUTC: sete,
-      Behavior: "CountOnly",
-      Take: "1",
-    }),
-    conversas({ ChatState: "Open", Behavior: "CountOnly", Take: "1" }),
-    conversas({
-      ChatState: "Open",
-      LastMessage: "Contact",
-      Behavior: "CountOnly",
-      Take: "1",
-    }),
-    conversas({
-      ChatState: "Open",
-      LastMessage: "Contact",
-      ChatOrderBy: "LastMessage",
-      Order: "Asc",
-      Take: "30",
-    }),
-  ]);
+  const encerradas = todas
+    .filter(
+      (e) => classificarEtiqueta(e.name ?? "", e.emoji).tipo === "encerrado",
+    )
+    .map((e) => e.id);
+  const idQuente = todas.find((e) => {
+    const c = classificarEtiqueta(e.name ?? "", e.emoji);
+    return c.tipo === "temperatura" && c.chave === "quente";
+  })?.id;
 
-  const temperatura: Record<Temperatura, number | null> = {
-    quente: null,
-    morno: null,
-    frio: null,
-  };
-  for (const t of TEMPERATURAS) {
-    const id = idTemperatura[t];
-    if (id) temperatura[t] = await contarContatos(buscar, token, org.id, id);
-  }
+  const [totalLeads, ativos, novas, abertas, espera, listaEspera, contadas] =
+    await Promise.all([
+      contarContatos(buscar, token, org.id),
+      encerradas.length
+        ? contatos({
+            "Tags.Rule": "None",
+            "Tags.Values": encerradas,
+            Behavior: "CountOnly",
+            Take: "1",
+          })
+        : Promise.resolve(null),
+      conversas({
+        ChatState: "All",
+        DateStartCreatedAtUTC: sete,
+        Behavior: "CountOnly",
+        Take: "1",
+      }),
+      conversas({ ChatState: "Open", Behavior: "CountOnly", Take: "1" }),
+      conversas({
+        ChatState: "Open",
+        LastMessage: "Contact",
+        Behavior: "CountOnly",
+        Take: "1",
+      }),
+      conversas({
+        ChatState: "Open",
+        LastMessage: "Contact",
+        ChatOrderBy: "LastMessage",
+        Order: "Asc",
+        Take: "30",
+      }),
+      emLotes(todas, SIMULTANEAS, async (e) => ({
+        id: e.id,
+        nome: (e.name ?? "").trim() || "(sem nome)",
+        emoji: e.emoji ?? null,
+        leads: await contarContatos(buscar, token, org.id, e.id),
+      })),
+    ]);
+  contadas.sort(
+    (a, b) => b.leads - a.leads || a.nome.localeCompare(b.nome, "pt-BR"),
+  );
 
   let listaQuentes: LeadResumo[] = [];
-  if (idTemperatura.quente) {
+  if (idQuente) {
     const q = await contatos({
       "Tags.Rule": "ContainsAny",
-      "Tags.Values": [idTemperatura.quente],
+      "Tags.Values": [idQuente],
       OrderBy: "LastActiveUTC",
       Order: "Desc",
       Take: "20",
@@ -300,10 +288,11 @@ export async function visaoGeral(
     organizacao: org.nome,
     atualizadoEm: agora.toISOString(),
     totalLeads,
+    emAtendimento: ativos === null ? null : total(ativos),
     conversasNovas7d: total(novas),
     conversasAbertas: total(abertas),
     aguardando: total(espera),
-    temperatura,
+    etiquetas: contadas,
     listaAguardando: (listaEspera.items ?? []).map((c) => ({
       id: c.id,
       nome: (c.contact?.name ?? "").trim() || "(sem nome)",

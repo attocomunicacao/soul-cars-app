@@ -5,9 +5,14 @@
  */
 import { safeStorage } from "electron";
 import * as caminhos from "./caminhos";
-import { metricas, visaoGeral, type Buscar } from "./utalk-api";
+import { visaoGeral, type Buscar } from "./utalk-api";
 
 const CHAVE = "utalkTokenCifrado";
+
+/** Só o processo principal usa o token (Soul IA e métricas); a interface nunca o recebe. */
+export function tokenUtalk() {
+  return lerToken();
+}
 
 function lerToken(): string | null {
   const guardado = caminhos.lerConfig()[CHAVE];
@@ -38,12 +43,6 @@ export function salvarTokenUtalk(token: string) {
 export function removerTokenUtalk() {
   caminhos.gravarConfig({ [CHAVE]: "" });
   return estadoUtalk();
-}
-
-export async function metricasUtalk() {
-  const token = lerToken();
-  if (!token) throw new Error("Cadastre o token do uTalk primeiro.");
-  return metricas(fetch as Buscar, token);
 }
 
 export async function visaoUtalk() {

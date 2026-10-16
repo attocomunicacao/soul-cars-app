@@ -37,6 +37,9 @@
     "testes/modelos.test.ts",
     "testes/gpu.test.ts",
     "testes/repositorio.test.ts",
-    "testes/utalk-api.test.ts"
+    "testes/utalk-api.test.ts",
+    "testes/crm-etiquetas.test.ts",
+    "testes/soulia.test.ts",
+    "testes/desempenho.test.ts"
   ]
 }

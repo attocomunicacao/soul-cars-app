@@ -100,6 +100,27 @@ export function Instagram({
   const conferir =
     registro?.carrossel === "conferir" || registro?.reels === "conferir";
   const trabalhando = ocupado || !!estado?.ocupado;
+  // "Pendente" só quer dizer "ainda não publicado": com os arquivos conferidos, mostra que está pronto.
+  const rotulo = (etapa: "carrossel" | "reels") => {
+    const estadoEtapa = registro?.[etapa] || "pendente";
+    if (estadoEtapa !== "pendente" || !plano) return tituloEstado[estadoEtapa];
+    const tem = plano.arquivos.some((f) =>
+      etapa === "carrossel" ? f.tipo === "carrossel" : f.tipo !== "carrossel",
+    );
+    return tem && !plano.pendencias.length
+      ? "Arquivos conferidos · pronto para publicar"
+      : tituloEstado.pendente;
+  };
+  // Diz por que o botão de publicar está desligado, na ordem em que a pessoa resolve.
+  const motivoBloqueio = !plano
+    ? "Carregando os arquivos…"
+    : plano.pendencias.length
+      ? 'Resolva os itens de "Antes de publicar".'
+      : !estado?.conta
+        ? "Informe e salve a conta do Instagram."
+        : !estado.aberto
+          ? 'Clique em "Abrir Instagram no app" e faça login.'
+          : "";
   return (
     <section className="panel instagram">
       <div className="actions">
@@ -162,7 +183,7 @@ export function Instagram({
         </div>
       )}
       <h3>1 · Carrossel — ordem 2 → 1 → 3</h3>
-      <p className="badge">{tituloEstado[registro?.carrossel || "pendente"]}</p>
+      <p className="badge">{rotulo("carrossel")}</p>
       <div className="instagram-midias">
         {plano?.arquivos
           .filter((f) => f.tipo === "carrossel")
@@ -179,7 +200,7 @@ export function Instagram({
         <textarea readOnly value={plano?.carrossel || ""} />
       </label>
       <h3>2 · Reels — vídeo editado</h3>
-      <p className="badge">{tituloEstado[registro?.reels || "pendente"]}</p>
+      <p className="badge">{rotulo("reels")}</p>
       <div className="instagram-midias">
         {plano?.arquivos
           .filter((f) => f.tipo !== "carrossel")
@@ -230,6 +251,9 @@ export function Instagram({
               ? "Retomar publicação do Reels"
               : "Publicar carrossel e depois Reels"}
         </button>
+        {!terminou && !conferir && !trabalhando && motivoBloqueio && (
+          <span role="status">{motivoBloqueio}</span>
+        )}
         {trabalhando && (
           <button
             onClick={() => {

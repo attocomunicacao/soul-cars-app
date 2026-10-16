@@ -13,13 +13,7 @@ import {
 } from "./lib/des";
 import { invoke, open, openPath } from "./lib/desktop";
 import { type VersaoCnw } from "./lib/engine";
-import {
-  gerarDocMd,
-  gravarNaPasta,
-  gerarVideo,
-  gerarVideoLeve,
-  tarjas,
-} from "./lib/producao";
+import { gerarDocMd, gravarNaPasta, gerarVideo, tarjas } from "./lib/producao";
 import {
   buscarCnwComBanco,
   fichaCnwComBanco,
@@ -507,9 +501,6 @@ export function Ficha({
               await comAndamento(() =>
                 gerarVideo(v.pasta!, t.veiculo, t.motor, t.preco),
               );
-            }}
-            videoLeve={async () => {
-              await comAndamento(() => gerarVideoLeve(v.pasta!));
             }}
           />
           <AndamentoVideo andamento={andamento} />

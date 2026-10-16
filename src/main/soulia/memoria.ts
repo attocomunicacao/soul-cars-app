@@ -220,7 +220,8 @@ export function gravarEventos(db: DatabaseSync, eventos: EventoGravar[]) {
   const inserir = db.prepare(
     `INSERT OR IGNORE INTO ia_eventos (id, conversa_id, em, tipo, detalhe) VALUES (?, ?, ?, ?, ?)`,
   );
-  for (const e of eventos) inserir.run(e.id, e.conversaId, e.em, e.tipo, e.detalhe);
+  for (const e of eventos)
+    inserir.run(e.id, e.conversaId, e.em, e.tipo, e.detalhe);
 }
 
 export function marcarSincronizada(
@@ -253,9 +254,9 @@ export function definirSync(db: DatabaseSync, chave: string, valor: string) {
 }
 
 export function lerSync(db: DatabaseSync, chave: string): string | null {
-  const r = db.prepare("SELECT valor FROM ia_sync WHERE chave = ?").get(chave) as
-    | { valor: string | null }
-    | undefined;
+  const r = db
+    .prepare("SELECT valor FROM ia_sync WHERE chave = ?")
+    .get(chave) as { valor: string | null } | undefined;
   return r?.valor ?? null;
 }
 
@@ -271,8 +272,7 @@ export type ResumoMemoria = {
 };
 
 export function resumoDaMemoria(db: DatabaseSync): ResumoMemoria {
-  const n = (sql: string) =>
-    Number((db.prepare(sql).get() as { n: number }).n);
+  const n = (sql: string) => Number((db.prepare(sql).get() as { n: number }).n);
   const faixa = db
     .prepare("SELECT MIN(em) AS a, MAX(em) AS b FROM ia_mensagens")
     .get() as { a: string | null; b: string | null };
@@ -338,9 +338,10 @@ export function lerConversas(db: DatabaseSync): ConversaLida[] {
     )
     .all() as Record<string, string | number | null>[];
   const porConversa = new Map<string, MensagemLida[]>();
+  const anuncioDaConversa = new Map<string, unknown>();
   const msgs = db
     .prepare(
-      "SELECT id, conversa_id, em, origem, tipo, texto, privada, atendente FROM ia_mensagens ORDER BY em, id",
+      "SELECT id, conversa_id, em, origem, tipo, texto, privada, atendente, anuncio_json FROM ia_mensagens ORDER BY em, id",
     )
     .all() as Record<string, string | number | null>[];
   for (const m of msgs) {
@@ -355,6 +356,11 @@ export function lerConversas(db: DatabaseSync): ConversaLida[] {
       atendente: (m.atendente as string | null) ?? null,
     });
     porConversa.set(String(m.conversa_id), lista);
+    if (m.anuncio_json && !anuncioDaConversa.has(String(m.conversa_id)))
+      anuncioDaConversa.set(
+        String(m.conversa_id),
+        tentar<unknown>(m.anuncio_json as string, null),
+      );
   }
   return linhas.map((c) => ({
     id: String(c.id),
@@ -369,7 +375,10 @@ export function lerConversas(db: DatabaseSync): ConversaLida[] {
     atendente: (c.atendente as string | null) ?? null,
     canal: (c.canal as string | null) ?? null,
     etiquetas: tentar<string[]>(c.etiquetas_json as string | null, []),
-    anuncio: tentar<unknown>(c.anuncio_json as string | null, null),
+    anuncio:
+      tentar<unknown>(c.anuncio_json as string | null, null) ??
+      anuncioDaConversa.get(String(c.id)) ??
+      null,
     mensagens: porConversa.get(String(c.id)) ?? [],
   }));
 }

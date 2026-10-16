@@ -8,7 +8,21 @@ const visivel = e => !!e && e.getBoundingClientRect().width > 0 && e.getBounding
 const dialogos = [...document.querySelectorAll('[role="dialog"]')].filter(visivel);
 const area = dialogos.at(-1) || document;
 const nome = e => [e.getAttribute('aria-label'),e.innerText,e.querySelector('svg[aria-label]')?.getAttribute('aria-label')].map(norm).filter(Boolean);
-const botao = (labels, raiz = area) => [...raiz.querySelectorAll('button,a,[role="button"]')].find(e => visivel(e) && !e.disabled && e.getAttribute('aria-disabled') !== 'true' && nome(e).some(n => labels.map(norm).includes(n)));
+const candidatos = raiz => [...raiz.querySelectorAll('button,a,[role="button"],[role="link"],[role="menuitem"],[role="tab"],div[tabindex="0"],span[tabindex="0"]')];
+const nomeBotao = e => [...nome(e), norm(e.textContent)].filter(Boolean);
+const achar = (labels, raiz) => {
+  const alvos = labels.map(norm);
+  const direto = candidatos(raiz).find(e => visivel(e) && !e.disabled && e.getAttribute('aria-disabled') !== 'true' && nomeBotao(e).some(n => alvos.includes(n)));
+  if (direto) return direto;
+  // Menu recolhido: só há o ícone, e o nome está no aria-label do SVG ou da imagem.
+  for (const icone of raiz.querySelectorAll('svg[aria-label],[aria-label]')) {
+    if (!alvos.includes(norm(icone.getAttribute('aria-label')))) continue;
+    const alvo = icone.closest('a,button,[role="button"],[role="link"],[tabindex="0"]') || icone;
+    if (visivel(alvo) && alvo.getAttribute('aria-disabled') !== 'true') return alvo;
+  }
+  return undefined;
+};
+const botao = (labels, raiz = area) => achar(labels, raiz) || (raiz === area && area !== document ? achar(labels, document) : undefined);
 const legenda = () => [...area.querySelectorAll('textarea,[contenteditable="true"][role="textbox"],[contenteditable="true"][aria-label]')].find(e => visivel(e) && /caption|legenda/i.test([e.getAttribute('aria-label'),e.getAttribute('placeholder'),e.getAttribute('data-placeholder')].join(' '))) || [...area.querySelectorAll('textarea,[contenteditable="true"][role="textbox"]')].find(visivel);
 `;
 
@@ -49,22 +63,51 @@ export class InstagramBrowser {
   }
   async conta() {
     return this.avaliar<string>(`
-      const perfil = [...document.querySelectorAll('a[href]')].find(e => visivel(e) && nome(e).some(n => ['perfil','profile'].includes(n)));
-      const href = perfil?.getAttribute('href') || '';
-      const match = new URL(href || '/', location.href).pathname.match(/^\\/([a-zA-Z0-9._]+)\\/$/);
-      return match && !['accounts','direct','explore','reels'].includes(match[1]) ? match[1].toLowerCase() : '';
+      const reservados = ['accounts','direct','explore','reels','stories','p','reel','about','legal'];
+      const handle = href => {
+        try {
+          const m = new URL(href || '/', location.href).pathname.match(/^\\/([a-zA-Z0-9._]+)\\/?$/);
+          return m && !reservados.includes(m[1].toLowerCase()) ? m[1].toLowerCase() : '';
+        } catch { return ''; }
+      };
+      const textoNome = e => [nome(e), [norm(e.textContent)]].flat();
+      const links = [...document.querySelectorAll('a[href]')];
+      // 1) O link "Perfil" do menu lateral (texto, rótulo ou ícone).
+      const perfil = links.find(e => visivel(e) && textoNome(e).some(n => ['perfil','profile'].includes(n)));
+      let achado = handle(perfil?.getAttribute('href'));
+      // 2) A foto do próprio perfil dentro de um link do menu: "Foto do perfil de fulano".
+      if (!achado) {
+        for (const img of document.querySelectorAll('img[alt]')) {
+          const m = norm(img.alt).match(/(?:foto do perfil de|profile picture of)\\s+([a-z0-9._]+)|^([a-z0-9._]+)'s profile picture/);
+          const dono = m && (m[1] || m[2]);
+          if (dono && img.closest('a[href]') && handle(img.closest('a[href]').getAttribute('href')) === dono) { achado = dono; break; }
+        }
+      }
+      return achado;
     `);
   }
   private async clicar(labels: string[], timeout = 25_000) {
-    return this.esperar(
-      () =>
-        this.avaliar<boolean>(`
+    try {
+      return await this.esperar(
+        () =>
+          this.avaliar<boolean>(`
       const e = botao(${JSON.stringify(labels)});
       if (!e) return false; e.click(); return true;
     `),
-      `Não encontrei “${labels[0]}” no Instagram. Confira a janela e tente novamente.`,
-      timeout,
-    );
+        `Não encontrei “${labels[0]}” no Instagram. Confira a janela e tente novamente.`,
+        timeout,
+      );
+    } catch (erro) {
+      // Mostra os rótulos que a página tem, para ajustar a busca quando a tela do Instagram mudar.
+      const vistos = await this.avaliar<string[]>(
+        `
+        return [...new Set([...document.querySelectorAll('[aria-label]')].filter(visivel).map(e => e.getAttribute('aria-label')))].slice(0, 40);
+      `,
+      ).catch(() => [] as string[]);
+      if (vistos.length)
+        this.log(`Rótulos visíveis na página: ${vistos.join(" | ")}`);
+      throw erro;
+    }
   }
   private onDebugger = (
     _e: unknown,
@@ -143,12 +186,24 @@ export class InstagramBrowser {
         throw new Error(
           "Feche o editor de publicação ou aviso aberto no Instagram antes de iniciar.",
         );
-      await this.clicar(["Criar", "Create", "Nova publicação", "New post"]);
-      // Algumas versões exibem primeiro um menu com Publicação/Reel.
-      const menu = await this.avaliar<boolean>(
-        `const e = botao(['Publicação','Post','Reel']); if (e) {e.click(); return true;} return false;`,
+      await this.clicar([
+        "Criar",
+        "Create",
+        "Nova publicação",
+        "New post",
+        "Novo post",
+        "Nova postagem",
+      ]);
+      // O "Criar" abre um menu (Postar / Vídeo ao vivo / Anúncio, ou Publicação / Reel).
+      const menuAberto = await this.esperar(
+        () =>
+          this.avaliar<boolean>(
+            "const e = botao(['Postar','Publicação','Post']); if (e) {e.click(); return true;} return !!document.querySelector('input[type=file]') || !!botao(['Selecionar do computador','Select from computer']);",
+          ),
+        "O menu de criação do Instagram não abriu.",
+        8_000,
       );
-      if (menu) await new Promise((resolve) => setTimeout(resolve, 500));
+      if (menuAberto) await new Promise((resolve) => setTimeout(resolve, 500));
       await this.esperar(
         () =>
           this.avaliar<boolean>(

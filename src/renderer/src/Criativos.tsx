@@ -12,7 +12,6 @@ import {
 } from "./lib/arquivos";
 import { fuelLabel, formatNumber, shortGearbox } from "./lib/des";
 import { gravarNaPasta, recortarArquivo } from "./lib/producao";
-import { removerFundo } from "./lib/engine";
 
 export function Criativos({
   veiculo: v,
@@ -31,8 +30,7 @@ export function Criativos({
   const atual = useRef(v);
   atual.current = v;
   const exportadosInstagram = useRef(new Set<string>());
-  const [aviso, setAviso] = useState(""),
-    [ocupado, setOcupado] = useState(false);
+  const [aviso, setAviso] = useState("");
   const post = (data: unknown) =>
     frame.current?.contentWindow?.postMessage(
       data,
@@ -186,51 +184,6 @@ export function Criativos({
           {aviso ||
             "Ajustes e fotos são salvos automaticamente. Exporte para CRIATIVO."}
         </p>
-        <label className="file-button">
-          {ocupado ? "Recortando…" : "Recortar foto"}
-          <input
-            disabled={ocupado}
-            type="file"
-            accept="image/*"
-            onChange={async (e) => {
-              const f = e.target.files?.[0];
-              e.target.value = "";
-              if (!f) return;
-              setOcupado(true);
-              try {
-                const png = await removerFundo(f, f.name);
-                await salvarFoto(v.id, "original", f);
-                await salvarFoto(v.id, "main", png);
-                post({
-                  type: "soul:photos",
-                  photos: [
-                    { slot: "original", file: f },
-                    { slot: "main", file: png },
-                  ],
-                });
-              } catch (err) {
-                setAviso(String(err));
-              } finally {
-                setOcupado(false);
-              }
-            }}
-          />
-        </label>
-        <button
-          disabled={ocupado}
-          onClick={async () => {
-            setOcupado(true);
-            try {
-              await vitrine();
-            } catch (e) {
-              setAviso(String(e));
-            } finally {
-              setOcupado(false);
-            }
-          }}
-        >
-          Recortar carrossel 1, 2 e 4
-        </button>
       </div>
       <iframe
         ref={frame}

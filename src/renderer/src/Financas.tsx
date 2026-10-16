@@ -23,7 +23,7 @@ type Operacao = {
   linha?: number;
   coluna?: number;
   valor?: string | null;
-  tipo?: "texto" | "data" | "numero";
+  tipo?: "numero";
   variaveis?: string[][];
 };
 
@@ -58,22 +58,6 @@ const numeroBr = (n: number) =>
   });
 
 const ou = (texto: string) => (texto && texto !== "-" ? texto : "—");
-
-/** "dd/mm/aaaa" ou "aaaa-mm-dd" → "aaaa-mm-dd"; vazio → null; inválido → undefined. */
-function lerDataDigitada(entrada: string): string | null | undefined {
-  const t = entrada.trim();
-  if (!t) return null;
-  const br = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  const iso = br
-    ? `${br[3]}-${br[2].padStart(2, "0")}-${br[1].padStart(2, "0")}`
-    : /^\d{4}-\d{2}-\d{2}$/.test(t)
-      ? t
-      : "";
-  const d = new Date(`${iso}T00:00:00`);
-  return iso && !Number.isNaN(d.getTime()) && d.toISOString().startsWith(iso)
-    ? iso
-    : undefined;
-}
 
 /** Caixa de "pago": clique, ou clique e arraste por várias linhas. */
 function CaixaPago({
@@ -122,6 +106,7 @@ export function Financas({ aoErro }: { aoErro: (mensagem: string) => void }) {
   const [mesAtual, setMesAtual] = useState("");
   const [busca, setBusca] = useState("");
   const [ocupado, setOcupado] = useState(false);
+  const [copiada, setCopiada] = useState("");
   const lidoEm = useRef(0);
   const fila = useRef<Promise<unknown>>(Promise.resolve());
   const montado = useRef(true);
@@ -281,37 +266,25 @@ export function Financas({ aoErro }: { aoErro: (mensagem: string) => void }) {
     });
   }
 
-  /** Grava a célula se o texto mudou; entrada inválida volta ao valor anterior. */
-  function confirmarCelula(
-    aba: string,
-    conta: Conta,
-    campo: HTMLInputElement,
-    tipo: "data" | "numero",
-  ) {
-    const coluna = tipo === "data" ? 2 : 4;
-    const anterior = campo.defaultValue;
+  /** Grava o valor se o texto mudou; entrada inválida volta ao valor anterior. */
+  function confirmarValor(aba: string, conta: Conta, campo: HTMLInputElement) {
     const digitado = campo.value.trim();
-    if (digitado === anterior) return;
-    let valor: string | null;
-    if (tipo === "data") {
-      const iso = lerDataDigitada(digitado);
-      if (iso === undefined) {
-        aoErro("Data inválida. Use dd/mm/aaaa.");
-        campo.value = anterior;
-        return;
-      }
-      valor = iso;
-    } else {
-      const n = lerValorDigitado(digitado);
-      if (n === undefined) {
-        aoErro("Valor inválido. Use números, como 1.234,56.");
-        campo.value = anterior;
-        return;
-      }
-      valor = n === null ? null : String(n);
+    if (digitado === campo.defaultValue) return;
+    const n = lerValorDigitado(digitado);
+    if (n === undefined) {
+      aoErro("Valor inválido. Use números, como 1.234,56.");
+      campo.value = campo.defaultValue;
+      return;
     }
     void editar([
-      { op: "celula", aba, linha: conta.linha, coluna, valor, tipo },
+      {
+        op: "celula",
+        aba,
+        linha: conta.linha,
+        coluna: 4,
+        valor: n === null ? null : String(n),
+        tipo: "numero",
+      },
     ]);
   }
 
@@ -342,6 +315,16 @@ export function Financas({ aoErro }: { aoErro: (mensagem: string) => void }) {
       campo.blur();
     }
     void conta;
+  }
+
+  async function copiarChave(chave: string) {
+    try {
+      await invoke("copiar_texto", { texto: chave });
+      setCopiada(chave);
+      setTimeout(() => montado.current && setCopiada(""), 1500);
+    } catch (e) {
+      aoErro(String(e));
+    }
   }
 
   async function novoMes(ultimo: Mes) {
@@ -508,31 +491,15 @@ export function Financas({ aoErro }: { aoErro: (mensagem: string) => void }) {
                                 }
                               />
                             </td>
-                            <td>
-                              <input
-                                key={dataBr(c.vencimento, "")}
-                                defaultValue={dataBr(c.vencimento, "")}
-                                disabled={ocupado}
-                                data-coluna={2}
-                                aria-label={`Vencimento de ${c.destinatario}`}
-                                className={atrasada ? "atrasada" : undefined}
-                                title={
-                                  atrasada
-                                    ? "Vencida e ainda não paga"
-                                    : undefined
-                                }
-                                style={{ minWidth: 110 }}
-                                onFocus={(e) => e.currentTarget.select()}
-                                onKeyDown={(e) => teclar(e, c)}
-                                onBlur={(e) =>
-                                  confirmarCelula(
-                                    mes.nome,
-                                    c,
-                                    e.currentTarget,
-                                    "data",
-                                  )
-                                }
-                              />
+                            <td
+                              className={atrasada ? "fixa atrasada" : "fixa"}
+                              title={
+                                atrasada
+                                  ? "Vencida e ainda não paga"
+                                  : undefined
+                              }
+                            >
+                              {dataBr(c.vencimento)}
                             </td>
                             <td className="fixa">
                               <strong>{c.destinatario}</strong>
@@ -552,12 +519,7 @@ export function Financas({ aoErro }: { aoErro: (mensagem: string) => void }) {
                                   onFocus={(e) => e.currentTarget.select()}
                                   onKeyDown={(e) => teclar(e, c)}
                                   onBlur={(e) =>
-                                    confirmarCelula(
-                                      mes.nome,
-                                      c,
-                                      e.currentTarget,
-                                      "numero",
-                                    )
+                                    confirmarValor(mes.nome, c, e.currentTarget)
                                   }
                                 />
                               ) : (
@@ -571,7 +533,19 @@ export function Financas({ aoErro }: { aoErro: (mensagem: string) => void }) {
                                 </span>
                               )}
                             </td>
-                            <td className="fixa">{ou(c.chave)}</td>
+                            <td className="fixa copiavel">
+                              {ou(c.chave)}
+                              {c.chave && c.chave !== "-" && (
+                                <button
+                                  className="copiar-chave"
+                                  title="Copiar chave"
+                                  aria-label={`Copiar chave de ${c.destinatario}`}
+                                  onClick={() => void copiarChave(c.chave)}
+                                >
+                                  {copiada === c.chave ? "Copiado" : "Copiar"}
+                                </button>
+                              )}
+                            </td>
                             <td className="fixa">{ou(c.via)}</td>
                             <td className="fixa">{ou(c.acesso)}</td>
                             <td className="fixa">{ou(c.local)}</td>

@@ -53,21 +53,16 @@ class TestPlanilha(unittest.TestCase):
     def _ws_de(self, aba):
         return openpyxl.load_workbook(self.arquivo)[aba]
 
-    def test_edita_vencimento_e_valor(self):
-        self._aplicar(
-            [
-                {"op": "celula", "aba": "OUTUBRO", "linha": 3, "coluna": 4, "valor": "12.5", "tipo": "numero"},
-                {"op": "celula", "aba": "OUTUBRO", "linha": 3, "coluna": 2, "valor": "2026-11-07", "tipo": "data"},
-            ]
-        )
+    def test_edita_o_valor(self):
+        self._aplicar([{"op": "celula", "aba": "OUTUBRO", "linha": 3, "coluna": 4, "valor": "12.5", "tipo": "numero"}])
         ws = self._ws()
         self.assertEqual(ws["D3"].value, 12.5)
-        self.assertEqual(ws["B3"].value, dt.datetime(2026, 11, 7))
         self.assertEqual(ws["D5"].value, "=SUM('OUTUBRO'!$D$3:$D$4)")
 
-    def test_so_vencimento_e_valor_mudam_pelo_app(self):
-        with self.assertRaises(ValueError):
-            self._aplicar([{"op": "celula", "aba": "OUTUBRO", "linha": 3, "coluna": 3, "valor": "x"}])
+    def test_vencimento_e_o_resto_so_mudam_na_planilha(self):
+        for coluna in (2, 3, 5):
+            with self.assertRaises(ValueError):
+                self._aplicar([{"op": "celula", "aba": "OUTUBRO", "linha": 3, "coluna": coluna, "valor": "x"}])
 
     def test_nao_edita_cabecalho_nem_total(self):
         for linha in (2, 5):
@@ -113,12 +108,14 @@ class TestPlanilha(unittest.TestCase):
     def test_otimizar_corrige_totais_e_datas(self):
         wb = openpyxl.load_workbook(self.arquivo)
         wb["OUTUBRO"]["D5"].value = "=SUM(OUTUBRO!$D$3:$D$3)"
-        wb["OUTUBRO"]["B8"].value = dt.datetime(2026, 9, 20)
+        wb["OUTUBRO"]["B8"].value = dt.datetime(2026, 9, 25)
+        wb["OUTUBRO"]["B3"].value = dt.datetime(2026, 10, 9)
         wb.save(self.arquivo)
         planilha.otimizar(str(self.arquivo), str(self.backups))
         ws = self._ws()
         self.assertEqual(ws["D5"].value, "=SUM('OUTUBRO'!$D$3:$D$4)")
         self.assertEqual(ws["B8"].value, dt.datetime(2026, 10, 20))
+        self.assertEqual(ws["B3"].value, dt.datetime(2026, 10, 5))
 
     def test_recusa_arquivo_alterado_depois_da_leitura(self):
         with self.assertRaises(ValueError):

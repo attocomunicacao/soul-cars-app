@@ -48,8 +48,6 @@ const completo: EntradaChecklist = {
   des_md: true,
   fotos: ["1.jpg", "1_sem_fundo.png", "2.jpg", "3.jpeg", "3_sem_fundo.png"],
   video_final: "C:\\x\\VIDEO_FORD.mp4",
-  video_leve: "C:\\x\\ANUNCIO\\ANUNCIO_FORD.mp4",
-  video_leve_bytes: 72 * 1024 * 1024,
   criativos: [
     "ford-fiesta-2016-trafego-pago.png",
     "ford-fiesta-2016-carrossel-1.png",
@@ -73,10 +71,6 @@ describe("checklist de prontidão", () => {
       ok: false,
       destino: "producao",
     });
-    expect(item("leve", { video_leve: null })).toMatchObject({
-      ok: false,
-      destino: "producao",
-    });
     expect(item("descricao", { des_md: false })).toMatchObject({
       ok: false,
       destino: "ficha",
@@ -85,7 +79,7 @@ describe("checklist de prontidão", () => {
       ok: false,
       destino: "criativos",
     });
-    expect(prontoParaAnunciar(estado({ video_leve: null }))).toBe(false);
+    expect(prontoParaAnunciar(estado({ video_final: null }))).toBe(false);
   });
   it("o criativo da foto precisa ser o Tráfego Pago do mesmo veículo", () => {
     expect(
@@ -101,11 +95,6 @@ describe("checklist de prontidão", () => {
     expect(
       item("criativos", { criativos: ["ford-fiesta-2016-carrossel-1.png"] }).ok,
     ).toBe(false);
-  });
-  it("avisa quando a versão leve passa de 100 MB, sem bloquear", () => {
-    const i = item("leve", { video_leve_bytes: 120 * 1024 * 1024 });
-    expect(i.ok).toBe(true);
-    expect(i.detalhe).toContain("passa de 100 MB");
   });
 });
 

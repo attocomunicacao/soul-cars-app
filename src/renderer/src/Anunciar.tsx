@@ -30,10 +30,6 @@ const juntar = (pasta: string, ...partes: string[]) =>
   [pasta.replace(/[\\/]+$/, ""), ...partes].join(
     pasta.includes("\\") ? "\\" : "/",
   );
-const mb = (b: number | null) =>
-  b == null
-    ? ""
-    : ` (${(b / 1024 / 1024).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} MB)`;
 
 /**
  * "Pronto para anunciar": checklist, cartão da campanha e registro manual do anúncio.
@@ -100,8 +96,6 @@ export function Anunciar({
         des_md: status.des_md,
         fotos: status.fotos,
         video_final: status.video_final,
-        video_leve: status.video_leve,
-        video_leve_bytes: status.video_leve_bytes,
         criativos: status.criativos,
       })
     : [];
@@ -233,27 +227,6 @@ export function Anunciar({
             "ainda não exportada (aba Criativos)"
           )}
         </li>
-        <li>
-          Vídeo:{" "}
-          {status?.video_leve ? (
-            <>
-              <code>{status.video_leve.split(/[\\/]/).pop()}</code>
-              {mb(status.video_leve_bytes)}{" "}
-              <button
-                onClick={() =>
-                  void revealItemInDir(status.video_leve!).catch((e) =>
-                    setErro(String(e)),
-                  )
-                }
-              >
-                Abrir pasta
-              </button>{" "}
-              {botaoCopiar("caminho-video", status.video_leve)}
-            </>
-          ) : (
-            "versão leve ainda não gerada (aba Produção)"
-          )}
-        </li>
       </ul>
 
       <h4>Passo a passo no Gerenciador de Anúncios</h4>
@@ -271,7 +244,9 @@ export function Anunciar({
           .
         </li>
         <li>Troque o criativo da foto pelo arquivo da foto acima.</li>
-        <li>Troque o criativo do vídeo pelo vídeo leve acima.</li>
+        <li>
+          Troque o criativo do vídeo pelo vídeo final da pasta do veículo.
+        </li>
         <li>
           Cole os textos principais, os títulos e as descrições nas lacunas, e o
           nome da campanha.

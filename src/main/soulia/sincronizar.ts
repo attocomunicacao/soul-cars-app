@@ -172,7 +172,7 @@ async function baixarMensagens(
       }
     }
     db.exec("BEGIN IMMEDIATE");
-    let novasDoLote = 0;
+    let novasDoLote: number;
     try {
       novasDoLote = gravarMensagens(db, msgs);
       gravarEventos(db, evs);
@@ -206,8 +206,11 @@ export async function sincronizar(
   const org = await descobrirOrganizacao(buscar, token);
 
   // 1) Lista as conversas e guarda os dados dos leads.
-  const pendentes: { id: string; eventoEm: string | null; ate: string | null }[] =
-    [];
+  const pendentes: {
+    id: string;
+    eventoEm: string | null;
+    ate: string | null;
+  }[] = [];
   let vistas = 0;
   for (let skip = 0; skip < limite && !cancelado(); skip += POR_PAGINA) {
     const p = await pedir<Pagina<Registro>>(buscar, token, "/v1/chats/", {
@@ -224,7 +227,8 @@ export async function sincronizar(
     const total = Math.min(p.page?.totalItems ?? itens.length, limite);
     db.exec("BEGIN IMMEDIATE");
     try {
-      for (const c of itens) vistas += registrarConversa(db, c, agora, pendentes);
+      for (const c of itens)
+        vistas += registrarConversa(db, c, agora, pendentes);
       db.exec("COMMIT");
     } catch (e) {
       db.exec("ROLLBACK");
@@ -281,7 +285,8 @@ export async function sincronizar(
       ? ultimoErro
       : new ErroUtalk("Não consegui baixar as mensagens do uTalk.");
 
-  if (!cancelado()) definirSync(db, "ultima_sincronizacao", agora.toISOString());
+  if (!cancelado())
+    definirSync(db, "ultima_sincronizacao", agora.toISOString());
   avisar({
     fase: "pronto",
     feito: pendentes.length,

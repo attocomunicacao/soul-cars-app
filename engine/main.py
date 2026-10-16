@@ -147,6 +147,13 @@ def planilha_aplicar(params):
     return planilha.aplicar(params["caminho"], params["operacoes"], params.get("lido_em"), str(pasta))
 
 
+def soulia_planilha(params):
+    """Grava a planilha da Soul IA a partir de um JSON temporário. Ver engine/soulia_planilha.py."""
+    import soulia_planilha as sp
+
+    return sp.exportar(params["entrada"], params["saida"])
+
+
 def cnw_buscar(params):
     """Versões do modelo no Carros na Web (catálogo do site)."""
     import cnw
@@ -203,6 +210,7 @@ METHODS = {
     "ficha_web_ficha": ficha_web_ficha,
     "fotos_organizar": fotos_organizar,
     "planilha_aplicar": planilha_aplicar,
+    "soulia_planilha": soulia_planilha,
 }
 
 

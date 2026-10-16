@@ -640,7 +640,7 @@ main.crm > :not(.crm-area):not([role="alert"]) {
   border-color: #c9a24b;
   background: #fff;
 }
-.grade-financas input.atrasada {
+.grade-financas td.atrasada {
   color: #9a2a2a;
   font-weight: 600;
   background: #f3dede;
@@ -759,4 +759,264 @@ main.crm > :not(.crm-area):not([role="alert"]) {
 .tabela-etiquetas td:last-child {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+.soulia-limite {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.soulia-limite input {
+  width: 90px;
+}
+.soulia-progresso {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 13px;
+}
+.soulia-progresso progress {
+  width: 100%;
+}
+.soulia-padrao {
+  max-height: 480px;
+  overflow: auto;
+  padding: 12px;
+  background: #f5f3ef;
+  border-radius: 8px;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+/* Leads: barras, cartões de destaque e tabela de demanda. */
+.cartao-crm.bom {
+  border-color: #9fd0a8;
+}
+.barras-crm {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.barras-crm li {
+  display: grid;
+  grid-template-columns: minmax(120px, 190px) 1fr 70px;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 0;
+  font-size: 0.9rem;
+}
+.barra-trilho {
+  height: 12px;
+  border-radius: 6px;
+  background: #eee9e1;
+  overflow: hidden;
+}
+.barra-cheia {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: #292927;
+}
+.barra-valor {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.dica-crm {
+  color: #6b6a65;
+  font-size: 0.85rem;
+  margin: 2px 0 6px;
+}
+.panel h3 {
+  margin: 16px 0 0;
+  font-size: 0.95rem;
+}
+.marcar-crm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tabela-etiquetas th {
+  text-align: left;
+  padding: 5px 6px;
+  border-bottom: 1px solid #ddd9d2;
+  font-size: 0.85rem;
+  color: #6b6a65;
+}
+.anos-crm {
+  color: #6b6a65;
+  font-size: 0.85rem;
+}
+.tabela-etiquetas td:last-child {
+  text-align: right;
+}
+
+/* Leads + Soul IA: abas internas e colunas por dia. */
+.abas-leads {
+  margin: 0 0 20px;
+  flex-wrap: wrap;
+}
+.grade-financas td.copiavel {
+  user-select: text;
+  cursor: text;
+}
+.grade-financas .copiar-chave {
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+/* Painel de Leads: grade única com o mesmo espaçamento, hierarquia KPI → tendência → detalhes. */
+.painel-leads,
+.soulia {
+  display: grid;
+  gap: 20px;
+}
+.painel-leads > .panel,
+.painel-leads .grade-crm > .panel,
+.soulia > .panel {
+  margin-bottom: 0;
+}
+.painel-leads .grade-crm {
+  margin-bottom: 0;
+  gap: 20px;
+}
+.painel-leads .cartoes-crm,
+.soulia .cartoes-crm {
+  margin: 0;
+}
+.grupo-kpi {
+  display: grid;
+  gap: 10px;
+}
+.painel-leads .rotulo-grupo {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8a867d;
+}
+.cartoes-crm {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+@media (max-width: 1100px) {
+  .cartoes-crm {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+}
+.cartao-crm {
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 16px 18px;
+  border-color: #e6e2da;
+}
+.cartao-crm b {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  line-height: 1.1;
+}
+.cartao-crm span {
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+.delta {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.delta.bom {
+  color: #2e7d46;
+}
+.delta.ruim {
+  color: #b3392d;
+}
+.painel-leads .panel h2,
+.soulia .panel h2 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+}
+.dica-crm {
+  margin: 0 0 16px;
+  font-size: 0.85rem;
+}
+.painel-leads .panel h3 {
+  margin: 22px 0 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8a867d;
+}
+.barras-crm {
+  margin: 0;
+}
+.barras-crm li {
+  grid-template-columns: minmax(90px, 170px) 1fr auto;
+  padding: 4px 0;
+}
+.barra-rotulo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.barra-valor {
+  min-width: 52px;
+}
+.barra-valor small {
+  color: #8a867d;
+}
+.grafico-linha {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.grafico-grade {
+  stroke: #ece8e0;
+  stroke-width: 1;
+}
+.grafico-texto {
+  fill: #8a867d;
+  font-size: 11px;
+}
+.grafico-area {
+  fill: #c9a74f;
+  opacity: 0.18;
+}
+.grafico-total {
+  fill: none;
+  stroke: #b8923a;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.grafico-sem {
+  fill: none;
+  stroke: #292927;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  stroke-linejoin: round;
+}
+.grafico-alvo {
+  fill: transparent;
+}
+.grafico-alvo:hover {
+  fill: rgba(41, 41, 39, 0.05);
+}
+.mapa-calor {
+  display: grid;
+  grid-template-columns: 34px repeat(24, minmax(0, 1fr));
+  gap: 3px;
+  align-items: center;
+}
+.mapa-hora,
+.mapa-dia {
+  color: #8a867d;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+.mapa-celula {
+  aspect-ratio: 1.4;
+  border-radius: 3px;
+  background: #292927;
 }

@@ -42,7 +42,7 @@ Aplicativo de desktop para Windows que leva um carro do **estoque** até o **an�
 
 ## As duas interfaces
 
-O app abre em **01 · Estoque** (lista de veículos, entrada de arquivos e relatório completo). Ao clicar em **Abrir ficha →** num veículo da lista abre-se a ficha dele, com as abas, na ordem: **Ficha → Produção → Criativos → Pronto para anunciar → Publicação → Instagram**, além de Configurações.
+O menu lateral tem **01 · Estoque**, **02 · CRM** (visão geral do uTalk), **03 · Leads e Soul IA**, **04 · BNDV**, **05 · Meta ADS** e **06 · Finanças**, além de Configurações. O app abre em **01 · Estoque** (lista de veículos, vitrine, entrada de arquivos e relatório completo). Ao clicar em **Abrir ficha →** num veículo da lista abre-se a ficha dele, com as abas, na ordem: **Ficha → Produção → Criativos → Pronto para anunciar → Publicação → Instagram**, além de Configurações.
 
 ## Como o app é montado
 
@@ -67,7 +67,8 @@ soul-cars-app/
 ├── src/
 │   ├── main/            processo principal: janela, IPC, banco, disco, BNDV, Instagram, motor
 │   │   ├── estoque/     extração BNDV, sincronização de pastas, balanço, relatório, vendas
-│   │   └── studio/      banco/esquema SQLite, arquivos, entrada, Instagram, motor Python
+│   │   ├── studio/      banco/esquema SQLite, arquivos, entrada, Instagram, motor Python
+│   │   └── soulia/      memória do CRM (uTalk), análise de atendimento e planilha
 │   ├── preload/         ponte segura window.soul
 │   ├── compartilhado/   regras puras usadas por main e renderer (anúncio, entrada, publicação)
 │   └── renderer/        interface React (src/) e recursos estáticos, incluindo o editor de criativos (public/criativo)
@@ -75,7 +76,7 @@ soul-cars-app/
 ├── resources/           ícone e logo empacotados
 ├── scripts/             instalação (.cmd) e testes de fumaça (smoke)
 ├── testes/              testes Vitest e fixtures
-├── docs/                guias, avaliação, manuais e planejamento
+├── docs/                visão geral para IA, guias, manuais, CRM/Soul IA e planejamento
 ├── dados-loja/          (local, fora do Git) ESTOQUE/ e dados/ da loja
 └── legado/              (local, fora do Git) projetos anteriores usados como referência
 ```
@@ -127,15 +128,17 @@ Veja [docs/04-dados-e-backup.md](docs/04-dados-e-backup.md).
 
 Índice completo em [docs/README.md](docs/README.md). Destaques:
 
+- [Visão geral para assistentes de IA](docs/00-visao-geral-para-ia.md): mapa do app inteiro, regras e onde mexer (leia primeiro).
 - [Manual do Usuário](docs/11-manual-do-usuario.md): fluxo completo, do estoque ao anúncio.
 - [Manual do Desenvolvedor](docs/12-manual-do-desenvolvedor.md): fluxo técnico, roadmap de manutenção e receitas.
-- [Avaliação: erros, melhorias e pontos fortes](docs/10-avaliacao-erros-melhorias.md): resultado dos testes de 11/10/2026.
+- [Avaliação: erros, melhorias e pontos fortes](docs/10-avaliacao-erros-melhorias.md): retrato de 11/10/2026; os números atuais estão em [Estado atual](#estado-atual).
+- [Soul IA](docs/16-soul-ia.md): memória das conversas do CRM, planilha e padrão de atendimento (base do futuro agente de WhatsApp).
 - [Roadmap do produto](docs/planejamento/02-roadmap.md).
 - [Avisos de terceiros](THIRD_PARTY_NOTICES.md): licenças das dependências do motor, modelos e arquivos embutidos.
 
 ## Estado atual
 
-Versão **1.0.0**. Em 11/10/2026: tipos sem erros, 101 testes Vitest e 36 testes Python passando, build gerado e os dois smokes em Electron real aprovados. Pendências e riscos estão na avaliação.
+Versão **1.0.0**. Em 16/10/2026: tipos e lint sem erros, 214 testes Vitest (2 pulados) e 74 testes Python (5 pulados) passando e build gerado. O resultado completo dos smokes em Electron real está na avaliação de 11/10/2026 (`npm run smoke` e `npm run smoke:instagram` repetem a conferência).
 
 ## Licença e autoria
 
