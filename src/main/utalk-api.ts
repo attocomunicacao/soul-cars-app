@@ -43,7 +43,7 @@ export type MetricasUtalk = {
   atualizadoEm: string;
 };
 
-type Pagina<T> = { items?: T[]; page?: { totalItems?: number } };
+export type Pagina<T> = { items?: T[]; page?: { totalItems?: number } };
 type Etiqueta = { id: string; name?: string; emoji?: string | null };
 
 const TOMADA = 100;
@@ -51,7 +51,7 @@ const SIMULTANEAS = 4;
 
 export class ErroUtalk extends Error {}
 
-async function pedir<T>(
+export async function pedir<T>(
   buscar: Buscar,
   token: string,
   caminho: string,
@@ -83,7 +83,7 @@ async function pedir<T>(
 }
 
 /** Roda `fn` sobre os itens, com no máximo `limite` chamadas ao mesmo tempo. */
-async function emLotes<T, R>(
+export async function emLotes<T, R>(
   itens: T[],
   limite: number,
   fn: (item: T) => Promise<R>,
@@ -114,7 +114,7 @@ export async function descobrirOrganizacao(buscar: Buscar, token: string) {
   return { id: org.id, nome: org.name ?? "" };
 }
 
-async function listarEtiquetas(
+export async function listarEtiquetas(
   buscar: Buscar,
   token: string,
   organizationId: string,

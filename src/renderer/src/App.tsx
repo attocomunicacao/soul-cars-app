@@ -8,7 +8,7 @@ import type { Balanco } from "./types";
 import { Ficha } from "./Ficha";
 import { Configuracoes } from "./Configuracoes";
 import { Embutida } from "./Embutida";
-import { PainelCrm } from "./PainelCrm";
+import { VisaoCrm } from "./VisaoCrm";
 import { Financas } from "./Financas";
 import { AvisosAnuncio } from "./AvisosAnuncio";
 import { statusProducao, type StatusProducao } from "./lib/producao";
@@ -53,7 +53,7 @@ function SelosAnexos({ status }: { status?: StatusProducao }) {
 }
 export function App() {
   const [pagina, setPagina] = useState<
-    "estoque" | "studio" | "crm" | "bndv" | "meta" | "financas"
+    "estoque" | "studio" | "crm" | "leads" | "bndv" | "meta" | "financas"
   >("estoque");
   const [lista, setLista] = useState<Veiculo[]>([]),
     [busca, setBusca] = useState("");
@@ -229,6 +229,17 @@ export function App() {
           02 · CRM
         </button>
         <button
+          className={pagina === "leads" ? "selected" : ""}
+          onClick={() => {
+            setPagina("leads");
+            setSelecionado(null);
+            setAba("veiculos");
+            setErro("");
+          }}
+        >
+          03 · Leads
+        </button>
+        <button
           className={pagina === "bndv" ? "selected" : ""}
           onClick={() => {
             setPagina("bndv");
@@ -237,7 +248,7 @@ export function App() {
             setErro("");
           }}
         >
-          03 · BNDV
+          04 · BNDV
         </button>
         <button
           className={pagina === "meta" ? "selected" : ""}
@@ -248,7 +259,7 @@ export function App() {
             setErro("");
           }}
         >
-          04 · Meta ADS
+          05 · Meta ADS
         </button>
         <button
           className={pagina === "financas" ? "selected" : ""}
@@ -259,7 +270,7 @@ export function App() {
             setErro("");
           }}
         >
-          05 · Finanças
+          06 · Finanças
         </button>
         <div className="aside-bottom">
           <button onClick={() => setConfig(!config)}>Configurações</button>
@@ -277,7 +288,6 @@ export function App() {
             : ""
         }
       >
-        {pagina === "crm" && <PainelCrm aoErro={setErro} />}
         {(pagina === "crm" || pagina === "bndv" || pagina === "meta") && (
           <Embutida key={pagina} id={pagina} aoErro={setErro} />
         )}
@@ -289,19 +299,27 @@ export function App() {
                 ? "Estoque"
                 : pagina === "financas"
                   ? "Finanças"
-                  : "Estoque"}
+                  : pagina === "leads"
+                    ? "Leads"
+                    : "Estoque"}
             </h1>
             <p>
               {pagina === "estoque"
                 ? "Veículos, sincronização e balanço da loja."
                 : pagina === "financas"
                   ? "Contas do mês a partir da planilha financeira."
-                  : "Ficha, produção, criativos e publicação em um só lugar."}
+                  : pagina === "leads"
+                    ? "Visão geral dos leads do CRM: quentes, esperando resposta e por etiqueta."
+                    : "Ficha, produção, criativos e publicação em um só lugar."}
             </p>
           </div>
           <div
             className="actions"
-            style={pagina === "financas" ? { display: "none" } : undefined}
+            style={
+              pagina === "financas" || pagina === "leads"
+                ? { display: "none" }
+                : undefined
+            }
           >
             <button disabled={ocupado} onClick={() => tarefa(carregar)}>
               Reler pastas
@@ -463,6 +481,8 @@ export function App() {
         )}
         {pagina === "financas" ? (
           <Financas aoErro={setErro} />
+        ) : pagina === "leads" ? (
+          <VisaoCrm aoErro={setErro} />
         ) : aba === "vitrine" && pagina === "estoque" ? (
           <Vitrine
             lista={lista}

@@ -593,7 +593,7 @@ main.crm {
   flex-direction: column;
   height: 100vh;
 }
-main.crm > :not(.crm-area):not(.crm-metricas):not([role="alert"]) {
+main.crm > :not(.crm-area):not([role="alert"]) {
   display: none;
 }
 .crm-area {
@@ -677,76 +677,86 @@ main.crm > :not(.crm-area):not(.crm-metricas):not([role="alert"]) {
   gap: 8px;
 }
 
-/* CRM: cartões e listas da visão geral. */
-.crm-cartoes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+/* Leads: visão geral do CRM em página própria. */
+.cartoes-crm {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
 }
-.crm-cartao {
+.cartao-crm {
   display: flex;
-  align-items: baseline;
-  gap: 5px;
-  padding: 3px 10px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
   border: 1px solid #ddd9d2;
-  border-radius: 8px;
-  background: #f5f3ef;
-  font-size: 0.85rem;
+  border-radius: 12px;
+  background: #fff;
 }
-.crm-cartao b {
-  font-size: 1.05rem;
+.cartao-crm b {
+  font-size: 1.8rem;
   font-variant-numeric: tabular-nums;
 }
-.crm-cartao.alerta {
+.cartao-crm span {
+  color: #6b6a65;
+  font-size: 0.85rem;
+}
+.cartao-crm.alerta {
   background: #fdecea;
   border-color: #e3a29b;
 }
-.crm-cartao.quente {
+.cartao-crm.quente {
   border-color: #e3a29b;
 }
-.crm-cartao.morno {
+.cartao-crm.morno {
   border-color: #e6cf8f;
 }
-.crm-cartao.frio {
+.cartao-crm.frio {
   border-color: #a9c4dc;
 }
-.crm-listas {
+.grade-crm {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 12px;
-  width: 100%;
-  max-height: 260px;
-  overflow: auto;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
 }
-.crm-lista h3 {
-  margin: 0 0 4px;
-  font-size: 0.9rem;
-}
-.crm-lista ul {
+.lista-leads {
   list-style: none;
   margin: 0;
   padding: 0;
+  max-height: 360px;
+  overflow: auto;
 }
-.crm-lista li {
+.lista-leads li {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
-  gap: 8px;
-  padding: 3px 0;
+  gap: 10px;
+  padding: 6px 0;
   border-bottom: 1px solid #eee9e1;
-  font-size: 0.85rem;
 }
-.crm-lead-nome {
+.lead-nome,
+.lead-etiquetas {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.crm-lead-etiquetas {
+.lead-etiquetas {
   color: #6b6a65;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
-.crm-lead-tempo {
+.lead-tempo {
   font-variant-numeric: tabular-nums;
   text-align: right;
+}
+.tabela-etiquetas {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+}
+.tabela-etiquetas td {
+  padding: 5px 6px;
+  border-bottom: 1px solid #eee9e1;
+}
+.tabela-etiquetas td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
