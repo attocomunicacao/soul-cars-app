@@ -8,6 +8,7 @@ Bibliotecas pesadas são importadas só no primeiro uso (o ping responde na hora
 
 import base64
 import json
+import os
 import platform
 import sys
 import time
@@ -138,6 +139,14 @@ def gerar_doc_md(params):
     return {"values": resultado["values"], "markdown": markdown, "conflicts": resultado["conflicts"]}
 
 
+def planilha_aplicar(params):
+    """Edita a planilha de finanças (células, linhas e totais). Ver engine/planilha.py."""
+    import planilha
+
+    pasta = Path(os.environ.get("SOUL_DATA_DIR") or ".") / "backups" / "financas"
+    return planilha.aplicar(params["caminho"], params["operacoes"], params.get("lido_em"), str(pasta))
+
+
 def cnw_buscar(params):
     """Versões do modelo no Carros na Web (catálogo do site)."""
     import cnw
@@ -150,6 +159,27 @@ def cnw_ficha(params):
     import cnw
 
     return cnw.ficha(params.get("codigo"), params.get("referer"))
+
+
+def ficha_web_buscar(params):
+    """Versões do modelo/ano nas fontes da web (com reserva, sem chave nem custo)."""
+    import ficha_web
+
+    return ficha_web.buscar(params.get("nome") or "", params.get("ano"))
+
+
+def ficha_web_ficha(params):
+    """Ficha da versão escolhida na fonte de onde ela veio."""
+    import ficha_web
+
+    return ficha_web.ficha(params.get("codigo"))
+
+
+def cnw_texto(params):
+    """Dados técnicos a partir do texto da ficha, colado pela pessoa (sem acessar o site)."""
+    import cnw
+
+    return cnw.ficha_texto(params.get("texto") or "")
 
 
 def fotos_organizar(params):
@@ -168,7 +198,11 @@ METHODS = {
     "gerar_doc_md": gerar_doc_md,
     "cnw_buscar": cnw_buscar,
     "cnw_ficha": cnw_ficha,
+    "cnw_texto": cnw_texto,
+    "ficha_web_buscar": ficha_web_buscar,
+    "ficha_web_ficha": ficha_web_ficha,
     "fotos_organizar": fotos_organizar,
+    "planilha_aplicar": planilha_aplicar,
 }
 
 

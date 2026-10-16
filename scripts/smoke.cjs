@@ -1,7 +1,7 @@
 // Executado pelo Electron real, com banco e estoque temporários.
 // Sem tela de carregamento: o teste espera uma única janela principal.
 process.env.SOUL_SEM_SPLASH = "1";
-const { app, BrowserWindow, nativeImage, session } = require("electron");
+const { app, nativeImage, session } = require("electron");
 const fs = require("node:fs");
 const path = require("node:path");
 const os = require("node:os");
@@ -76,14 +76,16 @@ app.on("browser-window-created", (_e, w) => {
         for(let i=0;i<40&&!relatorioFrame.style.height;i++)await new Promise(r=>setTimeout(r,150));
         if(!relatorioFrame.style.height)throw Error('O relatório ficou sem altura definida (segunda barra de rolagem)');
         const botaoPdf=[...document.querySelectorAll('button')].find(b=>b.textContent==='PDF'||b.textContent==='Gerando PDF…');if(!botaoPdf)throw Error('Falta o botão PDF no relatório completo');
-        const botao=[...document.querySelectorAll('aside button')].find(b=>b.textContent.includes('Studio'));botao.click();
+        const botao=[...document.querySelectorAll('aside button')].find(b=>b.textContent.includes('Estoque'));botao.click();
         await new Promise(r=>setTimeout(r,100));
-        if(document.querySelector('h1')?.textContent!=='Studio')throw Error('Navegação para Studio falhou');
+        if(document.querySelector('h1')?.textContent!=='Estoque')throw Error('Volta à lista do Estoque falhou');
         const abrir=[...document.querySelectorAll('td button')][0];if(!abrir)throw Error('Importação das pastas falhou');abrir.click();
         await new Promise(r=>setTimeout(r,100));
         await new Promise(r=>setTimeout(r,500));
         const anexar=[...document.querySelectorAll('button')].find(b=>b.textContent==='Anexar documento');
         if(!anexar || anexar.disabled)throw Error('Botão anexar documento indisponível');
+        [...document.querySelectorAll('nav button')].find(b=>b.textContent==='Produção').click();
+        await new Promise(r=>setTimeout(r,500));
         const painel=document.querySelector('.foto-painel');
         if(painel?.querySelectorAll('article').length!==2)throw Error('Painel de fotos ausente');
         painel.querySelector('article button[aria-label*="depois"]').click();
@@ -93,7 +95,7 @@ app.on("browser-window-created", (_e, w) => {
         if(!document.querySelector('.foto-painel')?.textContent.includes('1.png'))throw Error('Renomeação pelo painel falhou');
         const ficha=[...document.querySelectorAll('nav button')].find(b=>b.textContent==='Ficha');ficha.click();
         await new Promise(r=>setTimeout(r,100));
-        [...document.querySelectorAll('button')].find(b=>b.textContent==='Gerar e salvar DES.md').click();
+        window.confirm=()=>true;[...document.querySelectorAll('button')].find(b=>b.textContent==='Gerar e salvar DES.md').click();
         await new Promise(r=>setTimeout(r,400));
         [...document.querySelectorAll('nav button')].find(b=>b.textContent==='Publicação').click();
         await new Promise(r=>setTimeout(r,100));
@@ -142,22 +144,20 @@ app.on("browser-window-created", (_e, w) => {
         if(!document.querySelector('.instagram'))throw Error('Aba Instagram não abriu');
         return {pagina:document.querySelector('h1').textContent,sqlite:true,relatorioInterno:true,painelFotos:true,copia:true,editor:true,instagramAba:true,pacoteInstagram:true,motor:motor.python,exportacao:saved,png:estoque+'/123_FORD_FIESTA_ABC1D23/CRIATIVO/'+artes[0],versoes:window.soul.versoes};
       })()`);
-      // Botão "Entrar no BNDV": uma única janela, na sessão do BNDV (persist:bndv), sem preload.
-      const antes = BrowserWindow.getAllWindows().length;
+      // BNDV embutido: uma vista na janela principal, na sessão do BNDV (persist:bndv), sem preload.
       await w.webContents.executeJavaScript(
-        "window.soul.invocar('bndv_abrir')",
+        "window.soul.invocar('embutida_mostrar',{id:'bndv',x:240,y:0,largura:600,altura:400})",
       );
-      const segunda = await w.webContents.executeJavaScript(
-        "window.soul.invocar('bndv_abrir')",
+      const vista = w.contentView.children[0];
+      if (
+        !vista ||
+        vista.webContents.session !== session.fromPartition("persist:bndv")
+      )
+        throw new Error("O BNDV embutido não usa a sessão do BNDV.");
+      r.bndvEmbutido = true;
+      await w.webContents.executeJavaScript(
+        "window.soul.invocar('embutida_esconder')",
       );
-      const janelas = BrowserWindow.getAllWindows();
-      if (janelas.length !== antes + 1 || !segunda.jaAberta)
-        throw new Error("A janela de login do BNDV deveria ser única.");
-      const login = janelas.find((j) => j !== w);
-      if (login.webContents.session !== session.fromPartition("persist:bndv"))
-        throw new Error("A janela de login não usa a sessão do BNDV.");
-      r.loginBndv = true;
-      login.destroy();
       console.log("SMOKE OK " + JSON.stringify(r));
       const png = fs.readFileSync(r.png);
       if (png.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a")

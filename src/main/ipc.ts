@@ -24,7 +24,14 @@ import path from "node:path";
 import * as caminhos from "./caminhos";
 import * as balanco from "./estoque/balanco";
 import { extrair } from "./estoque/extracao";
-import { abrirJanelaBndv } from "./estoque/bndv-janela";
+import {
+  esconderEmbutidas,
+  mostrarEmbutida,
+  type IdEmbutida,
+  type Retangulo,
+} from "./embutidas";
+import * as financas from "./financas";
+import * as utalk from "./utalk";
 import { vitrine } from "./estoque/vitrine";
 import { exportarRelatorioPdf } from "./estoque/relatorio-pdf";
 import { gerarHtml } from "./estoque/relatorio";
@@ -207,10 +214,11 @@ const COMANDOS: Record<string, Comando> = {
 
   // ---- caminhos e configuração ----
   app_data: () => caminhos.userData(),
-  config_ler: () => ({
-    ...caminhos.lerConfig(),
-    raizDados: caminhos.raizDados(),
-  }),
+  config_ler: () => {
+    // O token cifrado do uTalk nunca vai para a interface.
+    const { utalkTokenCifrado: _token, ...resto } = caminhos.lerConfig();
+    return { ...resto, raizDados: caminhos.raizDados() };
+  },
   config_gravar: (a) => caminhos.gravarConfig(a.patch ?? {}),
   caminhos_app: () => ({
     raizDados: caminhos.raizDados(),
@@ -222,8 +230,30 @@ const COMANDOS: Record<string, Comando> = {
 
   // ---- Estoque (BNDV) ----
   estoque_atualizar: (a) => atualizarEstoque(a),
-  bndv_abrir: () => abrirJanelaBndv(janela),
+  embutida_mostrar: (a) => {
+    if (janela) mostrarEmbutida(a.id as IdEmbutida, janela, a as Retangulo);
+    return true;
+  },
+  embutida_esconder: () => {
+    esconderEmbutidas();
+    return true;
+  },
+  utalk_estado: () => utalk.estadoUtalk(),
+  utalk_token_salvar: (a) => utalk.salvarTokenUtalk(String(a.token)),
+  utalk_token_remover: () => utalk.removerTokenUtalk(),
+  utalk_metricas: () => utalk.metricasUtalk(),
+  utalk_visao: () => utalk.visaoUtalk(),
   estoque_vitrine: () => vitrine(),
+  // ---- Finanças (planilha mensal vinculada) ----
+  financas_estado: () => financas.estadoFinancas(),
+  financas_vincular: (a) => financas.vincularFinancas(String(a.origem)),
+  financas_desvincular: () => financas.desvincularFinancas(),
+  financas_ler: () => financas.lerFinancas(),
+  financas_abrir: () => financas.abrirFinancas(),
+  financas_editar: (a) =>
+    financas.editarFinancas(a.operacoes, a.lidoEm, emitir),
+  financas_pago: (a) =>
+    financas.marcarPagos(a.chaves as string[], a.pago === true),
   relatorio_pdf: () => exportarRelatorioPdf(janela),
   estoque_resumo: () => resumoEstoque(),
   anuncios_vendas: () => ultimasVendas(),

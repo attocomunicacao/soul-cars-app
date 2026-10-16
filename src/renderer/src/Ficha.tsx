@@ -1,18 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   atualizarVeiculo,
   obterLoja,
   type Veiculo,
   type Editavel,
 } from "./lib/db";
-import { gerarDes, type FichaDes, type TextosIA } from "./lib/des";
-import { invoke, open, openPath } from "./lib/desktop";
 import {
-  buscarCnw,
-  fichaCnw,
-  ocrEquipamentos,
-  type VersaoCnw,
-} from "./lib/engine";
+  camposVazios,
+  gerarDes,
+  type FichaDes,
+  type TextosIA,
+} from "./lib/des";
+import { invoke, open, openPath } from "./lib/desktop";
+import { type VersaoCnw } from "./lib/engine";
 import {
   gerarDocMd,
   gravarNaPasta,
@@ -20,11 +20,17 @@ import {
   gerarVideoLeve,
   tarjas,
 } from "./lib/producao";
+import {
+  buscarCnwComBanco,
+  fichaCnwComBanco,
+  versaoDoTitulo,
+} from "./lib/cnw-banco";
 import { Producao } from "./Producao";
+import { AndamentoVideo, aplicarLinha, type Andamento } from "./AndamentoVideo";
+import { DocumentoCrlv } from "./DocumentoCrlv";
 import { blocosDeCopia } from "./lib/publicacao";
 import { Criativos } from "./Criativos";
 import { Instagram } from "./Instagram";
-import { PromptAnuncio } from "./PromptAnuncio";
 import { Anunciar } from "./Anunciar";
 
 const CAMPOS: [Editavel, string][] = [
@@ -48,6 +54,23 @@ const CAMPOS: [Editavel, string][] = [
   ["conforto", "Conforto"],
   ["infotenimento", "Infotenimento"],
 ];
+/** Mensagem curta do erro, sem o prefixo "Error:" que o IPC acrescenta. */
+const erroLegivel = (e: unknown) =>
+  String(e instanceof Error ? e.message : e)
+    .replace(/^(Error:\s*)?Error invoking remote method '[^']*':\s*/, "")
+    .replace(/^(Error:\s*)+/, "");
+/** Campos que vêm do documento (CRLV); os demais são dados comerciais e do anúncio. */
+/** Primeiros dados a informar, antes do documento: preço de venda e quilometragem. */
+const CAMPOS_INICIAIS: Editavel[] = ["preco", "km"];
+const CAMPOS_CRLV: Editavel[] = [
+  "marca_modelo",
+  "placa",
+  "ano",
+  "combustivel",
+  "cor",
+  "renavam",
+  "chassi",
+];
 export function Ficha({
   veiculo,
   voltar,
@@ -56,15 +79,22 @@ export function Ficha({
   voltar: () => void;
 }) {
   const [v, setV] = useState(veiculo),
-    [aba, setAba] = useState("producao"),
+    [aba, setAba] = useState("ficha"),
     [aviso, setAviso] = useState(""),
     [ocupado, setOcupado] = useState(false);
   const [versoes, setVersoes] = useState<VersaoCnw[]>([]);
+  const [avisoCnw, setAvisoCnw] = useState("");
+  /** Equipamentos de uma fonte que não separa série de opcional: só entram se a pessoa confirmar. */
+  const [sugestaoEquip, setSugestaoEquip] = useState<{
+    fonte: string;
+    itens: Record<string, string[]>;
+  } | null>(null);
+  const [modeloWeb, setModeloWeb] = useState("");
   const [logs, setLogs] = useState<string[]>([]);
+  const [andamento, setAndamento] = useState<Andamento | null>(null);
   const [copiaNumero, setCopiaNumero] = useState<Record<string, number>>({});
   const [baixarInstagram, setBaixarInstagram] = useState(false);
   const [copiados, setCopiados] = useState<Record<string, string>>({});
-  const [mostrarPrompt, setMostrarPrompt] = useState(false);
   function ficha(): FichaDes {
     return Object.fromEntries(
       Object.entries(v).map(([k, value]) => [
@@ -80,6 +110,18 @@ export function Ficha({
       !window.confirm("Substituir o DES.md atual pelos textos gerados?")
     )
       return;
+    const vazios = camposVazios(ficha());
+    if (
+      vazios.length &&
+      !window.confirm(
+        `Estes campos estão vazios e saem como "NÃO INFORMADO" no DES.md: ${vazios.join(", ")}.` +
+          (sugestaoEquip
+            ? '\n\nA pesquisa na web trouxe equipamentos sugeridos que ainda não foram incluídos (botão "Incluir equipamentos sugeridos").'
+            : "") +
+          "\n\nGerar assim mesmo?",
+      )
+    )
+      return;
     await salvar();
     const loja = await obterLoja();
     const textos: TextosIA | null = ia || null;
@@ -93,13 +135,30 @@ export function Ficha({
     if (v.pasta) await gravarNaPasta(v.pasta, "DES.md", md);
     setV({ ...v, ...patch });
   }
+  // Só linhas de uma geração em curso mexem na barra: depois de cancelar ou falhar, o motor ainda
+  // pode soltar uma última linha, que não pode trazer a barra de volta.
+  const gerandoVideo = useRef(false);
   useEffect(
     () =>
-      window.soul.ouvir<string>("video:log", (l) =>
-        setLogs((prev) => [...prev.slice(-199), l]),
-      ),
+      window.soul.ouvir<string>("video:log", (l) => {
+        if (gerandoVideo.current)
+          setAndamento((atual) => aplicarLinha(atual, l));
+      }),
     [],
   );
+  /** Roda uma geração de vídeo mostrando a barra; cancelamento ou erro tiram a barra da tela. */
+  async function comAndamento(geracao: () => Promise<unknown>) {
+    gerandoVideo.current = true;
+    setAndamento(null);
+    try {
+      await geracao();
+    } catch (e) {
+      setAndamento(null);
+      throw e;
+    } finally {
+      gerandoVideo.current = false;
+    }
+  }
   async function tarefa(fn: () => Promise<unknown>) {
     setOcupado(true);
     setAviso("");
@@ -142,6 +201,33 @@ export function Ficha({
     setV({ ...v, ...patch });
     if (r.conflicts.length) setLogs(r.conflicts);
   }
+  /** Um campo da ficha. Documento (CRLV) e dados do anúncio são só duas seções visuais do mesmo cadastro. */
+  const campo = ([k, label]: [Editavel, string]) => (
+    <label key={k}>
+      {label}
+      {["seguranca", "conforto", "infotenimento"].includes(k) ? (
+        <textarea
+          value={String(v[k] ?? "")}
+          onChange={(e) => setV({ ...v, [k]: e.target.value })}
+        />
+      ) : (
+        <input
+          value={String(v[k] ?? "")}
+          type={["preco", "km"].includes(k) ? "number" : "text"}
+          onChange={(e) =>
+            setV({
+              ...v,
+              [k]: ["preco", "km"].includes(k)
+                ? e.target.value === ""
+                  ? null
+                  : Number(e.target.value)
+                : e.target.value,
+            })
+          }
+        />
+      )}
+    </label>
+  );
   return (
     <section>
       <div className="actions">
@@ -164,8 +250,8 @@ export function Ficha({
       </div>
       <nav>
         {[
-          "producao",
           "ficha",
+          "producao",
           "criativos",
           "anunciar",
           "publicacao",
@@ -206,34 +292,180 @@ export function Ficha({
       )}
       {aba === "ficha" && (
         <div className="panel">
-          <div className="grid">
-            {CAMPOS.map(([k, label]) => (
-              <label key={k}>
-                {label}
-                {["seguranca", "conforto", "infotenimento"].includes(k) ? (
-                  <textarea
-                    value={String(v[k] ?? "")}
-                    onChange={(e) => setV({ ...v, [k]: e.target.value })}
-                  />
-                ) : (
-                  <input
-                    value={String(v[k] ?? "")}
-                    type={["preco", "km"].includes(k) ? "number" : "text"}
-                    onChange={(e) =>
+          <div className="grid dados-iniciais">
+            {CAMPOS.filter(([k]) => CAMPOS_INICIAIS.includes(k)).map(campo)}
+          </div>
+          <DocumentoCrlv
+            pasta={v.pasta}
+            documento={documento}
+            onBusy={setOcupado}
+          >
+            <div className="grid">
+              {CAMPOS.filter(([k]) => CAMPOS_CRLV.includes(k)).map(campo)}
+            </div>
+          </DocumentoCrlv>
+          <fieldset className="dados-anuncio">
+            <legend>Dados do veículo e do anúncio</legend>
+            <div className="actions">
+              <button
+                disabled={ocupado}
+                onClick={() => {
+                  setVersoes([]);
+                  setAvisoCnw("Consultando a web…");
+                  setSugestaoEquip(null);
+                  void tarefa(async () => {
+                    try {
+                      const { busca: r, origem } = await buscarCnwComBanco(
+                        v.nome,
+                        v.ano,
+                      );
+                      setVersoes(r.versoes);
+                      setModeloWeb(r.modelo);
+                      setAvisoCnw(
+                        `${r.versoes.length} versão(ões) encontrada(s) para ${r.modelo} · fonte: ${r.fonte}` +
+                          (r.ignoradas?.length
+                            ? ` (palavras do nome que a fonte não usa: ${r.ignoradas.join(", ")})`
+                            : "") +
+                          (r.avisos.length
+                            ? ` (antes: ${r.avisos.join("; ")})`
+                            : "") +
+                          (origem === "banco"
+                            ? " (guardadas no app, sem consultar o site)"
+                            : "") +
+                          ". Escolha uma abaixo para preencher a ficha.",
+                      );
+                    } catch (e) {
+                      setAvisoCnw(`Consulta na web: ${erroLegivel(e)}`);
+                      throw e;
+                    }
+                  });
+                }}
+              >
+                Buscar ficha na web
+              </button>
+            </div>
+            {sugestaoEquip && (
+              <div className="notice" role="status">
+                <p>
+                  <strong>
+                    Equipamentos sugeridos ({sugestaoEquip.fonte}).
+                  </strong>{" "}
+                  Esta fonte lista os itens do modelo sem separar o que é de
+                  série do que é opcional. Só os de série podem ir para o
+                  anúncio: inclua e remova na ficha o que o carro não tem.
+                </p>
+                <p>
+                  {Object.values(sugestaoEquip.itens).reduce(
+                    (n, l) => n + l.length,
+                    0,
+                  )}{" "}
+                  itens em segurança, conforto e infotenimento.
+                </p>
+                <button
+                  onClick={() => {
+                    setV({
+                      ...v,
+                      ...Object.fromEntries(
+                        Object.entries(sugestaoEquip.itens).map(
+                          ([k, itens]) => [k, itens.join("\n")],
+                        ),
+                      ),
+                    });
+                    setSugestaoEquip(null);
+                    setAvisoCnw(
+                      "Equipamentos sugeridos incluídos. Revise cada lista e apague o que o carro não tem de série.",
+                    );
+                  }}
+                >
+                  Incluir equipamentos sugeridos
+                </button>
+              </div>
+            )}
+            {avisoCnw && (
+              <p
+                role="status"
+                className={
+                  avisoCnw.startsWith("Consulta na web:")
+                    ? "notice error"
+                    : "notice"
+                }
+              >
+                {avisoCnw}
+              </p>
+            )}
+            {versoes.map((item) => (
+              <button
+                key={item.codigo}
+                disabled={ocupado}
+                onClick={() =>
+                  tarefa(async () => {
+                    setAvisoCnw(`Lendo a ficha de ${item.titulo}…`);
+                    let f;
+                    try {
+                      f = (await fichaCnwComBanco(item.codigo)).ficha;
+                    } catch (e) {
+                      setAvisoCnw(`Consulta na web: ${erroLegivel(e)}`);
+                      throw e;
+                    }
+                    const deSerie = f.equipamentos_de_serie;
+                    const versao = versaoDoTitulo(item.titulo, modeloWeb);
+                    setAvisoCnw(
+                      `Ficha de ${item.titulo} aplicada (fonte: ${f.fonte}). Confira os campos acima e salve a ficha.`,
+                    );
+                    if (deSerie) {
+                      setSugestaoEquip(null);
                       setV({
                         ...v,
-                        [k]: ["preco", "km"].includes(k)
-                          ? e.target.value === ""
-                            ? null
-                            : Number(e.target.value)
-                          : e.target.value,
-                      })
+                        versao,
+                        ...Object.fromEntries(
+                          Object.entries(f.tecnicos).filter(
+                            ([, valor]) => valor,
+                          ),
+                        ),
+                        ...Object.fromEntries(
+                          Object.entries(f.equipamentos).map(([k, itens]) => [
+                            k,
+                            itens.join("\n"),
+                          ]),
+                        ),
+                      });
+                    } else {
+                      // Esta fonte não separa série de opcional: só os dados técnicos entram.
+                      setV({
+                        ...v,
+                        versao,
+                        ...Object.fromEntries(
+                          Object.entries(f.tecnicos).filter(
+                            ([, valor]) => valor,
+                          ),
+                        ),
+                      });
+                      setSugestaoEquip({
+                        fonte: f.fonte,
+                        itens: f.equipamentos,
+                      });
                     }
-                  />
-                )}
-              </label>
+                  })
+                }
+              >
+                {item.titulo} · {item.ano}
+              </button>
             ))}
-          </div>
+            <div className="grid">
+              {CAMPOS.filter(
+                ([k]) =>
+                  !CAMPOS_CRLV.includes(k) && !CAMPOS_INICIAIS.includes(k),
+              ).map(campo)}
+            </div>
+            <div className="actions">
+              <button
+                disabled={ocupado}
+                onClick={() => tarefa(() => descricao())}
+              >
+                Gerar e salvar DES.md
+              </button>
+            </div>
+          </fieldset>
           <label>
             Status
             <select
@@ -247,89 +479,6 @@ export function Ficha({
               <option value="publicado">Publicado</option>
             </select>
           </label>
-          <div className="actions">
-            <button
-              disabled={ocupado}
-              onClick={() => tarefa(() => descricao())}
-            >
-              Gerar e salvar DES.md
-            </button>
-            <button
-              disabled={ocupado}
-              onClick={() => setMostrarPrompt((m) => !m)}
-            >
-              Textos pelo chat (prompt pronto)
-            </button>
-            <button
-              disabled={ocupado}
-              onClick={() =>
-                tarefa(async () =>
-                  setVersoes((await buscarCnw(v.nome, v.ano)).versoes),
-                )
-              }
-            >
-              Buscar ficha Carros na Web
-            </button>
-            <label className="file-button">
-              OCR de equipamentos
-              <input
-                type="file"
-                accept="image/*"
-                disabled={ocupado}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f)
-                    void tarefa(async () => {
-                      const r = await ocrEquipamentos(f);
-                      setV({
-                        ...v,
-                        ...Object.fromEntries(
-                          Object.entries(r.itens).map(([k, items]) => [
-                            k,
-                            items.join("\n"),
-                          ]),
-                        ),
-                      });
-                    });
-                  e.target.value = "";
-                }}
-              />
-            </label>
-          </div>
-          {mostrarPrompt && (
-            <PromptAnuncio
-              ficha={v}
-              ocupado={ocupado}
-              aplicar={(textos) =>
-                tarefa(async () => {
-                  await descricao(textos);
-                })
-              }
-            />
-          )}
-          {versoes.map((item) => (
-            <button
-              key={item.codigo}
-              disabled={ocupado}
-              onClick={() =>
-                tarefa(async () => {
-                  const f = await fichaCnw(item.codigo);
-                  setV({
-                    ...v,
-                    ...f.tecnicos,
-                    ...Object.fromEntries(
-                      Object.entries(f.equipamentos).map(([k, itens]) => [
-                        k,
-                        itens.join("\n"),
-                      ]),
-                    ),
-                  });
-                })
-              }
-            >
-              {item.titulo} · {item.ano}
-            </button>
-          ))}
           <label>
             Descrição e anúncio
             <textarea
@@ -345,7 +494,6 @@ export function Ficha({
           <Producao
             onBusy={setOcupado}
             pasta={v.pasta}
-            documento={documento}
             vincular={async () => {
               const p = await open({ directory: true });
               if (typeof p === "string") {
@@ -356,12 +504,15 @@ export function Ficha({
             video={async () => {
               await salvar();
               const t = tarjas(v);
-              await gerarVideo(v.pasta!, t.veiculo, t.motor, t.preco);
+              await comAndamento(() =>
+                gerarVideo(v.pasta!, t.veiculo, t.motor, t.preco),
+              );
             }}
             videoLeve={async () => {
-              await gerarVideoLeve(v.pasta!);
+              await comAndamento(() => gerarVideoLeve(v.pasta!));
             }}
           />
+          <AndamentoVideo andamento={andamento} />
           {!!logs.length && <pre>{logs.join("\n")}</pre>}
         </>
       )}

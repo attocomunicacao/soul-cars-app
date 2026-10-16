@@ -104,5 +104,54 @@ class TestFicha(unittest.TestCase):
         self.assertNotIn("Central multimídia", todos)
 
 
+TEXTO_COPIADO = """Compartilhe:
+Fiat Argo Drive 1.0
+Ano
+2022
+Combustível
+Flex (álcool/gasolina)
+Configuração
+Hatchback
+Lugares 5
+Portas
+4
+TRANSMISSÃO
+Câmbio
+Manual
+de 5 marchas
+DIREÇÃO
+Assistência
+Elétrica
+"""
+
+
+class TestTextoColado(unittest.TestCase):
+    def test_le_os_dados_tecnicos_do_texto_copiado(self):
+        d = cnw.ficha_texto(TEXTO_COPIADO)
+        self.assertEqual(d["tecnicos"]["ano"], "2022")
+        self.assertEqual(d["tecnicos"]["lugares"], "5")
+        self.assertEqual(d["tecnicos"]["cambio"], "Manual de 5 marchas")
+        self.assertEqual(d["tecnicos"]["direcao"], "Elétrica")
+        # Equipamentos só de série: do texto não dá para saber, então ficam vazios.
+        self.assertEqual(sum(d["equipamentos"].values(), []), [])
+
+    def test_texto_que_nao_e_a_ficha_da_erro_claro(self):
+        with self.assertRaises(ValueError):
+            cnw.ficha_texto("oi")
+        with self.assertRaises(ValueError):
+            cnw.ficha_texto("a\nb\nc\nd\ne\nf")
+
+
+class TestPausa(unittest.TestCase):
+    def tearDown(self):
+        cnw._pausado_ate = 0.0
+
+    def test_apos_erro_do_site_nao_consulta_de_novo_na_janela_de_pausa(self):
+        cnw._pausado_ate = cnw.time.time() + 600
+        with self.assertRaises(cnw.SiteComErro) as ctx:
+            cnw.buscar("GLA 250", "2016")
+        self.assertIn("não vai consultar o site de novo", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

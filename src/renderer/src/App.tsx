@@ -4,22 +4,61 @@ import { alturaDaMensagem, comAvisoDeAltura } from "./lib/relatorio-frame";
 import { Vitrine } from "./Vitrine";
 import { importarEstoque } from "./lib/importacao";
 import { type Veiculo, manutencaoBanco } from "./lib/db";
-import type { Balanco, Contas } from "./types";
+import type { Balanco } from "./types";
 import { Ficha } from "./Ficha";
-import { Relatorios } from "./Relatorios";
 import { Configuracoes } from "./Configuracoes";
-import { Entrada } from "./Entrada";
+import { Embutida } from "./Embutida";
+import { PainelCrm } from "./PainelCrm";
+import { Financas } from "./Financas";
 import { AvisosAnuncio } from "./AvisosAnuncio";
+import { statusProducao, type StatusProducao } from "./lib/producao";
+import type { CartaoVitrine } from "../../compartilhado/vitrine";
 
 const moeda = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+function SelosAnexos({ status }: { status?: StatusProducao }) {
+  if (!status) return null;
+  const itens: [string, boolean, string][] = [
+    [
+      "Fotos",
+      status.fotos.length > 0,
+      status.fotos.length
+        ? `${status.fotos.length} foto(s) na pasta`
+        : "Sem fotos",
+    ],
+    [
+      "Vídeo",
+      !!(status.video_bruto || status.video_final),
+      status.video_final
+        ? "Vídeo final gerado"
+        : status.video_bruto
+          ? "Vídeo bruto na pasta"
+          : "Sem vídeo",
+    ],
+    [
+      "Documento",
+      status.doc_pdf,
+      status.doc_pdf ? "PDF do documento na pasta" : "Sem documento",
+    ],
+  ];
+  return (
+    <span className="selos-anexos">
+      {itens.map(([nome, ok, dica]) => (
+        <span key={nome} className={ok ? "selo ok" : "selo falta"} title={dica}>
+          {ok ? "✓" : "✗"} {nome}
+        </span>
+      ))}
+    </span>
+  );
+}
 export function App() {
-  const [pagina, setPagina] = useState<"estoque" | "studio">("estoque");
+  const [pagina, setPagina] = useState<
+    "estoque" | "studio" | "crm" | "bndv" | "meta" | "financas"
+  >("estoque");
   const [lista, setLista] = useState<Veiculo[]>([]),
     [busca, setBusca] = useState("");
   const [selecionado, setSelecionado] = useState<Veiculo | null>(null);
-  const [balanco, setBalanco] = useState<Balanco | null>(null),
-    [contas, setContas] = useState<Contas>({});
+  const [balanco, setBalanco] = useState<Balanco | null>(null);
   const [erro, setErro] = useState(""),
     [ocupado, setOcupado] = useState(false),
     [logs, setLogs] = useState<string[]>([]);
@@ -37,7 +76,6 @@ export function App() {
   async function carregar() {
     const b = await invoke<Balanco>("balanco_montar");
     setBalanco(b);
-    setContas(b.contas);
     setLista(await importarEstoque());
     const c = await invoke<{ raizDados: string; pastaMotor?: string }>(
       "config_ler",
@@ -101,19 +139,76 @@ export function App() {
       clearInterval(timer);
     };
   }, [selecionado, ocupado]);
-  const filtrados = lista.filter((v) =>
-    [v.nome, v.placa, v.versao, v.ano]
-      .join(" ")
-      .toLowerCase()
-      .includes(busca.toLowerCase()),
-  );
+  // Situação de fotos, vídeo e documento de cada pasta, relida a cada 15 s na lista.
+  const [anexos, setAnexos] = useState<Record<string, StatusProducao>>({});
+  useEffect(() => {
+    if (selecionado || aba !== "veiculos") return;
+    let ativo = true;
+    const ler = async () => {
+      const pastas = lista.map((v) => v.pasta).filter((p): p is string => !!p);
+      const lidos = await Promise.all(
+        pastas.map((p) =>
+          statusProducao(p)
+            .then((s) => [p, s] as const)
+            .catch(() => null),
+        ),
+      );
+      if (!ativo) return;
+      setAnexos(
+        Object.fromEntries(
+          lidos.filter((l): l is [string, StatusProducao] => !!l),
+        ),
+      );
+    };
+    void ler();
+    const timer = setInterval(() => void ler(), 15_000);
+    return () => {
+      ativo = false;
+      clearInterval(timer);
+    };
+  }, [lista, selecionado, pagina, aba]);
+  // Filtro "só em estoque no BNDV": usa a mesma lista da vitrine (veículos não vendidos).
+  const [soEstoque, setSoEstoque] = useState(true);
+  const [noEstoque, setNoEstoque] = useState<CartaoVitrine[] | null>(null);
+  useEffect(() => {
+    if (!soEstoque) return;
+    let ativo = true;
+    invoke<CartaoVitrine[]>("estoque_vitrine")
+      .then((c) => ativo && setNoEstoque(c))
+      .catch((e) => {
+        if (!ativo) return;
+        setErro(String(e));
+        setSoEstoque(false);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [soEstoque, lista]);
+  const emEstoque = (v: Veiculo) =>
+    !!noEstoque?.some(
+      (c) =>
+        (v.pasta && c.pasta === v.pasta) ||
+        (c.estudio && c.estudio.id === v.id) ||
+        (!!c.placa &&
+          (v.placa ?? "").trim().toUpperCase() === c.placa.toUpperCase()),
+    );
+  const filtrados = lista
+    .filter((v) => !soEstoque || !noEstoque || emEstoque(v))
+    .filter((v) =>
+      [v.nome, v.placa, v.versao, v.ano]
+        .join(" ")
+        .toLowerCase()
+        .includes(busca.toLowerCase()),
+    );
   return (
     <div className="app">
       <aside>
         <img src="./logo-soul.jpg" alt="SOUL Cars" />
         <p className="eyebrow">SEU ESPAÇO DE TRABALHO</p>
         <button
-          className={pagina === "estoque" ? "selected" : ""}
+          className={
+            pagina === "estoque" || pagina === "studio" ? "selected" : ""
+          }
           onClick={() => {
             setPagina("estoque");
             setSelecionado(null);
@@ -123,14 +218,48 @@ export function App() {
           01 · Estoque
         </button>
         <button
-          className={pagina === "studio" ? "selected" : ""}
+          className={pagina === "crm" ? "selected" : ""}
           onClick={() => {
-            setPagina("studio");
+            setPagina("crm");
             setSelecionado(null);
             setAba("veiculos");
+            setErro("");
           }}
         >
-          02 · Studio
+          02 · CRM
+        </button>
+        <button
+          className={pagina === "bndv" ? "selected" : ""}
+          onClick={() => {
+            setPagina("bndv");
+            setSelecionado(null);
+            setAba("veiculos");
+            setErro("");
+          }}
+        >
+          03 · BNDV
+        </button>
+        <button
+          className={pagina === "meta" ? "selected" : ""}
+          onClick={() => {
+            setPagina("meta");
+            setSelecionado(null);
+            setAba("veiculos");
+            setErro("");
+          }}
+        >
+          04 · Meta ADS
+        </button>
+        <button
+          className={pagina === "financas" ? "selected" : ""}
+          onClick={() => {
+            setPagina("financas");
+            setSelecionado(null);
+            setAba("veiculos");
+            setErro("");
+          }}
+        >
+          05 · Finanças
         </button>
         <div className="aside-bottom">
           <button onClick={() => setConfig(!config)}>Configurações</button>
@@ -141,18 +270,39 @@ export function App() {
           </small>
         </div>
       </aside>
-      <main>
+      <main
+        className={
+          pagina === "crm" || pagina === "bndv" || pagina === "meta"
+            ? "crm"
+            : ""
+        }
+      >
+        {pagina === "crm" && <PainelCrm aoErro={setErro} />}
+        {(pagina === "crm" || pagina === "bndv" || pagina === "meta") && (
+          <Embutida key={pagina} id={pagina} aoErro={setErro} />
+        )}
         <header>
           <div>
             <p className="eyebrow">SOUL CARS</p>
-            <h1>{pagina === "estoque" ? "Estoque" : "Studio"}</h1>
+            <h1>
+              {pagina === "estoque"
+                ? "Estoque"
+                : pagina === "financas"
+                  ? "Finanças"
+                  : "Estoque"}
+            </h1>
             <p>
               {pagina === "estoque"
                 ? "Veículos, sincronização e balanço da loja."
-                : "Ficha, produção, criativos e publicação em um só lugar."}
+                : pagina === "financas"
+                  ? "Contas do mês a partir da planilha financeira."
+                  : "Ficha, produção, criativos e publicação em um só lugar."}
             </p>
           </div>
-          <div className="actions">
+          <div
+            className="actions"
+            style={pagina === "financas" ? { display: "none" } : undefined}
+          >
             <button disabled={ocupado} onClick={() => tarefa(carregar)}>
               Reler pastas
             </button>
@@ -167,17 +317,6 @@ export function App() {
             >
               Abrir pasta do estoque
             </button>
-            {pagina === "estoque" && (
-              <button
-                title="Abre o BNDV numa janela para entrar ou conferir o login. O login vale para o Atualizar BNDV."
-                onClick={() => {
-                  setErro("");
-                  invoke("bndv_abrir").catch((e) => setErro(String(e)));
-                }}
-              >
-                Entrar no BNDV
-              </button>
-            )}
             {pagina === "estoque" && (
               <button
                 className="primary"
@@ -308,18 +447,6 @@ export function App() {
                 Veículos
               </button>
               <button
-                className={aba === "balanco" ? "selected" : ""}
-                onClick={() => setAba("balanco")}
-              >
-                Balanço
-              </button>
-              <button
-                className={aba === "entrada" ? "selected" : ""}
-                onClick={() => setAba("entrada")}
-              >
-                Entrada
-              </button>
-              <button
                 disabled={ocupado}
                 onClick={() =>
                   tarefa(async () => {
@@ -334,15 +461,9 @@ export function App() {
             </nav>
           </>
         )}
-        {pagina === "studio" && !selecionado && (
-          <nav>
-            <button onClick={() => setAba("veiculos")}>Veículos</button>
-            <button onClick={() => setAba("relatorios")}>
-              Relatórios Meta Ads
-            </button>
-          </nav>
-        )}
-        {aba === "vitrine" && pagina === "estoque" ? (
+        {pagina === "financas" ? (
+          <Financas aoErro={setErro} />
+        ) : aba === "vitrine" && pagina === "estoque" ? (
           <Vitrine
             lista={lista}
             voltar={() => setAba("veiculos")}
@@ -397,80 +518,30 @@ export function App() {
               srcDoc={comAvisoDeAltura(relatorio)}
             />
           </section>
-        ) : aba === "entrada" && pagina === "estoque" ? (
-          <Entrada />
-        ) : aba === "relatorios" && pagina === "studio" ? (
-          <Relatorios />
         ) : selecionado && pagina === "studio" ? (
           <Ficha
             key={selecionado.id}
             veiculo={selecionado}
             voltar={() => {
               setSelecionado(null);
+              setPagina("estoque");
               void tarefa(carregar);
             }}
           />
-        ) : aba === "balanco" ? (
-          <section className="panel">
-            <h2>Balanço patrimonial</h2>
-            <p>
-              Estoque é automático. Lucros acumulados fecham o saldo por
-              diferença.
-            </p>
-            <div className="grid">
-              {Object.entries(contas).map(([grupo, linhas]) => (
-                <fieldset key={grupo}>
-                  <legend>{grupo}</legend>
-                  {Object.entries(linhas).map(([conta, valor]) => (
-                    <label key={conta}>
-                      {conta}
-                      <input
-                        type="number"
-                        step="0.01"
-                        disabled={conta === "Estoque de veículos (custo)"}
-                        value={valor}
-                        onChange={(e) =>
-                          setContas({
-                            ...contas,
-                            [grupo]: {
-                              ...linhas,
-                              [conta]: Number(e.target.value),
-                            },
-                          })
-                        }
-                      />
-                    </label>
-                  ))}
-                </fieldset>
-              ))}
-            </div>
-            <button
-              className="primary"
-              disabled={ocupado}
-              onClick={() =>
-                tarefa(async () => {
-                  setBalanco(
-                    await invoke<Balanco>("balanco_salvar", { contas }),
-                  );
-                })
-              }
-            >
-              Salvar balanço
-            </button>
-            <p>
-              Ativo: {moeda(balanco?.ativo ?? 0)} · Passivo:{" "}
-              {moeda(balanco?.passivo ?? 0)} · Acumulados:{" "}
-              {moeda(balanco?.acumulados ?? 0)}
-            </p>
-          </section>
         ) : (
           <section className="panel">
             <div className="actions">
-              <h2>
-                {pagina === "studio"
-                  ? "Escolha um veículo para produzir"
-                  : "Veículos nas pastas"}
-              </h2>
+              <h2>Veículos nas pastas</h2>
+              <button
+                role="switch"
+                aria-checked={soEstoque}
+                className={soEstoque ? "chave ligada" : "chave"}
+                title="Mostra só os veículos que estão em estoque no BNDV (não vendidos)"
+                onClick={() => setSoEstoque(!soEstoque)}
+              >
+                <span className="chave-trilho" aria-hidden="true" />
+                BNDV
+              </button>
               <input
                 aria-label="Buscar veículo"
                 placeholder="Buscar nome, placa ou versão"
@@ -501,16 +572,35 @@ export function App() {
                     <td>{v.preco == null ? "—" : moeda(v.preco)}</td>
                     <td>
                       <span className="badge">{v.status}</span>
+                      <SelosAnexos
+                        status={v.pasta ? anexos[v.pasta] : undefined}
+                      />
                     </td>
                     <td>
-                      <button
-                        onClick={() => {
-                          setPagina("studio");
-                          setSelecionado(v);
-                        }}
-                      >
-                        Abrir Studio →
-                      </button>
+                      <div className="acoes-linha">
+                        <button
+                          onClick={() => {
+                            setPagina("studio");
+                            setSelecionado(v);
+                          }}
+                        >
+                          Abrir ficha →
+                        </button>
+                        <button
+                          disabled={!v.pasta}
+                          title={
+                            v.pasta
+                              ? "Abre a pasta do veículo no Explorador de Arquivos"
+                              : "Veículo sem pasta vinculada"
+                          }
+                          onClick={() => {
+                            setErro("");
+                            openPath(v.pasta!).catch((e) => setErro(String(e)));
+                          }}
+                        >
+                          Abrir pasta
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

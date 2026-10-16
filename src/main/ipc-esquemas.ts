@@ -33,7 +33,11 @@ export const METODOS_DO_MOTOR = [
   "gerar_doc_md",
   "cnw_buscar",
   "cnw_ficha",
+  "cnw_texto",
+  "ficha_web_buscar",
+  "ficha_web_ficha",
   "fotos_organizar",
+  "planilha_aplicar",
 ] as const;
 
 /** Extensões que o Windows executaria ao "abrir" o arquivo. */
@@ -201,8 +205,47 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
 
     // ---- Estoque ----
     estoque_atualizar: { args: { todos: opcional(booleano) } },
-    bndv_abrir: vazio,
+    embutida_mostrar: {
+      args: {
+        id: umDe("crm", "bndv", "meta"),
+        x: numero,
+        y: numero,
+        largura: numero,
+        altura: numero,
+      },
+    },
+    embutida_esconder: vazio,
+    utalk_estado: vazio,
+    utalk_token_salvar: { args: { token: texto({ max: 4000 }) } },
+    utalk_token_remover: vazio,
+    utalk_metricas: vazio,
+    utalk_visao: vazio,
     estoque_vitrine: vazio,
+    financas_estado: vazio,
+    financas_vincular: { args: { origem: caminhoQualquer } },
+    financas_desvincular: vazio,
+    financas_ler: vazio,
+    financas_abrir: vazio,
+    financas_editar: {
+      args: {
+        operacoes: lista(
+          objeto({
+            op: umDe("celula", "novo_mes"),
+            aba: texto({ max: 100 }),
+            linha: opcional(inteiro),
+            coluna: opcional(inteiro),
+            variaveis: opcional(lista(lista(texto({ max: 60 }), 50), 10)),
+            valor: opcional(anulavel(texto({ max: 500, vazio: true }))),
+            tipo: opcional(umDe("texto", "data", "numero")),
+          }),
+          200,
+        ),
+        lidoEm: opcional(numero),
+      },
+    },
+    financas_pago: {
+      args: { chaves: lista(texto({ max: 300 }), 500), pago: booleano },
+    },
     relatorio_pdf: vazio,
     estoque_resumo: vazio,
     anuncios_vendas: vazio,

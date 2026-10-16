@@ -121,3 +121,24 @@ export const buscarCnw = (nome: string, ano?: string | null) =>
 /** Ficha da versão escolhida. Só traz equipamentos DE SÉRIE (os opcionais ficam de fora). */
 export const fichaCnw = (codigo: string, referer?: string) =>
   engine<FichaCnw>("cnw_ficha", { codigo, referer });
+
+/** Consulta na web com reserva: tenta cada fonte até uma responder. */
+export type BuscaWeb = BuscaCnw & {
+  fonte: string;
+  avisos: string[];
+  /** Palavras do nome que a fonte não usa no modelo (ex.: "hatch"). */
+  ignoradas?: string[];
+};
+export type FichaWeb = FichaCnw & {
+  /** true: só itens de série (Carros na Web). false: o site não separa série de opcional. */
+  equipamentos_de_serie: boolean;
+  fonte: string;
+};
+export const buscarWeb = (nome: string, ano?: string | null) =>
+  engine<BuscaWeb>("ficha_web_buscar", { nome, ano });
+export const fichaWeb = (codigo: string) =>
+  engine<FichaWeb>("ficha_web_ficha", { codigo });
+
+/** Dados técnicos a partir do texto da ficha colado pela pessoa. Não acessa o site e não traz equipamentos. */
+export const fichaCnwTexto = (texto: string) =>
+  engine<FichaCnw>("cnw_texto", { texto });

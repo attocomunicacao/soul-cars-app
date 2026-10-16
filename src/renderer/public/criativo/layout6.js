@@ -426,6 +426,17 @@ window.Layout6 = (() => {
       edges.addColorStop(1, 'rgba(0,0,0,0)');
       real.fillStyle = edges;
       real.fillRect(0, 0, LARGURA, 503);
+      // O mesmo vale para o alto e o pé da foto: sem isso o piso real termina numa linha
+      // reta e deixa uma faixa branca entre a foto e o rodapé.
+      const margem = Math.min(80, height * 0.2);
+      const bordas = real.createLinearGradient(0, y, 0, y + height);
+      // Só suaviza as bordas que ficam dentro da faixa; as que passam da moldura já são cortadas por ela.
+      bordas.addColorStop(0, y > 0 ? 'rgba(0,0,0,0)' : '#000');
+      bordas.addColorStop(y > 0 ? margem / height : 0, '#000');
+      bordas.addColorStop(y + height < 503 ? 1 - margem / height : 1, '#000');
+      bordas.addColorStop(1, y + height < 503 ? 'rgba(0,0,0,0)' : '#000');
+      real.fillStyle = bordas;
+      real.fillRect(0, 0, LARGURA, 503);
       originalFloor.src = realCanvas.toDataURL('image/png');
     }
     publish(0, shadowCanvas, strength > 0 && !original);

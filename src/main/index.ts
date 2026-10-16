@@ -20,7 +20,7 @@ import {
 import { reiniciarMotor } from "./studio/motor";
 import { importarLegado } from "./studio/legado";
 import { apagarArquivoDeSegredos, removerConfigIa } from "./limpeza-ia";
-import { fecharJanelaBndv } from "./estoque/bndv-janela";
+import { fecharEmbutidas } from "./embutidas";
 import { mostrarSplash, type Splash } from "./splash";
 import { iniciarDiagnostico, registrar } from "./diagnostico";
 import { encerrarInstagram } from "./studio/instagram";
@@ -168,5 +168,5 @@ if (!app.requestSingleInstanceLock()) {
   app.on("before-quit", pararEntrada);
   app.on("before-quit", reiniciarMotor);
   app.on("before-quit", encerrarInstagram);
-  app.on("before-quit", fecharJanelaBndv);
+  app.on("before-quit", fecharEmbutidas);
 }

@@ -91,6 +91,10 @@
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  /* O recorte do degradê vai só até a caixa do texto; o itálico passa dela e as pontas
+     (S inicial, O final) saíam cortadas. A folga é devolvida com margem negativa. */
+  padding: 0 0.14em;
+  margin: 0 -0.14em;
 }
 .v-year {
   position: absolute;
@@ -209,6 +213,8 @@
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  padding: 0 0.1em;
+  margin: 0 -0.1em;
 }
 .v-fuel-label {
   left: 462px;

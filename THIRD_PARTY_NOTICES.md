@@ -26,6 +26,7 @@ As bibliotecas **não são redistribuídas** no instalador nem no repositório: 
 | colorama | 0.4.6 | BSD-3-Clause | indireta |
 | cryptography | 50.0.1 | Apache-2.0 OR BSD-3-Clause | indireta |
 | ctranslate2 | 4.8.2 | MIT | indireta |
+| et-xmlfile | 2.0.0 | MIT | indireta |
 | faster-whisper | 1.2.1 | MIT | direta (video) |
 | filelock | 3.32.6 | MIT | indireta |
 | flatbuffers | 25.12.19 | Apache-2.0 | indireta |
@@ -45,6 +46,7 @@ As bibliotecas **não são redistribuídas** no instalador nem no repositório: 
 | numba | 0.67.0 | BSD-2-Clause | indireta |
 | numpy | 2.5.3 | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 | direta (documentos) |
 | onnxruntime | 1.30.0 | MIT | indireta |
+| openpyxl | 3.1.5 | MIT | direta (planilha) |
 | packaging | 26.3 | Apache-2.0 OR BSD-2-Clause | indireta |
 | pdfminer-six | 20260107 | MIT | indireta |
 | pdfplumber | 0.11.10 | MIT | direta (documentos) |

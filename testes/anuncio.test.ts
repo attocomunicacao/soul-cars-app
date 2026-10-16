@@ -67,7 +67,7 @@ describe("checklist de prontidão", () => {
   it("cada pendência aponta para onde resolver", () => {
     expect(item("documento", { doc_md: false })).toMatchObject({
       ok: false,
-      destino: "producao",
+      destino: "ficha",
     });
     expect(item("video", { video_final: null })).toMatchObject({
       ok: false,

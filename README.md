@@ -29,21 +29,20 @@ Aplicativo de desktop para Windows que leva um carro do **estoque** até o **an�
 | Etapa | O que acontece | Onde |
 |---|---|---|
 | 1. Estoque | Abre o BNDV numa janela própria, lê veículos e vendas pela API GraphQL, grava CSVs e cria/atualiza uma pasta por veículo (`INFO.md`, `CRIATIVO`, `FOTOS`, `VIDEO`). | Aba **Estoque** |
-| 2. Balanço | Calcula patrimônio, lucro, giro e margem; mostra gráficos (inclusive lucro dos últimos 12 meses) e gera um relatório HTML. | Estoque › Balanço / Relatório completo |
+| 2. Balanço | Calcula patrimônio, lucro, giro e margem; mostra gráficos (inclusive lucro dos últimos 12 meses) e gera um relatório HTML. | Estoque › Relatório completo |
 | 3. Entrada de arquivos | Vigia uma pasta sincronizada (Google Drive/OneDrive). Fotos, vídeo e documento enviados pela equipe, com a placa no nome da pasta, são **copiados** (nunca movidos) para a pasta do veículo. | Estoque › Entrada |
-| 4. Ficha e documento | Lê o CRLV (PDF, com ou sem senha, ou escaneado via OCR), preenche a ficha, busca a ficha técnica no Carros na Web e gera `DOC.md` e `DES.md` (descrição do anúncio). | Studio › veículo |
+| 4. Ficha e documento | Lê o CRLV (PDF, com ou sem senha, ou escaneado via OCR), preenche a ficha, busca a ficha técnica na web (Carros na Web, com o Ficha Completa como reserva) e gera `DOC.md` e `DES.md` (descrição do anúncio). | Ficha › veículo |
 | 5. Produção | Painel de fotos (reordenar, renomear, recorte de fundo), Editor Mágico de vídeo (tarjas, legendas, trilha) e versão leve do vídeo para anúncio. | Studio › Produção |
-| 6. Criativos | Editor de artes (layouts 4 e 6, sombra, piso) com exportação de PNG para `CRIATIVO`. | Studio › Criativos |
+| 6. Criativos | Editor de artes (layouts 4 e 6, sombra, piso) com exportação de PNG para `CRIATIVO`. | Ficha › Criativos |
 | 7. Pronto para anunciar | Checklist de prontidão e cartão de campanha com textos, títulos, descrições e arquivos, com botões de copiar. Registro do anúncio e lembrete de pausa quando o carro é vendido. | Studio › Pronto para anunciar |
-| 8. Publicação | Blocos de texto para o Gerenciador de Anúncios, prontos para copiar. | Studio › Publicação |
-| 9. Instagram | Publica carrossel e depois Reels pelo navegador integrado, com retomada e prevenção de duplicatas. | Studio › Instagram |
-| 10. Relatórios | Relatórios Meta Ads e exportação XLSX. | Studio › Relatórios |
+| 8. Publicação | Blocos de texto para o Gerenciador de Anúncios, prontos para copiar. | Ficha › Publicação |
+| 9. Instagram | Publica carrossel e depois Reels pelo navegador integrado, com retomada e prevenção de duplicatas. | Ficha › Instagram |
 
 **Regra de ouro:** nenhuma automação ativa campanha sozinha. O app deixa tudo pronto; a pessoa cria e ativa o anúncio. O app não usa nenhum serviço pago: sem API, sem chave, sem cobrança por uso. Os textos de IA do anúncio saem pelo prompt pronto, colado no chat que a pessoa já usa.
 
 ## As duas interfaces
 
-O app abre em **01 · Estoque** (lista de veículos, balanço, entrada de arquivos). Em **02 · Studio** ficam a ficha do veículo e suas abas, na ordem: **Produção → Criativos → Pronto para anunciar → Publicação → Instagram**, além de Relatórios e Configurações.
+O app abre em **01 · Estoque** (lista de veículos, entrada de arquivos e relatório completo). Ao clicar em **Abrir ficha →** num veículo da lista abre-se a ficha dele, com as abas, na ordem: **Ficha → Produção → Criativos → Pronto para anunciar → Publicação → Instagram**, além de Configurações.
 
 ## Como o app é montado
 

@@ -212,6 +212,26 @@ tbody tr:hover {
   padding: 5px 10px;
   border-radius: 20px;
 }
+.selos-anexos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.selo {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.selo.ok {
+  background: #dff1e0;
+  color: #1f6b2a;
+}
+.selo.falta {
+  background: #f3dede;
+  color: #9a2a2a;
+}
 .notice {
   background: #fbf2dc;
   border: 1px solid #dfc586;
@@ -447,13 +467,14 @@ button.copiado {
 }
 .vitrine-corpo {
   display: grid;
-  grid-template-columns: 0.95fr 1.05fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
   align-items: stretch;
 }
 .vitrine-foto {
   position: relative;
-  min-height: 140px;
+  aspect-ratio: 1 / 1;
+  align-self: start;
   border-radius: 10px;
   overflow: hidden;
   background: #20211f;
@@ -482,6 +503,9 @@ button.copiado {
   background: #f6f3ec;
   align-content: center;
 }
+.vitrine-cartao dl {
+  min-width: 0;
+}
 .vitrine-cartao dl div {
   display: flex;
   justify-content: space-between;
@@ -491,14 +515,19 @@ button.copiado {
 .vitrine-cartao dt {
   color: #6b6455;
 }
+.vitrine-cartao dt {
+  flex-shrink: 0;
+}
 .vitrine-cartao dd {
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-weight: 600;
   text-align: right;
 }
 .vitrine-cartao footer {
   display: grid;
-  grid-template-columns: 0.95fr 1.05fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
 }
 .vitrine-preco {
@@ -517,4 +546,207 @@ button.copiado {
   .vitrine-grade {
     grid-template-columns: 1fr;
   }
+}
+
+.chave {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+.chave-trilho {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  border-radius: 20px;
+  background: #cfcac0;
+  transition: background 0.15s;
+}
+.chave-trilho::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s;
+}
+.chave.ligada .chave-trilho {
+  background: #c9a24a;
+}
+.chave.ligada .chave-trilho::after {
+  transform: translateX(16px);
+}
+
+.acoes-linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* CRM: a página do uTalk é uma vista nativa sobre esta área; o resto da tela some. */
+main.crm {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+main.crm > :not(.crm-area):not(.crm-metricas):not([role="alert"]) {
+  display: none;
+}
+.crm-area {
+  flex: 1;
+  min-height: 0;
+  background: #f5f3ef;
+}
+.documento-crlv,
+.dados-anuncio {
+  margin-bottom: 20px;
+}
+.documento-crlv .grid {
+  margin-top: 20px;
+}
+.dados-iniciais {
+  margin-bottom: 20px;
+}
+
+/* Finanças: grade com células de planilha; só vencimento e valor variável são campos. */
+.grade-financas td {
+  padding: 4px 6px;
+  white-space: nowrap;
+  user-select: none;
+}
+.grade-financas td.fixa {
+  color: #555;
+  padding: 4px 12px;
+}
+.grade-financas tr.paga {
+  background: #eef7ee;
+}
+.grade-financas tr.paga td.fixa {
+  color: #888;
+}
+.grade-financas input {
+  border-color: transparent;
+  background: transparent;
+  padding: 8px;
+}
+.grade-financas input:hover:not(:disabled) {
+  border-color: #ddd9d2;
+}
+.grade-financas input:focus {
+  border-color: #c9a24b;
+  background: #fff;
+}
+.grade-financas input.atrasada {
+  color: #9a2a2a;
+  font-weight: 600;
+  background: #f3dede;
+}
+.caixa-pago {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 2px solid #b9b2a4;
+  border-radius: 7px;
+  background: #fff;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+}
+.caixa-pago:hover {
+  border-color: #c9a24b;
+}
+.caixa-pago:focus-visible {
+  outline: 2px solid #c9a24b;
+  outline-offset: 2px;
+}
+.caixa-pago.marcado {
+  background: #2f8f3f;
+  border-color: #2f8f3f;
+}
+.pago-titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* CRM: cartões e listas da visão geral. */
+.crm-cartoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.crm-cartao {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 3px 10px;
+  border: 1px solid #ddd9d2;
+  border-radius: 8px;
+  background: #f5f3ef;
+  font-size: 0.85rem;
+}
+.crm-cartao b {
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+.crm-cartao.alerta {
+  background: #fdecea;
+  border-color: #e3a29b;
+}
+.crm-cartao.quente {
+  border-color: #e3a29b;
+}
+.crm-cartao.morno {
+  border-color: #e6cf8f;
+}
+.crm-cartao.frio {
+  border-color: #a9c4dc;
+}
+.crm-listas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-height: 260px;
+  overflow: auto;
+}
+.crm-lista h3 {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+}
+.crm-lista ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.crm-lista li {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid #eee9e1;
+  font-size: 0.85rem;
+}
+.crm-lead-nome {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.crm-lead-etiquetas {
+  color: #6b6a65;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.crm-lead-tempo {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }

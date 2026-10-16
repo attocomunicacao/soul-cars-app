@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
-import { ask, invoke, open } from "./lib/desktop";
+import { ask, invoke } from "./lib/desktop";
 import { aquecerRecorte } from "./lib/engine";
 import { localizarFotosVitrine } from "./lib/arquivos";
 import {
-  copiarComoDoc,
-  documentoNaPasta,
   statusProducao,
   renomearFotos,
   organizarFotos,
@@ -19,14 +17,12 @@ const mb = (b: number) =>
 export function Producao({
   pasta,
   vincular,
-  documento,
   video,
   videoLeve,
   onBusy,
 }: {
   pasta: string | null;
   vincular: () => Promise<void>;
-  documento: (origem: string, senha: string) => Promise<void>;
   video: () => Promise<void>;
   videoLeve: () => Promise<void>;
   onBusy: (valor: boolean) => void;
@@ -37,7 +33,6 @@ export function Producao({
   }, [pasta]);
   const [status, setStatus] = useState<StatusProducao | null>(null);
   const [fotos, setFotos] = useState<Foto[]>([]);
-  const [senha, setSenha] = useState("");
   const [ocupado, setOcupado] = useState(false);
   const [aviso, setAviso] = useState("");
   const [arrastada, setArrastada] = useState<string | null>(null);
@@ -160,68 +155,13 @@ export function Producao({
       </div>
       <p>{pasta || "Vincule a pasta do veículo para iniciar."}</p>
       <p className="muted">
-        Documento, fotos e vídeo são verificados automaticamente a cada 5
-        segundos.
+        Fotos e vídeo são verificados automaticamente a cada 5 segundos.
       </p>
       {aviso && (
         <p className="notice" role="status">
           {aviso}
         </p>
       )}
-      <fieldset>
-        <legend>1 · Documento (CRLV)</legend>
-        <p>
-          {status?.doc_pdf
-            ? "✓ Documento encontrado na pasta"
-            : "○ Nenhum documento PDF encontrado"}
-          {status?.doc_md ? " · DOC.md já gerado" : ""}
-        </p>
-        <div className="actions">
-          <button
-            disabled={ocupado || !pasta}
-            onClick={() =>
-              tarefa(verificar, "Verificação do documento atualizada.")
-            }
-          >
-            Verificar documento
-          </button>
-          <button
-            className="primary"
-            disabled={ocupado || !pasta}
-            onClick={() =>
-              tarefa(async () => {
-                const p = await open({
-                  title: "Anexar documento do veículo",
-                  filters: [{ name: "CRLV", extensions: ["pdf"] }],
-                });
-                if (typeof p !== "string") return false;
-                await copiarComoDoc(pasta!, p);
-              }, "Seleção concluída. O documento escolhido foi anexado como DOC.pdf.")
-            }
-          >
-            Anexar documento
-          </button>
-          <button
-            disabled={ocupado || !status?.doc_pdf}
-            onClick={() =>
-              tarefa(async () => {
-                const d = await documentoNaPasta(pasta!);
-                await documento(d.caminho, senha);
-              })
-            }
-          >
-            Ler documento e preencher ficha
-          </button>
-        </div>
-        <label>
-          Senha do CRLV (se necessário)
-          <input
-            type="password"
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-          />
-        </label>
-      </fieldset>
       <fieldset>
         <legend>2 · Fotos em FOTOS</legend>
         <p>

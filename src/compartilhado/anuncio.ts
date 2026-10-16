@@ -110,7 +110,7 @@ export function checklist(e: EntradaChecklist): ItemChecklist[] {
           : e.doc_pdf
             ? "Falta ler o documento (gerar DOC.md)"
             : "Anexe o PDF do documento",
-      destino: "producao",
+      destino: "ficha",
     },
     {
       id: "fotos",

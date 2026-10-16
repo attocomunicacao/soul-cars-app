@@ -23,7 +23,7 @@ flowchart TD
 |---|---|---|---|
 | 1. Atualizar estoque | Estoque › **Atualizar BNDV** | ~1 min | Fazer login no BNDV na primeira vez |
 | 2. Receber arquivos | Estoque › **Entrada** | automático (a cada 30 s) | Escolher a pasta sincronizada uma única vez |
-| 3. Ficha do carro | Studio › veículo › ficha | alguns min | Conferir os dados lidos |
+| 3. Ficha do carro | Estoque › Abrir ficha › Ficha | alguns min | Conferir os dados lidos |
 | 4. Produção | veículo › **Produção** | depende do vídeo | Conferir fotos e vídeo |
 | 5. Criativos | veículo › **Criativos** | alguns min | Ajustar as artes e exportar |
 | 6. Pronto para anunciar | veículo › **Pronto para anunciar** | poucos min | Copiar textos e criar o anúncio na Meta |
@@ -41,7 +41,7 @@ Dê um duplo clique no atalho **SOUL Cars** (pasta `Soul Cars`). Não aparece te
 ## Antes de começar (primeira vez)
 
 1. Abra o app **SOUL Cars**. Ele abre em **01 · Estoque**.
-2. Vá em **Studio › Configurações** e confira:
+2. Vá em **Configurações** (canto inferior do menu) e confira:
    - **Raiz de dados**: a pasta que contém `ESTOQUE` e `dados` (não é a própria `ESTOQUE`).
    - Dados da loja (nome, telefone, etc.).
    - **Campanha modelo**: o nome da campanha que você duplica no Gerenciador de Anúncios.
@@ -49,12 +49,12 @@ Dê um duplo clique no atalho **SOUL Cars** (pasta `Soul Cars`). Não aparece te
 
 ## Etapa 1: Atualizar o estoque
 
-1. Em **Estoque**, clique em **Atualizar BNDV**. Para só entrar (ou conferir se o login continua valendo) sem atualizar, use **Entrar no BNDV**: abre o BNDV numa janela, com a mesma sessão do Atualizar. **Abrir pasta do estoque** abre a pasta `ESTOQUE` no Explorador de Arquivos.
+1. Em **Estoque**, clique em **Atualizar BNDV**. Para só entrar (ou conferir se o login continua valendo) sem atualizar, abra **04 · BNDV** no menu lateral: o BNDV aparece dentro do próprio app, com a mesma sessão do Atualizar. **03 · CRM** mostra o Umbler uTalk da mesma forma (o login fica salvo). No topo do CRM, a faixa **Visão geral** mostra leads, conversas novas nos últimos 7 dias, abertas, **aguardando você** (a última mensagem é do cliente) e os leads **quentes, mornos e frios**. Esses três vêm das etiquetas **QUENTE**, **MORNO** e **FRIO** que o vendedor aplica no uTalk (crie-as com esses nomes). **Leads** abre a lista de quem espera resposta (mais antigo primeiro) e dos leads quentes; **Etiquetas** conta os leads de cada etiqueta (ex.: FIESTA 2016), com busca. Na primeira vez, cole o token gerado em account.umbler.com/profile: ele fica só neste computador, cifrado. **Atualizar** refaz a contagem; **Trocar token** apaga o salvo. **Abrir pasta do estoque** abre a pasta `ESTOQUE` no Explorador de Arquivos.
 2. Uma janela do BNDV abre. Na primeira vez, faça login; nas próximas, o app entra sozinho.
 3. Aguarde cerca de 1 minuto. O app baixa veículos e vendas e cria uma pasta para cada carro novo:
    `ESTOQUE/<ID>_<MARCA>_<MODELO>_<PLACA>/` com `INFO.md`, `CRIATIVO`, `FOTOS` e `VIDEO`.
 4. Clique no cartão **Estoque** (o primeiro, no topo) para ver o **estoque atual em cartões**, como na lista do BNDV: foto, marca e modelo, placa, preço de tabela, dias em estoque e, quando a ficha do Studio estiver preenchida, versão, ano, quilometragem, cor, câmbio e combustível (o que faltar aparece como —). O botão **Abrir no Studio** leva à ficha do veículo. A foto do cartão é a **imagem 2** do painel de fotos do Studio (a segunda na ordem das fotos); se o carro tiver uma foto só, é ela. Se o BNDV expirar o login, o **Atualizar BNDV** mostra a janela do BNDV para você entrar de novo.
-5. Confira a lista de veículos e o **Balanço** (patrimônio, lucro, giro e margem). **Abrir relatório completo** mostra os gráficos dentro do app.
+5. Confira a lista de veículos e os totais no topo (estoque, custo, receita e margem). **Abrir relatório completo** mostra os gráficos dentro do app.
 
 Boas práticas:
 - **Reler pastas** só lê o computador; **Atualizar BNDV** usa a internet. A lista se relê sozinha a cada minuto quando nada está aberto.
@@ -76,11 +76,11 @@ A equipe sobe fotos, vídeo e documento numa subpasta do Google Drive (ou OneDri
 
 ## Etapa 3: Ficha do veículo
 
-Em **Studio**, abra o veículo.
+Em **Estoque**, clique em **Abrir ficha →** no veículo.
 
 1. Revise os dados da ficha.
-2. **Documento:** o app detecta o PDF na pasta (DOC.pdf tem prioridade). Clique em **Ler documento e preencher ficha**; se o PDF tiver senha, informe-a. Isso gera `DOC.md`.
-3. **Ficha técnica:** busque pelo Carros na Web (escolhendo a versão, com equipamentos de série) ou cole a ficha / transcreva de um print.
+2. **Documento (aba Ficha):** o app detecta o PDF na pasta (DOC.pdf tem prioridade). Clique em **Ler documento e preencher ficha**; se o PDF tiver senha, informe-a. Isso gera `DOC.md`.
+3. **Ficha técnica:** use **Buscar ficha na web**: o app consulta o Carros na Web e, se ele estiver bloqueado ou fora do ar, o Ficha Completa, e mostra a fonte usada. Escolha a versão. Do Carros na Web vêm só os equipamentos de série; do Ficha Completa os equipamentos vêm como **sugestão** (a fonte não separa série de opcional) e só entram depois que você clica em **Incluir equipamentos sugeridos** e confere. O que já foi lido fica guardado no app e não é consultado de novo. Sem nenhuma fonte, use **Preencher com CRLV e BNDV**, **Colar ficha técnica** ou o OCR de equipamentos.
 4. **Descrição:** gere o `DES.md` (padrão) ou use **Textos pelo chat (prompt pronto)**: o app monta o prompt, você cola no chat que já usa (Claude, ChatGPT…), cola a resposta de volta e o app valida. Sem chave e sem custo. O app mantém preço, km e ano da ficha.
 5. Salve.
 
@@ -126,10 +126,6 @@ Aba **Pronto para anunciar**.
 ## Relatório completo em PDF
 
 Em **Estoque › Abrir relatório completo**, o botão **PDF** gera o relatório inteiro em folhas A4, pronto para imprimir: escolha onde salvar (ele sugere a pasta `dados`) e o arquivo abre em seguida. O **Balanço por veículo** aparece do carro que entrou mais recentemente para o mais antigo.
-
-## Relatórios
-
-**Studio › Relatórios** reúne os relatórios Meta Ads e a exportação em planilha (XLSX). O gráfico de **lucro por mês** mostra os últimos 12 meses e tem setas para navegar.
 
 ## Problemas comuns
 
