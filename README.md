@@ -10,9 +10,13 @@ Aplicativo de desktop para Windows que leva um carro do **estoque** até o **an�
 
 ## Baixar e instalar (equipe da loja)
 
-1. Entre no GitHub com a conta que recebeu acesso ao repositório privado (o dono convida em **Settings › Collaborators**).
-2. Abra **Releases** e baixe `SOUL-Cars-Setup-<versão>.exe` da versão mais recente.
-3. Execute o instalador (Windows 10/11 x64). Se o SmartScreen avisar "editor desconhecido", clique em **Mais informações › Executar assim mesmo** (o instalador ainda não é assinado).
+1. Abra a página de **Releases** do repositório (se ele estiver privado, entre antes com a conta GitHub que recebeu acesso; o dono convida em **Settings › Collaborators**).
+2. Baixe `SOUL-Cars-Setup-<versão>.exe` da versão mais recente.
+3. Execute o instalador (Windows 10/11 x64). O Windows vai mostrar **"O Windows protegeu o seu PC"** (SmartScreen). Isso é esperado: o app é de uso interno e o instalador não tem assinatura digital paga. Para continuar:
+   1. Clique em **Mais informações** (link logo abaixo do texto).
+   2. Clique em **Executar assim mesmo**.
+
+   Só é preciso fazer isso na primeira vez de cada versão. Se o navegador bloquear o download, clique em **Manter** ou **Manter mesmo assim**. Confirme sempre que o arquivo veio da Release oficial deste repositório.
 4. Abra o **SOUL Cars** e entre no BNDV pela aba **Estoque**: o app sincroniza o estoque e cria as pastas dos veículos em `Documentos\SOUL Cars`. Fotos, vídeos e dados **não** vêm no instalador.
 5. Para as automações de documento, foto e vídeo, use **Configurações › Instalar motor**; o app baixa o que precisa sozinho (o OCR de escaneados ainda exige Tesseract e o vídeo exige FFmpeg).
 
