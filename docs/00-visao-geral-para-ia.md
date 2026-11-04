@@ -1,5 +1,9 @@
 # Visão geral do app para assistentes de IA
 
+> Continuidade entre chats: consulte também [CONTEXTO-PARA-OUTRO-CHAT.md](CONTEXTO-PARA-OUTRO-CHAT.md), conferido com o código local em 23/10/2026. Ele detalha os fluxos atuais e ressalva descrições históricas abaixo, como CRM no menu, edição financeira e funcionalidades sem tela montada.
+
+> Aprofundamento: [contratos e detalhes de implementação](DETALHES-IMPLEMENTACAO.md), [inventário](INVENTARIO-CODIGO.md) e [cobertura da leitura](COBERTURA-LEITURA.md). Esses documentos registram regras encontradas nos corpos do código, testes e scripts, além dos limites da análise.
+
 Leia este arquivo primeiro. Ele resume o que o app faz, onde cada coisa mora e quais regras não se quebram. Depois leia `AGENTS.md`, `02`, `03` e `04` antes de mexer em regra de negócio.
 
 ## 1. O que é

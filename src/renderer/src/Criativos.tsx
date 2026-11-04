@@ -12,6 +12,7 @@ import {
 } from "./lib/arquivos";
 import { fuelLabel, formatNumber, shortGearbox } from "./lib/des";
 import { gravarNaPasta, recortarArquivo } from "./lib/producao";
+import { invoke } from "./lib/desktop";
 
 export function Criativos({
   veiculo: v,
@@ -141,6 +142,7 @@ export function Criativos({
             ok: true,
             message: `Salvo em ${caminho}`,
           });
+          setAviso(`Salvo em ${caminho}`);
           if (
             prepararInstagram &&
             /-(carrossel-[123]|trafego-pago)\.png$/i.test(data.name)

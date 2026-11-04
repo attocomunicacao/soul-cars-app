@@ -115,11 +115,11 @@ describe("fotos na ordem", () => {
 });
 
 describe("cartão da campanha", () => {
-  it("mostra as 5 lacunas de texto, título e descrição, com [VENDA] no nome", () => {
+  it("mostra as 5 lacunas de texto, título e descrição, com o nome sem prefixo", () => {
     const md = gerarDes(fiesta, loja);
-    expect(md).toContain("[LEAD] FORD FIESTA 2016");
+    expect(md).toContain("\n\nFORD FIESTA 2016");
     const c = cartaoCampanha(md);
-    expect(c.nomeCampanha).toBe("[VENDA] FORD FIESTA 2016");
+    expect(c.nomeCampanha).toBe("FORD FIESTA 2016");
     expect(c.textos.map((t) => t.label)).toEqual(
       [1, 2, 3, 4, 5].map((n) => `${n}. TEXTO PRINCIPAL`),
     );
@@ -136,10 +136,10 @@ describe("cartão da campanha", () => {
       mensagens: [],
     });
   });
-  it("troca qualquer prefixo por [VENDA] e acrescenta se não houver", () => {
-    expect(nomeComPrefixoVenda("[LEAD] A 2020")).toBe("[VENDA] A 2020");
-    expect(nomeComPrefixoVenda("[VENDA] A 2020")).toBe("[VENDA] A 2020");
-    expect(nomeComPrefixoVenda("A 2020")).toBe("[VENDA] A 2020");
+  it("remove qualquer prefixo do nome da campanha", () => {
+    expect(nomeComPrefixoVenda("[LEAD] A 2020")).toBe("A 2020");
+    expect(nomeComPrefixoVenda("[VENDA] A 2020")).toBe("A 2020");
+    expect(nomeComPrefixoVenda("A 2020")).toBe("A 2020");
   });
 });
 

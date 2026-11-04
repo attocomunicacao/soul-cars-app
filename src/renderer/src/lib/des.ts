@@ -168,7 +168,7 @@ export type TextosIA = {
 
 /** Prefixo do nome da campanha. O objetivo virou geração de leads em 14/09/2026;
  *  os anúncios antigos continuam com [VENDA] no DES.md que já foi gerado. */
-export const PREFIXO_CAMPANHA = "[LEAD]";
+export const PREFIXO_CAMPANHA = "";
 
 export function gerarDes(
   f: FichaDes,
@@ -210,7 +210,7 @@ export function gerarDes(
     field(label.toUpperCase(), text(f[id])),
   ).join("\n");
 
-  const campaign = `${prefixoCampanha} ${name}`;
+  const campaign = `${prefixoCampanha} ${name}`.trim();
   const estados = [
     "📄 CAMPANHA EM RASCUNHO",
     "✅ CAMPANHA PUBLICADA",

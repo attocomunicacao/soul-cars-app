@@ -1,5 +1,15 @@
 # Validação da migração
 
+## Atualização de 23/10/2026: seletores do smoke
+
+O smoke foi adaptado à navegação atual: confirma a página Estoque pelo botão selecionado e pelo conteúdo da lista, sem depender do antigo `h1`; usa o botão “Voltar aos dados” do editor em vez da aba Instagram removida. A exportação dos quatro PNGs continua obrigatória e o plano é conferido pelo IPC real `instagram_plano`. A ficha sintética salva o ano antes da exportação para que cadastro e nomes dos arquivos usem a mesma identificação. O resultado agora inclui `png3D`, permitindo executar as verificações de resolução e de ausência do molde na imagem. Um sucesso remove o diagnóstico antigo de erro.
+
+Validação repetida: TypeScript sem erros; Vitest com 214 testes aprovados e 2 ignorados; smoke geral aprovado no Electron real; smoke específico do Instagram aprovado em página local simulada; build main/preload/React concluído. As operações de disco e Electron foram executadas fora das restrições do sandbox, somente com fixtures e diretórios temporários. O aviso `Comando não disponível: sql_execute` é esperado no smoke: ele verifica que SQL arbitrário permanece bloqueado.
+
+Evidências locais: `docs/smoke.json` e `docs/smoke-instagram.json`. As verificações históricas abaixo registram o estado de 09/10/2026.
+
+## Verificação histórica
+
 Verificações realizadas em 09/10/2026, Windows x64:
 
 | Verificação | Resultado |

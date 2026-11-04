@@ -1020,3 +1020,47 @@ main.crm > :not(.crm-area):not([role="alert"]) {
   border-radius: 3px;
   background: #292927;
 }
+
+.campo-numerico {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #ddd9d2;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0 14px;
+}
+.campo-numerico:focus-within {
+  border-color: #b88822;
+  box-shadow: 0 0 0 3px #b888221a;
+}
+.campo-numerico > span {
+  color: #8a713e;
+  font-size: 14px;
+  font-weight: 600;
+}
+.campo-numerico input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font-size: 20px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding: 13px 0;
+}
+.campo-numerico input:focus-visible {
+  outline: none;
+}
+.barra-pasta {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin: -30px -34px 24px;
+  padding: 12px 34px;
+  background: var(--canvas, #f5f3ef);
+  border-bottom: 1px solid var(--line, #e3ded5);
+}

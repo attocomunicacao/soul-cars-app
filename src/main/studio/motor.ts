@@ -73,23 +73,61 @@ export function estadoMotor() {
         ? "C:/Program Files/Tesseract-OCR/tesseract.exe"
         : null),
     ffmpeg: naPath("ffmpeg"),
-    uv: !!naPath("uv"),
+    uv: true, // se faltar, o app baixa sozinho ao instalar o motor
     venv: pasta ? path.join(pasta, ".venv") : null,
     engine: pasta,
   };
 }
 
-export function instalarMotor(emitir: Emitir) {
-  const uv = naPath("uv");
-  const pasta = pastaMotor();
-  if (!uv)
-    throw new Error(
-      "Instale uv pelo Git CMD: winget install --id astral-sh.uv -e. Depois reabra o app.",
+/** uv baixado pelo próprio app (usuário final não precisa instalar nada). */
+const UV_LOCAL = () => path.join(caminhos.userData(), "uv", "uv.exe");
+const UV_URL =
+  "https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-pc-windows-msvc.zip";
+
+function uvDisponivel(): string | null {
+  return naPath("uv") ?? (fs.existsSync(UV_LOCAL()) ? UV_LOCAL() : null);
+}
+
+/** Usa o uv do PATH ou baixa o executável oficial (~20 MB) para a pasta de dados do app. */
+async function garantirUv(emitir: Emitir): Promise<string> {
+  const existente = uvDisponivel();
+  if (existente) return existente;
+  emitir("estoque:log", { texto: "Baixando o instalador do motor (uv)…" });
+  const pasta = path.dirname(UV_LOCAL());
+  fs.mkdirSync(pasta, { recursive: true });
+  const resposta = await fetch(UV_URL);
+  if (!resposta.ok)
+    throw new Error(`Falha ao baixar o uv (${resposta.status}).`);
+  const zip = path.join(pasta, "uv.zip");
+  fs.writeFileSync(zip, Buffer.from(await resposta.arrayBuffer()));
+  await new Promise<void>((resolver, rejeitar) => {
+    const p = spawn(
+      "powershell.exe",
+      [
+        "-NoProfile",
+        "-Command",
+        `Expand-Archive -LiteralPath '${zip}' -DestinationPath '${pasta}' -Force`,
+      ],
+      { windowsHide: true },
     );
+    p.on("error", rejeitar);
+    p.on("close", (c) =>
+      c === 0 ? resolver() : rejeitar(new Error("Falha ao extrair o uv.")),
+    );
+  });
+  fs.rmSync(zip, { force: true });
+  if (!fs.existsSync(UV_LOCAL()))
+    throw new Error("uv.exe não encontrado após extrair.");
+  return UV_LOCAL();
+}
+
+export async function instalarMotor(emitir: Emitir) {
+  const pasta = pastaMotor();
   if (!pasta)
     throw new Error(
       "Pasta engine não encontrada. Escolha a pasta nas configurações.",
     );
+  const uv = await garantirUv(emitir);
   return new Promise<void>((resolver, rejeitar) => {
     const p = spawn(uv, ["sync", "--all-groups", "--project", pasta], {
       windowsHide: true,

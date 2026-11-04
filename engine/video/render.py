@@ -1,4 +1,4 @@
-"""Monta o vídeo Soul Cars sem Premiere: tarjas + legendas palavra a palavra com glow + trilha + cartão final.
+"""Monta o vídeo Soul Cars sem Premiere: tarjas + legendas animadas pelo contexto da fala + trilha + cartão final.
 
 Uso: python render.py <pasta_do_veiculo> "<veículo>" "<motor/câmbio>" "<preço>"
 """
@@ -13,7 +13,14 @@ import time
 import unicodedata
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import animacao_tarjas  # noqa: E402
+import animacao_logo  # noqa: E402
+import legendas  # noqa: E402
+import contexto  # noqa: E402
+import expressoes  # noqa: E402
 
 ENGINE = Path(__file__).resolve().parent
 W, H, FPS = 1080, 1920, "60000/1001"
@@ -27,7 +34,11 @@ if FONT is None:
     raise SystemExit("ERRO: fonte Lato Black não encontrada (assets/Lato-Black.ttf).")
 ORANGE = (214, 125, 5)
 LOGO_SECONDS = 5.0
-# Medidas tiradas dos vídeos finalizados no Premiere (1080x1920)
+PADDING_TARJA = 32
+BORDA_GLOW = 16
+LARGURA_MAX_TARJA = int((W - 2 * 64) / animacao_tarjas.ESCALA_MAXIMA) - 2 * BORDA_GLOW
+ESPACO_TARJAS = 8
+# Estilos e tempos originais; altura/padding são recalculados pelo texto.
 TARJAS = [  # (y_topo, altura, tamanho_fonte, padding_x, fundo, cor_texto, entra_em, entra_ate)
     (223, 135, 75, 40, (255, 255, 255), (0, 0, 0), 0.00, 0.55),
     (336, 99, 73, 31, (1, 1, 1), (255, 255, 255), 0.25, 0.80),
@@ -59,22 +70,59 @@ def progresso(pct: float, texto: str) -> None:
     log(f"PROGRESSO {max(0, min(100, pct)):.0f} {texto}")
 
 
-def run_ffmpeg(cmd: list, segundos_totais: float, inicio: float, fim: float, texto: str) -> None:
+def run_ffmpeg(cmd: list, segundos_totais: float, inicio: float, fim: float, texto: str,
+               limite_sem_avanco: float = 120) -> None:
     """Roda o ffmpeg mostrando o avanço real (out_time do -progress) entre inicio% e fim%."""
     completo = [cmd[0], "-progress", "pipe:1", "-nostats", *cmd[1:]]
     erros = []
+    ultimo_avanco = time.monotonic()
+    ultimo_tempo = -1
+    travou = threading.Event()
+    terminou = threading.Event()
     # O `with` fecha stdout/stderr (e espera o processo) mesmo se algo falhar no meio.
     with subprocess.Popen(completo, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                           encoding="utf-8", errors="replace") as proc:
+        def vigiar():
+            while not terminou.wait(1):
+                if time.monotonic() - ultimo_avanco < limite_sem_avanco:
+                    continue
+                if proc.poll() is not None:
+                    return
+                travou.set()
+                # No Windows, ffmpeg pode ser um shim que abre o executável real.
+                try:
+                    if os.name == "nt":
+                        subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"],
+                                       capture_output=True, timeout=15,
+                                       creationflags=subprocess.CREATE_NO_WINDOW)
+                except (OSError, subprocess.TimeoutExpired):
+                    pass
+                finally:
+                    if proc.poll() is None:
+                        proc.kill()
+                return
+
+        vigia = threading.Thread(target=vigiar, daemon=True)
+        vigia.start()
         leitor = threading.Thread(target=lambda: erros.append(proc.stderr.read()), daemon=True)
         leitor.start()
-        for linha in proc.stdout:
-            chave, _, valor = linha.strip().partition("=")
-            if chave == "out_time_us" and valor.isdigit() and segundos_totais > 0:
-                fracao = min(1.0, int(valor) / 1_000_000 / segundos_totais)
-                progresso(inicio + (fim - inicio) * fracao, texto)
-        codigo = proc.wait()
-        leitor.join(timeout=5)
+        try:
+            for linha in proc.stdout:
+                chave, _, valor = linha.strip().partition("=")
+                if chave == "out_time_us" and valor.isdigit() and segundos_totais > 0:
+                    tempo = int(valor)
+                    if tempo > ultimo_tempo:
+                        ultimo_tempo = tempo
+                        ultimo_avanco = time.monotonic()
+                    fracao = min(1.0, tempo / 1_000_000 / segundos_totais)
+                    progresso(inicio + (fim - inicio) * fracao, texto)
+            codigo = proc.wait()
+        finally:
+            terminou.set()
+            vigia.join(timeout=20)
+            leitor.join(timeout=5)
+    if travou.is_set():
+        raise RuntimeError(f"FFmpeg sem avanço por {limite_sem_avanco:g} segundos.")
     if codigo != 0:
         detalhe = (erros[0] if erros else "")[-2500:]
         raise RuntimeError(f"Falha ao executar ffmpeg:\n{detalhe}")
@@ -107,27 +155,61 @@ def levenshtein(a: str, b: str) -> int:
 
 
 # ---------------- tarjas ----------------
-def tarja_png(text: str, spec, out: Path) -> tuple:
+def tarja_png(text: str, spec, out: Path, glow_out: Path | None = None) -> tuple:
     y, h, size, pad, bg, fg, _, _ = spec
+    pad = PADDING_TARJA
+    text = " ".join(text.split()) or "—"
     font = ImageFont.truetype(str(FONT), size)
     l, t, r, b = font.getbbox(text)
-    while (r - l) + 2 * pad > W - 40 and size > 30:  # nome longo: reduz a fonte para caber com margem
-        size -= 2
+    while (r - l) + 2 * pad > LARGURA_MAX_TARJA and size > 42:
+        size = max(42, size - 2)
         font = ImageFont.truetype(str(FONT), size)
         l, t, r, b = font.getbbox(text)
-    tw = r - l
-    cap = font.getbbox("H")
-    img = Image.new("RGBA", (tw + 2 * pad, h), bg + (255,))
+    # Mesmo nomes excepcionais respeitam o limite, sem comprimir as letras.
+    if r - l + 2 * pad > LARGURA_MAX_TARJA:
+        while text and font.getbbox(text.rstrip() + "…")[2] - font.getbbox(text.rstrip() + "…")[0] + 2 * pad > LARGURA_MAX_TARJA:
+            text = text[:-1]
+        text = text.rstrip() + "…"
+    # Usa a tinta real dos glifos: acentos e descendentes também ficam centralizados.
+    mascara = font.getmask(text)
+    tinta = mascara.getbbox()
+    l, t, r, b = font.getbbox(text)
+    il, it, ir, ib = tinta
+    tw, th = ir - il, ib - it
+    img = Image.new("RGBA", (tw + 2 * pad, th + 2 * pad), bg + (255,))
     d = ImageDraw.Draw(img)
-    # centraliza verticalmente pela altura das maiúsculas (igual ao Premiere)
-    ty = (h - (cap[3] - cap[1])) / 2 - cap[1]
-    d.text((pad - l, ty), text, font=font, fill=fg + (255,))
+    d.text((pad - l - il, pad - t - it), text, font=font, fill=fg + (255,))
     img.save(out)
+    if glow_out is not None:
+        letras = Image.new("L", img.size, 0)
+        ImageDraw.Draw(letras).text((pad - l - il, pad - t - it), text, font=font, fill=255)
+        brilho = Image.new("RGBA", img.size, (255, 255, 255, 0))
+        brilho.putalpha(letras.filter(ImageFilter.GaussianBlur(5)).point(lambda v: round(v * 0.55)))
+        brilho.save(glow_out)
     return img.width, y
 
 
-# ---------------- legendas ----------------
+def uniformizar_larguras(tarjas: list, glow_valor: Path) -> list:
+    """Iguala os fundos pela maior tarja, sem esticar texto ou máscara de brilho."""
+    largura = max(w for _, w, _, _ in tarjas)
+    alinhadas = []
+    for i, (png, w, y, spec) in enumerate(tarjas):
+        deslocamento = (largura - w) // 2
+        with Image.open(png) as original:
+            imagem = Image.new("RGBA", (largura, original.height), spec[4] + (255,))
+            imagem.alpha_composite(original.convert("RGBA"), (deslocamento, 0))
+        imagem.save(png)
+        if i == 2:
+            with Image.open(glow_valor) as letras:
+                brilho = Image.new("RGBA", imagem.size, (255, 255, 255, 0))
+                brilho.alpha_composite(letras.convert("RGBA"), (deslocamento, 0))
+            brilho.save(glow_valor)
+        alinhadas.append((png, largura, y, spec))
+    return alinhadas
+
+
 def fix_words(words: list, veiculo: str, correcoes: list) -> list:
+    words = expressoes.normalizar(words)
     # junta pontuação solta ("100" "%")
     merged = []
     for w in words:
@@ -169,77 +251,18 @@ def fix_words(words: list, veiculo: str, correcoes: list) -> list:
     return merged
 
 
-def ass_time(t: float) -> str:
-    t = max(t, 0)
-    h = int(t // 3600); m = int(t % 3600 // 60); s = t % 60
-    return f"{h}:{m:02d}:{s:05.2f}"
+def build_ass(words: list, video_end: float, out: Path, veiculo: str = "") -> list:
+    """Legendas: o motor de contexto planeja as animações (ver contexto.py e legendas.py)."""
+    return legendas.gerar_ass(words, video_end, out, FONT, veiculo)
 
 
-def build_ass(words: list, video_end: float, out: Path) -> None:
-    # LEG_IN: sobe 100 px e aparece em ~200 ms com desaceleração (ease-out)
-    x, y, rise, leg_in = W // 2, 1520, 100, 0.20
-    size = 90  # medido: mesma altura de letra dos vídeos do Premiere
-    head = f"""[Script Info]
-ScriptType: v4.00+
-PlayResX: {W}
-PlayResY: {H}
-WrapStyle: 2
-ScaledBorderAndShadow: yes
-
-[V4+ Styles]
-Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: GlowWide,Lato Black,{size},&HB0FFFFFF,&H000000FF,&HB0FFFFFF,&H00000000,0,0,0,0,100,100,0,0,1,7,0,5,0,0,0,1
-Style: GlowTight,Lato Black,{size},&H40FFFFFF,&H000000FF,&H40FFFFFF,&H00000000,0,0,0,0,100,100,0,0,1,2,0,5,0,0,0,1
-Style: Leg,Lato Black,{size},&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,5,0,0,0,1
-
-[Events]
-Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-"""
-    lines = []
-    for i, w in enumerate(words):
-        start = w["s"]
-        nxt = words[i + 1]["s"] if i + 1 < len(words) else w["e"] + 0.4
-        # igual ao Premiere: a palavra fica até a próxima começar (pausas longas encerram antes)
-        end = min(nxt if nxt - w["e"] < 1.0 else w["e"] + 0.3, video_end)
-        if end <= start:
-            continue
-        txt = w["w"].upper().replace("{", "(").replace("}", ")")
-        # entrada em 6 trechos com ease-out cúbico (libass só move em linha reta; trechos curtos = curva suave)
-        steps = 6
-        seg = min(leg_in, end - start) / steps
-        ease = lambda p: 1 - (1 - p) ** 3
-        # (estilo, camada, blur, transparência base 0-255)
-        layers = [("GlowWide", 0, "\\blur16", 0xB0), ("GlowTight", 1, "\\blur5", 0x40), ("Leg", 2, "", 0)]
-        for k in range(steps + 1):
-            final = k == steps
-            if not final:
-                a0, a1 = ease(k / steps), ease((k + 1) / steps)
-                s0, s1 = start + k * seg, start + (k + 1) * seg
-            else:
-                s0, s1 = start + steps * seg, end
-            if s1 - s0 < 0.005:
-                continue
-            for style, layer, extra, base in layers:
-                if final:
-                    tags = f"\\pos({x},{y})"
-                else:
-                    y0, y1 = y + rise * (1 - a0), y + rise * (1 - a1)
-                    # aparece somando à transparência base do estilo (o glow continua suave no fim)
-                    al0 = int(base + (255 - base) * (1 - a0)); al1 = int(base + (255 - base) * (1 - a1))
-                    tags = f"\\move({x},{y0:.1f},{x},{y1:.1f})\\alpha&H{al0:02X}&\\t(\\alpha&H{al1:02X}&)"
-                lines.append(f"Dialogue: {layer},{ass_time(s0)},{ass_time(s1)},{style},,0,0,0,,{{{tags}{extra}}}{txt}")
-    out.write_text(head + "\n".join(lines) + "\n", encoding="utf-8")
+def preparar_fontes(destino: Path) -> Path:
+    """Fonte única do render: Lato Black."""
+    destino.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(FONT, destino / FONT.name)
+    return destino
 
 
-def overlay_x_expr(w: int, t_in0: float, t_in1: float, t_out0: float, t_out1: float) -> str:
-    cx = (W - w) / 2
-    ease_in = f"(1-pow(1-(t-{t_in0})/{t_in1 - t_in0},5))"  # ease-out quíntico: chega devagar, sem tranco
-    ease_out = f"pow((t-{t_out0})/{t_out1 - t_out0},3)"
-    return (f"if(lt(t,{t_in0}),-{w},if(lt(t,{t_in1}),-{w}+({cx}+{w})*{ease_in},"
-            f"if(lt(t,{t_out0}),{cx},if(lt(t,{t_out1}),{cx}-({cx}+{w})*{ease_out},-{w}))))")
-
-
-# ---------------- principal ----------------
 def localizar_video(root: Path) -> Path:
     # Aceita as duas pastas de mídia verificadas pelo Studio e a pasta do veículo.
     candidatos = [root / "PROJETO", root / "VIDEO", root]
@@ -269,7 +292,7 @@ def main(folder: str, veiculo: str, motor: str, preco: str) -> None:
 
     progresso(1, "Lendo o vídeo bruto")
     dur = probe_duration(video)
-    total = dur + LOGO_SECONDS
+    total = dur + (LOGO_SECONDS if logo else 0)
     log(f"Vídeo {video.name}: {dur:.2f}s -> saída {out.name} ({total:.2f}s)")
 
     # 1) transcrição (cache por vídeo)
@@ -301,64 +324,124 @@ def main(folder: str, veiculo: str, motor: str, preco: str) -> None:
     log("2/3 Gerando tarjas e legendas...")
     progresso(37, "Montando tarjas e legendas")
     ass = work / "legendas.ass"
-    build_ass(words, dur, ass)
+    plano = build_ass(words, dur, ass, veiculo)
+    (work / "plano_legendas.txt").write_text(contexto.resumo(plano), encoding="utf-8")
+    log(f"Legendas: {len(plano)} frases, animações " + ", ".join(sorted({p['animacao'] for p in plano})))
     tarjas = []
-    out_start, out_end = dur - 1.1, dur - 0.7
+    glow_valor = work / "glow_valor.png"
+    proximo_y = TARJAS[0][0]
     for i, (text, spec) in enumerate(zip([veiculo, motor, preco], TARJAS)):
+        spec = (proximo_y, *spec[1:])
         png = work / f"tarja{i}.png"
-        w, y = tarja_png(text, spec, png)
+        w, y = tarja_png(text, spec, png, glow_valor if i == 2 else None)
         tarjas.append((png, w, y, spec))
+        with Image.open(png) as imagem:
+            proximo_y = y + imagem.height + ESPACO_TARJAS
+    tarjas = uniformizar_larguras(tarjas, glow_valor)
+    for i, (png, w, y, spec) in enumerate(tarjas):
+        with Image.open(png) as imagem:
+            # Halo suave, separado da imagem medida para preservar o padding real.
+            tamanho = (imagem.width + 2 * BORDA_GLOW, imagem.height + 2 * BORDA_GLOW)
+            mascara = Image.new("L", tamanho, 0)
+            mascara.paste(36, (BORDA_GLOW, BORDA_GLOW, tamanho[0]-BORDA_GLOW, tamanho[1]-BORDA_GLOW))
+            halo = Image.new("RGBA", tamanho, ORANGE if i == 2 else (255, 255, 255))
+            halo.putalpha(mascara.filter(ImageFilter.GaussianBlur(6)))
+            halo.alpha_composite(imagem.convert("RGBA"), (BORDA_GLOW, BORDA_GLOW))
+        halo.save(png)
+        if i == 2:
+            with Image.open(glow_valor) as letras:
+                expandido = Image.new("RGBA", tamanho, (255, 255, 255, 0))
+                expandido.alpha_composite(letras, (BORDA_GLOW, BORDA_GLOW))
+            expandido.save(glow_valor)
+        tarjas[i] = (png, w + 2 * BORDA_GLOW, y - BORDA_GLOW, spec)
 
     # 3) ffmpeg: vídeo + tarjas + legendas + cartão final + áudio
     log("3/3 Renderizando (HEVC 1080x1920 59,94 fps 50 Mbps)...")
     progresso(40, "Renderizando o vídeo")
     inputs = ["-i", str(video)]
     for png, *_ in tarjas:
-        inputs += ["-loop", "1", "-framerate", FPS, "-t", f"{total}", "-i", str(png)]  # 60 fps: movimento suave
-    if logo:
-        inputs += ["-loop", "1", "-framerate", FPS, "-t", f"{LOGO_SECONDS}", "-i", str(logo)]
-    if trilha:
-        inputs += ["-i", str(trilha)]
-    n_logo = 1 + len(tarjas)
-    n_trilha = n_logo + (1 if logo else 0)
+        inputs += ["-loop", "1", "-framerate", FPS, "-t", f"{dur}", "-i", str(png)]  # 60 fps: movimento suave
+    inputs += ["-loop", "1", "-framerate", FPS, "-t", f"{dur}", "-i", str(glow_valor)]
+    n_glow = 1 + len(tarjas)
 
     fc = [f"[0:v]scale={W}:{H}:flags=lanczos,fps={FPS},setsar=1,format=yuv420p[base]"]
-    last = "base"
+    # Compõe o conjunto em transparência para escalar as três tarjas como uma peça.
+    topo_conjunto = TARJAS[0][0] - 40
+    altura_conjunto = proximo_y - TARJAS[0][0] + 80
+    fc.append(f"color=c=black:s={W}x{altura_conjunto}:r={FPS}:d={dur},format=rgba,colorchannelmixer=aa=0[conjunto]")
+    last = "conjunto"
+    fc.append(f"[{n_glow}:v]{animacao_tarjas.filtro_glow_valor()}[brilho_valor]")
+    fc.append("[3:v][brilho_valor]overlay=0:0:shortest=1:format=auto[preco_brilho]")
+    predefinicao = animacao_tarjas.escolher(veiculo)
+    log(f"Animação das tarjas: {predefinicao}")
     for i, (png, w, y, spec) in enumerate(tarjas):
         _, _, _, _, _, _, a, b = spec
-        # motor por último na pilha (fica por cima da base da tarja do nome)
-        x = overlay_x_expr(w, a, b, out_start + i * 0.06, out_end + i * 0.06)
-        fc.append(f"[{last}][{i + 1}:v]overlay=x='{x}':y={y}:eval=frame:shortest=1[v{i}]")
+        f = animacao_tarjas.filtros(predefinicao, i, w, y - topo_conjunto, (a, b),
+                                    animacao_tarjas.saida_final(dur, i))
+        entrada = "preco_brilho" if i == 2 else f"{i + 1}:v"
+        if f["pre"]:
+            fc.append(f"[{entrada}]{f['pre']}[t{i}]")
+            entrada = f"t{i}"
+        fc.append(f"[{last}][{entrada}]overlay=x='{f['x']}':y='{f['y']}':eval=frame:shortest=1:format=auto[v{i}]")
         last = f"v{i}"
+    escala = animacao_tarjas.filtro_escala(TARJAS[-1][-1], animacao_tarjas.saida_final(dur, 0)[0], FPS)
+    fc.append(f"[{last}]{escala}[tarjas_animadas]")
+    fc.append(f"[base][tarjas_animadas]overlay=x=0:y={topo_conjunto}:shortest=1[com_tarjas]")
+    last = "com_tarjas"
     ass_path = str(ass).replace("\\", "/").replace(":", "\\:")
-    fonts_dir = str(FONT.parent).replace("\\", "/").replace(":", "\\:")
-    fc.append(f"[{last}]subtitles='{ass_path}':fontsdir='{fonts_dir}'[vid]")
-    if logo:
-        fc.append(f"color=c=0x191919:s={W}x{H}:r={FPS}:d={LOGO_SECONDS}[bg]")
-        fc.append(f"[{n_logo}:v]scale={W}:-1,format=rgba[lg]")
-        fc.append(f"[bg][lg]overlay=(W-w)/2:(H-h)/2,format=yuv420p,setsar=1[card]")
-        fc.append("[vid][card]concat=n=2:v=1:a=0[vout]")
-    else:
-        fc.append("[vid]null[vout]")
-    voice = f"[0:a]volume=3dB,apad=whole_dur={total}[voz]"
-    if trilha:
-        fc.append(voice)
-        fc.append(f"[{n_trilha}:a]atrim=0:{total},volume=-30dB,afade=t=out:st={total - 1.5}:d=1.5[mus]")
-        fc.append("[voz][mus]amix=inputs=2:duration=first:normalize=0[aout]")
-    else:
-        fc.append(voice.replace("[voz]", "[aout]"))
+    fonts_dir = str(preparar_fontes(work / "fontes")).replace("\\", "/").replace(":", "\\:")
+    fc.append(f"[{last}]subtitles='{ass_path}':fontsdir='{fonts_dir}',trim=duration={dur},setpts=PTS-STARTPTS[vid]")
+    # Cena e cartão em processos separados: o concat no grafo de overlays pode
+    # bloquear o agendador do FFmpeg na transição, inclusive com encoder por CPU.
+    codificador = "hevc_qsv"
 
+    def codificar(entradas, filtros, mapa, segundos, destino, inicio, fim, mensagem):
+        nonlocal codificador
+        cmd = ["ffmpeg", "-hide_banner", "-y", "-filter_complex_threads", "2", *entradas,
+               "-filter_complex", ";".join(filtros), "-map", mapa, "-an", "-t", str(segundos),
+               "-c:v", codificador, "-b:v", "50M", "-maxrate", "100M", "-bufsize", "100M",
+               "-r", FPS, "-pix_fmt", "yuv420p", "-tag:v", "hvc1", str(destino)]
+        try:
+            run_ffmpeg(cmd, segundos, inicio, fim, mensagem)
+        except RuntimeError as erro:
+            if codificador != "hevc_qsv":
+                raise
+            log(f"  (codificador Intel falhou: {erro}; usando x265)")
+            codificador = "libx265"
+            cmd[cmd.index("hevc_qsv")] = codificador
+            run_ffmpeg(cmd, segundos, inicio, fim, mensagem + " (x265)")
+
+    cena = work / "cena.mp4"
+    codificar(inputs, fc, "[vid]", dur, cena, 40, 86, "Renderizando a cena")
+    codificador_cena = codificador
+    partes = [cena]
+    if logo:
+        cartao = work / "encerramento.mp4"
+        codificar(["-loop", "1", "-framerate", FPS, "-t", str(LOGO_SECONDS), "-i", str(logo)],
+                  animacao_logo.filtros(0, LOGO_SECONDS, W, H, FPS), "[card]", LOGO_SECONDS,
+                  cartao, 86, 94, "Renderizando a logo final")
+        if codificador != codificador_cena:
+            # Partes com parâmetros do mesmo encoder tornam o MP4 concatenado
+            # compatível também com players que não aceitam mudança de SPS/PPS.
+            codificar(inputs, fc, "[vid]", dur, cena, 40, 86, "Refazendo a cena com x265")
+        partes.append(cartao)
+
+    # Concat demuxer lê arquivos já fechados, sem grafo de vídeo concorrente.
+    lista = work / "partes.txt"
+    lista.write_text("".join(f"file '{p.name}'\n" for p in partes), encoding="utf-8")
+    entradas = ["-f", "concat", "-safe", "1", "-i", str(lista), "-i", str(video)]
+    audio = [f"[1:a]volume=3dB,apad=whole_dur={total}[voz]"]
+    if trilha:
+        entradas += ["-i", str(trilha)]
+        audio += [f"[2:a]atrim=0:{total},volume=-30dB,afade=t=out:st={max(0, total - 1.5)}:d=1.5[mus]",
+                  "[voz][mus]amix=inputs=2:duration=first:normalize=0[aout]"]
+    else:
+        audio[0] = audio[0].replace("[voz]", "[aout]")
     tmp_out = work / "saida.mp4"
-    cmd = ["ffmpeg", "-hide_banner", "-y", *inputs, "-filter_complex", ";".join(fc),
-           "-map", "[vout]", "-map", "[aout]", "-t", f"{total}",
-           "-c:v", "hevc_qsv", "-b:v", "50M", "-maxrate", "100M", "-bufsize", "100M", "-tag:v", "hvc1",
+    cmd = ["ffmpeg", "-hide_banner", "-y", *entradas, "-filter_complex", ";".join(audio),
+           "-map", "0:v:0", "-map", "[aout]", "-t", str(total), "-c:v", "copy", "-tag:v", "hvc1",
            "-c:a", "aac", "-b:a", "320k", "-ar", "48000", "-movflags", "+faststart", str(tmp_out)]
-    try:
-        run_ffmpeg(cmd, total, 40, 98, "Renderizando o vídeo")
-    except RuntimeError:
-        log("  (codificador Intel indisponível, usando x265)")
-        cmd[cmd.index("hevc_qsv")] = "libx265"
-        run_ffmpeg(cmd, total, 40, 98, "Renderizando o vídeo (x265)")
+    run_ffmpeg(cmd, total, 94, 98, "Unindo cena, logo e áudio")
 
     # Só troca o arquivo final depois de conferir que o vídeo saiu inteiro.
     if not tmp_out.is_file() or tmp_out.stat().st_size < 100_000:

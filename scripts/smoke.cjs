@@ -42,7 +42,7 @@ fs.writeFileSync(
 const timeout = setTimeout(() => {
   console.error("SMOKE: tempo excedido");
   app.exit(1);
-}, 90000);
+}, 300000);
 app.on("browser-window-created", (_e, w) => {
   w.webContents.setBackgroundThrottling(false);
   w.on("show", () => w.hide());
@@ -51,7 +51,9 @@ app.on("browser-window-created", (_e, w) => {
       await new Promise((r) => setTimeout(r, 1500));
       const r = await w.webContents.executeJavaScript(`(async()=>{
         if(!window.soul)throw Error('Ponte preload ausente');
-        if(document.querySelector('h1')?.textContent!=='Estoque')throw Error('Página inicial incorreta');
+        const esperar=async(condicao,mensagem)=>{for(let i=0;i<80;i++){if(condicao())return;await new Promise(r=>setTimeout(r,100));}throw Error(mensagem);};
+        const noEstoque=()=>document.querySelector('aside button.selected')?.textContent.includes('Estoque')&&!!document.querySelector('.metric-link')&&!!document.querySelector('table');
+        await esperar(noEstoque,'Página inicial do Estoque não carregou');
         const novoId=await window.soul.invocar('db_veiculo_criar',{veiculo:{nome:'SMOKE'}});
         const veiculo=await window.soul.invocar('db_veiculo_obter',{id:novoId});
         if(veiculo?.nome!=='SMOKE')throw Error('SQLite/IPC falhou');
@@ -78,7 +80,7 @@ app.on("browser-window-created", (_e, w) => {
         const botaoPdf=[...document.querySelectorAll('button')].find(b=>b.textContent==='PDF'||b.textContent==='Gerando PDF…');if(!botaoPdf)throw Error('Falta o botão PDF no relatório completo');
         const botao=[...document.querySelectorAll('aside button')].find(b=>b.textContent.includes('Estoque'));botao.click();
         await new Promise(r=>setTimeout(r,100));
-        if(document.querySelector('h1')?.textContent!=='Estoque')throw Error('Volta à lista do Estoque falhou');
+        await esperar(noEstoque,'Volta à lista do Estoque falhou');
         const abrir=[...document.querySelectorAll('td button')][0];if(!abrir)throw Error('Importação das pastas falhou');abrir.click();
         await new Promise(r=>setTimeout(r,100));
         await new Promise(r=>setTimeout(r,500));
@@ -95,6 +97,11 @@ app.on("browser-window-created", (_e, w) => {
         if(!document.querySelector('.foto-painel')?.textContent.includes('1.png'))throw Error('Renomeação pelo painel falhou');
         const ficha=[...document.querySelectorAll('nav button')].find(b=>b.textContent==='Ficha');ficha.click();
         await new Promise(r=>setTimeout(r,100));
+        const ano=[...document.querySelectorAll('label')].find(l=>l.textContent.trim()==='Ano')?.querySelector('input');
+        if(!ano)throw Error('Campo Ano ausente na ficha');
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(ano,'2016');
+        ano.dispatchEvent(new Event('input',{bubbles:true}));
+        await new Promise(r=>setTimeout(r,100));
         window.confirm=()=>true;[...document.querySelectorAll('button')].find(b=>b.textContent==='Gerar e salvar DES.md').click();
         await new Promise(r=>setTimeout(r,400));
         [...document.querySelectorAll('nav button')].find(b=>b.textContent==='Publicação').click();
@@ -106,7 +113,7 @@ app.on("browser-window-created", (_e, w) => {
         const criativos=[...document.querySelectorAll('nav button')].find(b=>b.textContent==='Criativos');criativos.click();
         await new Promise(r=>setTimeout(r,2500));
         const frame=document.querySelector('iframe');if(!frame?.contentDocument?.querySelector('#app') && !frame?.contentDocument?.querySelector('[data-layout]'))throw Error('Editor não carregou');
-        if(frame.contentDocument.querySelector('#editor-form').elements.namedItem('titulo').value!=='FORD FIESTA')throw Error('Ficha não chegou ao editor');
+        if(frame.contentDocument.querySelector('#editor-form').elements.namedItem('titulo').value!=='FORD FIESTA 2016')throw Error('Ficha não chegou ao editor');
         const form=frame.contentDocument.querySelector('#editor-form');
         for(const [key,value] of Object.entries({titulo:'FORD FIESTA 2016',subtitulo:'S 1.5','terceiro-titulo':'MANUAL',valor:'45.900',ano:'2016',km:'84.000',fuel:'Flex'})) {
           const input=form.elements.namedItem(key);if(!input)continue;input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));
@@ -129,20 +136,36 @@ app.on("browser-window-created", (_e, w) => {
           await new Promise(r=>setTimeout(r,500));
         }
         if(!artes.length)throw Error('Exportação PNG falhou: '+frame.contentDocument.querySelector('#status').textContent);
-        frame.contentWindow.postMessage({type:'soul:vitrine-photos',photos:[1,2,4].map(numero=>({numero,file:foto}))},'*');
+        frame.contentWindow.postMessage({type:'soul:vitrine-photos',photos:[1,2,4].map(numero=>({numero,file:foto,original:foto}))},'*');
+        for(let i=0;i<40;i++){
+          try{frame.contentWindow.Layout6.validateCarousel();break;}catch{await new Promise(r=>setTimeout(r,100));}
+        }
+        await frame.contentWindow.Layout6.ready();
+        const piso=frame.contentDocument.querySelector('.v-original-floor');
+        const sombra=frame.contentDocument.querySelector('.v-shadow');
+        if(piso.hidden||!sombra.hidden)throw Error('Com a foto original, o carrossel deve usar o piso real da mesma numeração');
+        frame.contentDocument.querySelector('#export-resolution').value='2';
         frame.contentWindow.postMessage({type:'soul:instagram-export'},'*');
         let pacote=[];
-        for(let i=0;i<100;i++){
+        for(let i=0;i<600;i++){
           const status=await window.soul.invocar('producao_status',{pasta:estoque+'/123_FORD_FIESTA_ABC1D23'});
           pacote=status.criativos.filter(n=>/-(carrossel-[123]|trafego-pago)\\.png$/.test(n));
           if(pacote.length===4)break;
           await new Promise(r=>setTimeout(r,500));
         }
         if(pacote.length!==4)throw Error('Exportação do pacote Instagram falhou: '+frame.contentDocument.querySelector('#status').textContent);
-        [...document.querySelectorAll('nav button')].find(b=>b.textContent==='Instagram').click();
-        await new Promise(r=>setTimeout(r,300));
-        if(!document.querySelector('.instagram'))throw Error('Aba Instagram não abriu');
-        return {pagina:document.querySelector('h1').textContent,sqlite:true,relatorioInterno:true,painelFotos:true,copia:true,editor:true,instagramAba:true,pacoteInstagram:true,motor:motor.python,exportacao:saved,png:estoque+'/123_FORD_FIESTA_ABC1D23/CRIATIVO/'+artes[0],versoes:window.soul.versoes};
+        // A ficha atual não possui aba Instagram: o pacote sai do editor.
+        const cadastrados=await window.soul.invocar('db_veiculos_listar',{});
+        const cadastrado=cadastrados.find(v=>v.placa==='ABC1D23');
+        if(!cadastrado)throw Error('Veículo do pacote Instagram não encontrado');
+        const plano=await window.soul.invocar('instagram_plano',{id:cadastrado.id});
+        if(plano.arquivos.filter(a=>a.tipo==='carrossel').length!==3||plano.arquivos.filter(a=>a.tipo==='capa').length!==1)throw Error('Plano do Instagram não reconheceu os quatro criativos exportados: '+plano.pendencias.join('; '));
+        const voltar=[...frame.contentDocument.querySelectorAll('button')].find(b=>b.textContent.trim()==='← Voltar aos dados');
+        if(!voltar)throw Error('Botão Voltar aos dados ausente no editor de criativos');
+        voltar.click();
+        for(let i=0;i<30&&!document.querySelector('textarea.markdown');i++)await new Promise(r=>setTimeout(r,100));
+        if(!document.querySelector('textarea.markdown')||document.querySelector('.editor iframe'))throw Error('Retorno do editor à ficha falhou');
+        return {pagina:document.querySelector('aside button.selected').textContent.trim(),sqlite:true,relatorioInterno:true,painelFotos:true,copia:true,editor:true,retornoFicha:true,planoInstagram:true,pacoteInstagram:true,estudio3D:true,motor:motor.python,exportacao:saved,png:estoque+'/123_FORD_FIESTA_ABC1D23/CRIATIVO/'+artes[0],png3D:estoque+'/123_FORD_FIESTA_ABC1D23/CRIATIVO/'+pacote.find(n=>n.endsWith('-carrossel-1.png')),versoes:window.soul.versoes};
       })()`);
       // BNDV embutido: uma vista na janela principal, na sessão do BNDV (persist:bndv), sem preload.
       await w.webContents.executeJavaScript(
@@ -162,10 +185,30 @@ app.on("browser-window-created", (_e, w) => {
       const png = fs.readFileSync(r.png);
       if (png.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a")
         throw new Error("Arquivo exportado não é PNG.");
+      const carrossel = nativeImage.createFromPath(r.png3D);
+      const tamanho = carrossel.getSize();
+      if (tamanho.width !== 2160 || tamanho.height !== 2700)
+        throw new Error("O carrossel 3D não saiu em alta resolução.");
+      // A foto sintética é cinza; laranja na faixa da foto revelaria que os
+      // pontos ou as linhas do molde de conferência vazaram para o PNG.
+      const pixels = carrossel.toBitmap();
+      for (let y = 1240; y < 2240; y += 2) {
+        for (let x = 2; x < 2158; x += 2) {
+          const i = (y * 2160 + x) * 4;
+          const [b, g, vermelho] = pixels.subarray(i, i + 3);
+          if (vermelho > 140 && g < 180 && vermelho - g > 35 && g - b > 25)
+            throw new Error(
+              "O molde de conferência apareceu no PNG exportado.",
+            );
+        }
+      }
       fs.writeFileSync(
         path.resolve(__dirname, "../docs/smoke.json"),
         JSON.stringify(r, null, 2),
       );
+      fs.rmSync(path.resolve(__dirname, "../docs/smoke-error.txt"), {
+        force: true,
+      });
       clearTimeout(timeout);
       app.exit(0);
     } catch (e) {

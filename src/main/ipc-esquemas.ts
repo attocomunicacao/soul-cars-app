@@ -182,13 +182,8 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
     instagram_abrir: vazio,
     instagram_publicar: { args: { id: veiculo } },
     instagram_cancelar: vazio,
-    instagram_confirmar: {
-      args: {
-        id: veiculo,
-        etapa: texto({ max: 40 }),
-        publicado: booleano,
-      },
-    },
+
+    instagram_reiniciar: { args: { id: veiculo } },
 
     // ---- banco, caminhos e configuração ----
     ...esquemasDoBanco(),

@@ -71,6 +71,15 @@
     return nativeClick.call(this);
   };
 
+  // O #status fica escondido no editor compacto: erros de exportação (fotos faltando,
+  // texto que não cabe) sobem para o app mostrar ao usuário.
+  const statusEl = document.querySelector('#status');
+  if (statusEl)
+    new MutationObserver(() => {
+      if (statusEl.classList.contains('error') && statusEl.textContent.trim())
+        post({ type: 'soul:instagram-export-error', message: statusEl.textContent.trim() });
+    }).observe(statusEl, { attributes: true, childList: true, characterData: true, subtree: true });
+
   // ---- Ajustes do editor (salvos por veículo no app) ----
   // Controles simples: luz e cor, carrossel e resolução. Textos vêm da ficha e
   // não entram aqui. Sombra/pneus e piso/pincel têm snapshot próprio nos módulos.

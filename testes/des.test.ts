@@ -50,12 +50,13 @@ describe("DES.md", () => {
     expect(gerarDes(fiesta, loja, null, "[VENDA]")).toBe(fixture);
   });
 
-  it("usa [LEAD] no nome da campanha por padrão", () => {
+  it("não usa prefixo no nome da campanha por padrão", () => {
     const md = gerarDes(fiesta, loja);
     expect(md).toContain(
-      "## NOME DA CAMPANHA\n\n[LEAD] FORD FIESTA 2016\n\n[LEAD] FORD FIESTA 2016",
+      "## NOME DA CAMPANHA\n\nFORD FIESTA 2016\n\nFORD FIESTA 2016",
     );
     expect(md).not.toContain("[VENDA]");
+    expect(md).not.toContain("[LEAD]");
   });
 
   it("reimporta os dados técnicos e equipamentos do próprio DES.md", () => {

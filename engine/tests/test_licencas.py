@@ -34,6 +34,8 @@ class TestLicencas(unittest.TestCase):
 
     def test_fontes_embutidas_tem_texto_da_licenca(self):
         self.assertTrue((RAIZ / "engine" / "video" / "assets" / "Lato-OFL.txt").is_file())
+        self.assertTrue((RAIZ / "engine" / "video" / "assets" / "Lora-OFL.txt").is_file())
+        self.assertTrue((RAIZ / "engine" / "video" / "assets" / "Lora-SemiBoldItalic.ttf").is_file())
         self.assertTrue((RAIZ / "engine" / "tessdata" / "LICENSE-tesseract.txt").is_file())
 
 

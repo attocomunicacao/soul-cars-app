@@ -7,6 +7,7 @@
 window.Layout6 = (() => {
   const LARGURA = 1080;
   const ALTURA = 1350;
+  const ALTURA_FOTO = 619;
 
   const icone = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
   const WHATSAPP = icone(
@@ -52,13 +53,8 @@ window.Layout6 = (() => {
       <p class="v-value v-gear v-fit" data-max="76" data-min="28"><span class="v-it"></span></p>
     </div>
     <div class="v-photo">
-      <i class="v-studio-glow"></i>
-      <img class="v-backdrop-shadow v-layer" alt="" hidden>
-      <img class="v-reflection v-layer" alt="" hidden>
       <img class="v-original-floor v-layer" alt="" hidden><img class="v-shadow v-layer" alt="" hidden>
       <div class="v-car"><img data-mirror="image-main" alt="" hidden></div>
-      <img class="v-light v-layer" alt="" hidden>
-      <img class="v-contour v-layer" alt="" hidden>
     </div>
     <div class="v-foot">
       <div class="v-copper"></div><div class="v-copper-edge"></div><div class="v-black"></div>
@@ -78,7 +74,7 @@ window.Layout6 = (() => {
   extras.className = 'v-inputs';
   extras.innerHTML =
     '<legend><span>02</span> Carrossel</legend>' +
-    '<p class="field-hint">Três peças em 1080 × 1350, com as fotos 1, 2 e 4 em PNG sem fundo. O estúdio, a iluminação e a sombra acompanham cada carro.</p>' +
+    '<p class="field-hint">Três peças em 1080 × 1350, com as fotos 1, 2 e 4 em PNG sem fundo. A sombra e o piso acompanham cada carro.</p>' +
     '<label>Diferencial <span class="muted">(opcional, só o que for verdadeiro)</span>' +
     '<input name="v-diferencial" data-ajuste placeholder="COM TETO SOLAR" autocomplete="off"></label>' +
     '<label>WhatsApp<input name="v-telefone" data-ajuste value="11 96595-2083" autocomplete="off"></label>' +
@@ -86,17 +82,14 @@ window.Layout6 = (() => {
     '<label>Instagram<input name="v-instagram" data-ajuste value="@soulcarsveiculos" autocomplete="off"></label>' +
     '<label>Site<input name="v-site" data-ajuste value="soulcars.com.br" autocomplete="off"></label>' +
     '</div>' +
-    '<details class="v-studio-controls"><summary>Estúdio · sombra e iluminação</summary>' +
-    '<p class="field-hint">Camadas independentes do PNG. Para ajustar o contato com o piso, marque os pneus em “Sombra e reflexo no piso”.</p>' +
+    '<details class="v-studio-controls"><summary>Sombra e piso</summary>' +
+    '<p class="field-hint">Cada peça usa o piso real da foto original de mesma numeração (1, 2 e 4). Sem a foto original, aplica só a sombra de chão.</p>' +
     '<label>Sombra no piso<input name="v-sombra" data-ajuste type="range" min="0" max="100" value="68" aria-label="Sombra no piso da Carrossel"></label>' +
     '<label>Suavidade da sombra<input name="v-suavidade" data-ajuste type="range" min="0" max="100" value="55" aria-label="Suavidade da sombra da Carrossel"></label>' +
-    '<label>Luz de estúdio<input name="v-luz" data-ajuste type="range" min="0" max="100" value="32" aria-label="Luz de estúdio da Carrossel"></label>' +
-    '<label>Luz e sombra no contorno<input name="v-contorno" data-ajuste type="range" min="0" max="100" value="60" aria-label="Luz e sombra no contorno da Carrossel"></label>' +
-    '<label>Profundidade do fundo<input name="v-profundidade" data-ajuste type="range" min="0" max="100" value="70" aria-label="Profundidade do fundo da Carrossel"></label>' +
-    '<label>Reflexo no piso<input name="v-reflexo" data-ajuste type="range" min="0" max="100" value="16" aria-label="Reflexo no piso da Carrossel"></label>' +
     '</details>';
   document.querySelector('#editor-form').append(extras);
   extras.addEventListener('input', sync);
+  extras.addEventListener('change', sync);
 
   const slides = [1, 2, 4].map((numero) => ({ numero, image: null, version: 0 }));
   const slideJobs = new Map();
@@ -111,6 +104,12 @@ window.Layout6 = (() => {
     '<button type="button" class="v-crop-carousel">Recortar fotos 1, 2 e 4 da pasta</button>' +
     '<p class="field-hint v-carousel-status" aria-live="polite">Carregue os três PNGs para exportar o carrossel.</p>';
   extras.insertBefore(carousel, extras.querySelector('.v-studio-controls'));
+  carousel.querySelectorAll('.v-carousel-card').forEach((card, index) => {
+    const label = document.createElement('label');
+    label.hidden = true;
+    label.innerHTML = `<input type="hidden" name="v-apoios-${index}" data-ajuste value="">`;
+    card.append(label);
+  });
   const slideSelect = carousel.querySelector('[name="v-slide"]');
   const previewNav = document.createElement('nav');
   previewNav.className = 'v-preview-nav';
@@ -148,7 +147,10 @@ window.Layout6 = (() => {
       if (!hasTransparency(image) || !caixaOpaca(image)) throw Error('A foto do carrossel precisa ter o carro recortado e fundo transparente.');
       if (version !== slide.version) return;
       slide.image = image;
-      if (!restoring) slide.original = null;
+      if (!restoring) {
+        slide.original = null;
+        extras.querySelector(`[name="v-apoios-${index}"]`).value = '';
+      }
       const thumb = carousel.querySelector(`[data-v-slide="${index}"] img`);
       thumb.src = image.src;
       thumb.hidden = false;
@@ -243,12 +245,14 @@ window.Layout6 = (() => {
       let x0 = l, y0 = a, x1 = -1, y1 = -1;
       for (let y = 0; y < a; y++)
         for (let x = 0; x < l; x++)
-          if (alfa[(y * l + x) * 4 + 3] > 24) {
+          // Só o corpo sólido define a caixa: a sombra residual semitransparente do
+          // PNG não pode encolher o carro em relação às outras peças.
+          if (alfa[(y * l + x) * 4 + 3] > 160) {
             if (x < x0) x0 = x;
             if (x > x1) x1 = x;
             if (y < y0) y0 = y;
             if (y > y1) y1 = y;
-            if (alfa[(y * l + x) * 4 + 3] > 160) bottom[x] = y;
+            bottom[x] = y;
           }
       if (x1 >= x0 && y1 >= y0)
         caixa = { x: x0 / escala, y: y0 / escala, largura: (x1 - x0 + 1) / escala, altura: (y1 - y0 + 1) / escala };
@@ -281,6 +285,22 @@ window.Layout6 = (() => {
           if (picked.length === 2) break;
         }
         if (picked.length === 2) caixa.contacts = picked.sort((a, b) => a.x - b.x).map((p) => ({ x: p.x / escala, y: p.y / escala }));
+        else {
+          // Na vista frontal o para-choque une os mínimos dos pneus. Procura
+          // o contato nas faixas externas, usando alfa sólido: a sombra residual
+          // semitransparente do PNG não pode definir a altura do chão.
+          const contatoFrontal = (inicio, fim) => {
+            const colunas = [];
+            for (let x = Math.ceil(x0 + (x1 - x0) * inicio); x <= x0 + (x1 - x0) * fim; x++)
+              if (bottom[x] >= y0 + (y1 - y0) * 0.6) colunas.push({ x, y: bottom[x] });
+            if (!colunas.length) return null;
+            const base = Math.max(...colunas.map((p) => p.y));
+            const apoio = colunas.filter((p) => p.y >= base - 2);
+            return { x: apoio.reduce((s, p) => s + p.x, 0) / apoio.length / escala, y: base / escala };
+          };
+          const frontais = [contatoFrontal(0.02, 0.10), contatoFrontal(0.90, 0.98)];
+          if (frontais.every(Boolean)) caixa.contacts = frontais;
+        }
       }
     } catch {
       caixa = null; // foto de outra origem: segue o enquadramento simples
@@ -298,8 +318,8 @@ window.Layout6 = (() => {
       hero.style.cssText = '';
       return null;
     }
-    const LARGURA_ALVO = 702;
-    const ALTURA_ALVO = 451;
+    const LARGURA_ALVO = 860;
+    const ALTURA_ALVO = 579;
     const k = Math.min(LARGURA_ALVO / caixa.largura, ALTURA_ALVO / caixa.altura);
     Object.assign(hero.style, {
       width: `${hero.naturalWidth * k}px`,
@@ -318,26 +338,26 @@ window.Layout6 = (() => {
     };
   }
 
-  // As imagens abaixo são camadas descartáveis de composição. O arquivo e
-  // a imagem principal continuam intactos; luz é recortada apenas pelo alfa.
+  // Mesma lógica do Tráfego pago: o recorte (PNG) fica sobre o piso real da foto
+  // original da mesma numeração, recortado por uma máscara elíptica suave. Sem a
+  // foto original, só a sombra de chão do CarGrounding. Nada de brilho ou contorno.
   let studioKey = '';
   function studioLayers(hero, geometry) {
-    const layers = ['.v-shadow', '.v-reflection', '.v-light', '.v-backdrop-shadow', '.v-contour'].map((s) => root.querySelector(s));
+    const shadowImg = root.querySelector('.v-shadow');
     const originalFloor = root.querySelector('.v-original-floor');
     if (!geometry) {
       originalFloor.hidden = true;
-      layers.forEach((image) => { image.hidden = true; });
+      shadowImg.hidden = true;
       studioKey = '';
       return;
     }
     const scale = Math.max(1, Math.min(3, window.renderScale || 1));
-    const settings = ['v-sombra', 'v-suavidade', 'v-luz', 'v-reflexo', 'v-profundidade', 'v-contorno'].map((name) => Number(value(name)) / 100);
+    const [strength, softness] = ['v-sombra', 'v-suavidade'].map((name) => Number(value(name)) / 100);
     const usesMain = hero.src === document.querySelector('#image-main').src;
     const grounding = usesMain ? window.CarGrounding?.snapshot?.() : null;
     const original = slides[slideIndex].original ?? (usesMain ? window.OriginalFloor?.source : null);
-    const key = JSON.stringify([hero.src, original?.src, geometry, scale, settings, grounding?.points]);
+    const key = JSON.stringify([hero.src, original?.src, geometry, scale, strength, softness, grounding?.points]);
     if (studioKey === key) return;
-    const [strength, softness, light, reflection, depth, contour] = settings;
     const { x, y, width, height, bounds, scale: k } = geometry;
     const carWidth = bounds.largura * k;
     const base = y + (bounds.y + bounds.altura) * k;
@@ -357,53 +377,18 @@ window.Layout6 = (() => {
         }))
       : [{ x: center - carWidth * 0.34, y: base }, { x: center + carWidth * 0.34, y: base }];
     const [a, b] = points;
-    const angle = Math.atan2(b.y - a.y, b.x - a.x);
-    const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+    const cy = (a.y + b.y) / 2;
     const canvas = () => {
       const c = document.createElement('canvas');
       c.width = LARGURA * scale;
-      c.height = 503 * scale;
+      c.height = ALTURA_FOTO * scale;
       const ctx = c.getContext('2d');
       ctx.scale(scale, scale);
       return { c, ctx };
     };
-    const publish = (index, c, enabled) => {
-      layers[index].hidden = !enabled;
-      if (enabled) layers[index].src = c.toDataURL('image/png');
-    };
-    // Sombra projetada na parede do ciclorama, afastada e muito mais difusa
-    // que o contato com o piso. A máscara evita uma segunda sombra nos pneus.
-    const { c: wallMask, ctx: wallSilhouette } = canvas();
-    wallSilhouette.drawImage(hero, x + 46 - width * 0.035, y - 18 - height * 0.035, width * 1.07, height * 1.07);
-    wallSilhouette.globalCompositeOperation = 'source-in';
-    wallSilhouette.fillStyle = `rgba(48,38,31,${depth * 0.26})`;
-    wallSilhouette.fillRect(0, 0, LARGURA, 503);
-    const { c: wallCanvas, ctx: wall } = canvas();
-    wall.filter = `blur(${(22 + softness * 18) * scale}px)`;
-    wall.drawImage(wallMask, 0, 0, LARGURA, 503);
-    wall.filter = 'none';
-    wall.globalCompositeOperation = 'destination-in';
-    const wallFade = wall.createLinearGradient(0, 180, 0, 425);
-    wallFade.addColorStop(0, '#000');
-    wallFade.addColorStop(0.6, 'rgba(0,0,0,0.65)');
-    wallFade.addColorStop(1, 'rgba(0,0,0,0)');
-    wall.fillStyle = wallFade;
-    wall.fillRect(0, 0, LARGURA, 503);
-    publish(3, wallCanvas, depth > 0);
-    const { c: shadowCanvas, ctx: shadow } = canvas();
-    // Mesmo gerador de sombra do Gold: penumbra, carroceria e contatos dos pneus.
-    // Usa o enquadramento de cada foto do carrossel, sem depender de image-main.
-    window.CarGrounding.paintFloorShadow(shadow, {
-      points,
-      width: carWidth,
-      strength,
-      soft: softness,
-      depth: carWidth * 0.075,
-      bodyCenter: { x: center, y: (cy + base) / 2 }
-    });
     originalFloor.hidden = !original;
+    shadowImg.hidden = Boolean(original) || strength <= 0;
     if (original) {
-      // Recorta o piso real com a mesma máscara elíptica suave usada pelo Gold.
       // Foto e PNG conservam as coordenadas originais, por isso os pneus coincidem.
       const { c: realCanvas, ctx: real } = canvas();
       real.drawImage(original, x, y, width, height);
@@ -417,7 +402,7 @@ window.Layout6 = (() => {
       mask.fillStyle = fade;
       mask.fillRect(-1, -1, 2, 2);
       real.globalCompositeOperation = 'destination-in';
-      real.drawImage(maskCanvas, 0, 0, LARGURA, 503);
+      real.drawImage(maskCanvas, 0, 0, LARGURA, ALTURA_FOTO);
       // Suaviza também as bordas do arquivo, quando o piso chega até a moldura.
       const edges = real.createLinearGradient(x, 0, x + width, 0);
       edges.addColorStop(0, 'rgba(0,0,0,0)');
@@ -425,7 +410,7 @@ window.Layout6 = (() => {
       edges.addColorStop(0.92, '#000');
       edges.addColorStop(1, 'rgba(0,0,0,0)');
       real.fillStyle = edges;
-      real.fillRect(0, 0, LARGURA, 503);
+      real.fillRect(0, 0, LARGURA, ALTURA_FOTO);
       // O mesmo vale para o alto e o pé da foto: sem isso o piso real termina numa linha
       // reta e deixa uma faixa branca entre a foto e o rodapé.
       const margem = Math.min(80, height * 0.2);
@@ -433,96 +418,23 @@ window.Layout6 = (() => {
       // Só suaviza as bordas que ficam dentro da faixa; as que passam da moldura já são cortadas por ela.
       bordas.addColorStop(0, y > 0 ? 'rgba(0,0,0,0)' : '#000');
       bordas.addColorStop(y > 0 ? margem / height : 0, '#000');
-      bordas.addColorStop(y + height < 503 ? 1 - margem / height : 1, '#000');
-      bordas.addColorStop(1, y + height < 503 ? 'rgba(0,0,0,0)' : '#000');
+      bordas.addColorStop(y + height < ALTURA_FOTO ? 1 - margem / height : 1, '#000');
+      bordas.addColorStop(1, y + height < ALTURA_FOTO ? 'rgba(0,0,0,0)' : '#000');
       real.fillStyle = bordas;
-      real.fillRect(0, 0, LARGURA, 503);
+      real.fillRect(0, 0, LARGURA, ALTURA_FOTO);
       originalFloor.src = realCanvas.toDataURL('image/png');
+    } else if (strength > 0) {
+      const { c: shadowCanvas, ctx: shadow } = canvas();
+      window.CarGrounding.paintFloorShadow(shadow, {
+        points,
+        width: carWidth,
+        strength,
+        soft: softness,
+        depth: carWidth * 0.075,
+        bodyCenter: { x: center, y: (cy + base) / 2 }
+      });
+      shadowImg.src = shadowCanvas.toDataURL('image/png');
     }
-    publish(0, shadowCanvas, strength > 0 && !original);
-
-    const { c: reflectionCanvas, ctx: floor } = canvas();
-    const slope = Math.abs(b.x - a.x) < 30 ? 0 : Math.max(-0.35, Math.min(0.35, (b.y - a.y) / (b.x - a.x)));
-    const intercept = cy - slope * cx;
-    const compression = 0.25;
-    floor.save();
-    floor.beginPath();
-    floor.moveTo(0, intercept);
-    floor.lineTo(LARGURA, intercept + slope * LARGURA);
-    floor.lineTo(LARGURA, 503);
-    floor.lineTo(0, 503);
-    floor.closePath();
-    floor.clip();
-    floor.filter = `blur(${1.8 * scale}px)`;
-    floor.transform(1, (1 + compression) * slope, 0, -compression, 0, (1 + compression) * intercept);
-    floor.drawImage(hero, x, y, width, height);
-    floor.restore();
-    floor.globalCompositeOperation = 'destination-in';
-    floor.setTransform(scale, slope * scale, 0, scale, 0, intercept * scale);
-    const reflectionFade = floor.createLinearGradient(0, 0, 0, 48);
-    reflectionFade.addColorStop(0, `rgba(0,0,0,${reflection * 0.75})`);
-    reflectionFade.addColorStop(0.4, `rgba(0,0,0,${reflection * 0.28})`);
-    reflectionFade.addColorStop(1, 'rgba(0,0,0,0)');
-    floor.fillStyle = reflectionFade;
-    floor.fillRect(0, 0, LARGURA, 503);
-    publish(1, reflectionCanvas, reflection > 0 && !original);
-
-    const { c: lightCanvas, ctx: lighting } = canvas();
-    const softbox = lighting.createLinearGradient(center - carWidth / 2, 0, center + carWidth / 2, 503);
-    softbox.addColorStop(0, `rgba(255,249,239,${light * 0.38})`);
-    softbox.addColorStop(0.28, `rgba(255,249,239,${light * 0.13})`);
-    softbox.addColorStop(0.57, 'rgba(255,255,255,0)');
-    softbox.addColorStop(0.85, `rgba(238,245,255,${light * 0.09})`);
-    softbox.addColorStop(1, `rgba(238,245,255,${light * 0.19})`);
-    lighting.fillStyle = softbox;
-    lighting.fillRect(0, 0, LARGURA, 503);
-    lighting.globalCompositeOperation = 'destination-in';
-    lighting.drawImage(hero, x, y, width, height);
-    publish(2, lightCanvas, light > 0);
-
-    // Diferença entre o alfa e uma cópia deslocada: luz só no bordo voltado
-    // à fonte (alto/esquerda), oclusão no bordo oposto. Não desenha halo externo
-    // nem uma linha uniforme em volta do carro.
-    const { c: contourCanvas, ctx: contourCtx } = canvas();
-    function innerEdge(dx, dy, blur, colorStops) {
-      const { c: mask, ctx: edge } = canvas();
-      edge.drawImage(hero, x, y, width, height);
-      edge.globalCompositeOperation = 'destination-out';
-      edge.filter = `blur(${blur * scale}px)`;
-      edge.drawImage(hero, x + dx, y + dy, width, height);
-      edge.filter = 'none';
-      edge.globalCompositeOperation = 'source-in';
-      const tone = edge.createLinearGradient(center - carWidth / 2, y + bounds.y * k, center + carWidth / 2, base);
-      for (const [position, color] of colorStops) tone.addColorStop(position, color);
-      edge.fillStyle = tone;
-      edge.fillRect(0, 0, LARGURA, 503);
-      contourCtx.drawImage(mask, 0, 0, LARGURA, 503);
-    }
-    innerEdge(-8, -5, 4, [
-      [0, 'rgba(32,26,22,0)'],
-      [0.35, `rgba(32,26,22,${contour * 0.08})`],
-      [0.72, `rgba(32,26,22,${contour * 0.38})`],
-      [1, `rgba(32,26,22,${contour * 0.62})`]
-    ]);
-    innerEdge(4, 5, 2.5, [
-      [0, `rgba(255,247,230,${contour * 0.58})`],
-      [0.24, `rgba(255,247,230,${contour * 0.34})`],
-      [0.6, `rgba(255,247,230,${contour * 0.06})`],
-      [1, 'rgba(255,247,230,0)']
-    ]);
-    // Modelagem ampla no flanco escuro, sem virar apenas um traço na borda.
-    const { c: ambientCanvas, ctx: ambient } = canvas();
-    const ambientShade = ambient.createLinearGradient(center - carWidth / 2, 0, center + carWidth / 2, 503);
-    ambientShade.addColorStop(0, 'rgba(36,29,23,0)');
-    ambientShade.addColorStop(0.5, 'rgba(36,29,23,0)');
-    ambientShade.addColorStop(0.82, `rgba(36,29,23,${contour * 0.07})`);
-    ambientShade.addColorStop(1, `rgba(36,29,23,${contour * 0.23})`);
-    ambient.fillStyle = ambientShade;
-    ambient.fillRect(0, 0, LARGURA, 503);
-    ambient.globalCompositeOperation = 'destination-in';
-    ambient.drawImage(hero, x, y, width, height);
-    contourCtx.drawImage(ambientCanvas, 0, 0, LARGURA, 503);
-    publish(4, contourCanvas, contour > 0);
     studioKey = key;
   }
 
@@ -565,7 +477,6 @@ window.Layout6 = (() => {
       if (!hero.hidden && hero.src !== principal.src) hero.src = principal.src;
     }
     foto.classList.toggle('v-studio', Boolean(recortada && !hero.hidden));
-    foto.style.setProperty('--studio-depth', String(Number(value('v-profundidade')) / 100));
     if (recortada && !hero.hidden && hero.complete && hero.naturalWidth) studioLayers(hero, enquadrar(hero));
     else {
       hero.style.cssText = '';

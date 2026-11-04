@@ -113,7 +113,7 @@ Aba **Pronto para anunciar**.
   2. Se faltarem criativos, **Baixar carrossel e capa**.
   3. **Abrir Instagram no app**, faça login e resolva as verificações.
   4. Revise imagens e legendas e clique em **Publicar carrossel e depois Reels**. O app confere se a conta conectada é a salva.
-- Se algo falhar: **Retomar publicação do Reels** continua sem repetir o carrossel. Se o app fechar após clicar em Compartilhar, abra o perfil e marque **Já foi publicado** ou **Não foi publicado**. Isso evita postar duas vezes.
+- Se algo falhar: **Retomar publicação do Reels** continua sem repetir o carrossel. Se o app fechar após clicar em Compartilhar, a etapa volta a Pendente (o app não consulta o Instagram); veja o perfil antes de publicar de novo.
 - **Interromper automação** para os próximos passos; confira o perfil se o envio já começou.
 
 ## Etapa 8: Quando o carro for vendido
@@ -138,7 +138,7 @@ Em **Estoque › Abrir relatório completo**, o botão **PDF** gera o relatório
 | Botões de documento, recorte ou vídeo falham | Em Configurações, **Instalar / reparar motor Python**; confirme uv, Tesseract e FFmpeg |
 | Arquivo da Entrada ficou como pendência | Confira a placa no nome da pasta e se existe um único veículo com essa placa |
 | "A entrada está copiando arquivos" | O vídeo e a cópia não rodam juntos; aguarde terminar |
-| Instagram parou no meio | Veja **Retomada** acima; nunca republique sem conferir o perfil |
+| Instagram parou no meio | Veja **Retomada** acima; veja o perfil antes de publicar de novo |
 | Foto HEIC não aparece | Converta para JPG antes (o app só copia o HEIC) |
 
 ## Onde fica cada coisa

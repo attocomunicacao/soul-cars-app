@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   atualizarVeiculo,
   obterLoja,
@@ -24,8 +24,120 @@ import { AndamentoVideo, aplicarLinha, type Andamento } from "./AndamentoVideo";
 import { DocumentoCrlv } from "./DocumentoCrlv";
 import { blocosDeCopia } from "./lib/publicacao";
 import { Criativos } from "./Criativos";
-import { Instagram } from "./Instagram";
-import { Anunciar } from "./Anunciar";
+
+/** Mantém a digitação em reais inteiros; a vírgula permite informar centavos. */
+/** Textarea que cresce com o conteúdo: nunca cria barra de rolagem própria. */
+function CampoTexto({
+  value,
+  onChange,
+  className,
+}: {
+  value: string;
+  onChange: (valor: string) => void;
+  className?: string;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const ajustar = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight + 2}px`;
+  };
+  useLayoutEffect(ajustar, [value]);
+  useEffect(() => {
+    window.addEventListener("resize", ajustar);
+    return () => window.removeEventListener("resize", ajustar);
+  }, []);
+  return (
+    <textarea
+      ref={ref}
+      className={className}
+      value={value}
+      style={{ overflow: "hidden", resize: "none" }}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  );
+}
+
+function CampoNumerico({
+  valor,
+  moeda,
+  alterar,
+}: {
+  valor: number | null;
+  moeda: boolean;
+  alterar: (valor: number | null) => void;
+}) {
+  const formatar = (numero: number | null) =>
+    numero == null
+      ? ""
+      : numero.toLocaleString("pt-BR", {
+          minimumFractionDigits: moeda ? 2 : 0,
+          maximumFractionDigits: moeda ? 2 : 0,
+        });
+  const [edicao, setEdicao] = useState<string | null>(null);
+  const entrada = useRef<HTMLInputElement>(null);
+  const cursor = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    if (cursor.current != null) {
+      entrada.current?.setSelectionRange(cursor.current, cursor.current);
+      cursor.current = null;
+    }
+  });
+  return (
+    <span className="campo-numerico">
+      {moeda && <span aria-hidden="true">R$</span>}
+      <input
+        ref={entrada}
+        type="text"
+        inputMode={moeda ? "decimal" : "numeric"}
+        placeholder={moeda ? "0,00" : "0"}
+        value={edicao ?? formatar(valor)}
+        onFocus={() =>
+          setEdicao(
+            valor == null
+              ? ""
+              : valor.toLocaleString("pt-BR", {
+                  maximumFractionDigits: moeda ? 2 : 0,
+                }),
+          )
+        }
+        onBlur={() => setEdicao(null)}
+        onChange={(evento) => {
+          const bruto = evento.target.value;
+          const antes = bruto.slice(
+            0,
+            evento.target.selectionStart ?? bruto.length,
+          );
+          const quantidade = antes.replace(/[^0-9,]/g, "").length;
+          const limpo = bruto.replace(moeda ? /[^0-9,]/g : /[^0-9]/g, "");
+          const [inteiro, ...decimais] = limpo.split(",");
+          const parteInteira = inteiro.replace(/^0+(?=\d)/, "");
+          const agrupado = parteInteira.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+          const texto =
+            agrupado +
+            (moeda && decimais.length
+              ? "," + decimais.join("").slice(0, 2)
+              : "");
+          let posicao = 0;
+          let vistos = 0;
+          while (posicao < texto.length && vistos < quantidade) {
+            if (/[0-9,]/.test(texto[posicao])) vistos++;
+            posicao++;
+          }
+          cursor.current = posicao;
+          setEdicao(texto);
+          alterar(
+            texto.replace(/[^0-9]/g, "") === ""
+              ? null
+              : Number(texto.replace(/\./g, "").replace(",", ".")),
+          );
+        }}
+      />
+      {!moeda && <span aria-hidden="true">km</span>}
+    </span>
+  );
+}
 
 const CAMPOS: [Editavel, string][] = [
   ["nome", "Nome comercial"],
@@ -87,7 +199,6 @@ export function Ficha({
   const [logs, setLogs] = useState<string[]>([]);
   const [andamento, setAndamento] = useState<Andamento | null>(null);
   const [copiaNumero, setCopiaNumero] = useState<Record<string, number>>({});
-  const [baixarInstagram, setBaixarInstagram] = useState(false);
   const [copiados, setCopiados] = useState<Record<string, string>>({});
   function ficha(): FichaDes {
     return Object.fromEntries(
@@ -200,22 +311,24 @@ export function Ficha({
     <label key={k}>
       {label}
       {["seguranca", "conforto", "infotenimento"].includes(k) ? (
-        <textarea
+        <CampoTexto
           value={String(v[k] ?? "")}
-          onChange={(e) => setV({ ...v, [k]: e.target.value })}
+          onChange={(valor) => setV({ ...v, [k]: valor })}
+        />
+      ) : k === "preco" || k === "km" ? (
+        <CampoNumerico
+          valor={v[k] ?? null}
+          moeda={k === "preco"}
+          alterar={(valor) => setV({ ...v, [k]: valor })}
         />
       ) : (
         <input
           value={String(v[k] ?? "")}
-          type={["preco", "km"].includes(k) ? "number" : "text"}
+          type="text"
           onChange={(e) =>
             setV({
               ...v,
-              [k]: ["preco", "km"].includes(k)
-                ? e.target.value === ""
-                  ? null
-                  : Number(e.target.value)
-                : e.target.value,
+              [k]: e.target.value,
             })
           }
         />
@@ -229,11 +342,6 @@ export function Ficha({
           ← Veículos
         </button>
         <h2>{v.nome}</h2>
-        {v.pasta && (
-          <button onClick={() => tarefa(() => openPath(v.pasta!))}>
-            Abrir pasta
-          </button>
-        )}
         <button
           className="primary"
           disabled={ocupado}
@@ -243,39 +351,20 @@ export function Ficha({
         </button>
       </div>
       <nav>
-        {[
-          "ficha",
-          "producao",
-          "criativos",
-          "anunciar",
-          "publicacao",
-          "instagram",
-        ].map((a) => (
+        {["ficha", "producao", "criativos", "publicacao"].map((a) => (
           <button
             key={a}
             disabled={ocupado}
             className={aba === a ? "selected" : ""}
-            onClick={() => {
-              setBaixarInstagram(false);
-              if (a === "instagram")
-                void tarefa(async () => {
-                  await salvar();
-                  setAba(a);
-                });
-              else setAba(a);
-            }}
+            onClick={() => setAba(a)}
           >
             {a === "producao"
               ? "Produção"
-              : a === "anunciar"
-                ? "Pronto para anunciar"
-                : a === "publicacao"
-                  ? "Publicação"
-                  : a === "ficha"
-                    ? "Ficha"
-                    : a === "instagram"
-                      ? "Instagram"
-                      : "Criativos"}
+              : a === "publicacao"
+                ? "Publicação"
+                : a === "ficha"
+                  ? "Ficha"
+                  : "Criativos"}
           </button>
         ))}
       </nav>
@@ -461,24 +550,11 @@ export function Ficha({
             </div>
           </fieldset>
           <label>
-            Status
-            <select
-              value={v.status}
-              onChange={(e) =>
-                setV({ ...v, status: e.target.value as Veiculo["status"] })
-              }
-            >
-              <option value="rascunho">Rascunho</option>
-              <option value="criativos">Criativos</option>
-              <option value="publicado">Publicado</option>
-            </select>
-          </label>
-          <label>
             Descrição e anúncio
-            <textarea
+            <CampoTexto
               className="markdown"
               value={v.des_md || ""}
-              onChange={(e) => setV({ ...v, des_md: e.target.value })}
+              onChange={(valor) => setV({ ...v, des_md: valor })}
             />
           </label>
         </div>
@@ -508,34 +584,8 @@ export function Ficha({
         </>
       )}
       {aba === "criativos" && (
-        <Criativos
-          veiculo={v}
-          onChange={setV}
-          onBack={() => {
-            setBaixarInstagram(false);
-            setAba("ficha");
-          }}
-          prepararInstagram={baixarInstagram}
-          onInstagramPronto={() => {
-            setBaixarInstagram(false);
-            setAba("instagram");
-          }}
-        />
+        <Criativos veiculo={v} onChange={setV} onBack={() => setAba("ficha")} />
       )}
-      {aba === "instagram" && (
-        <Instagram
-          veiculo={v}
-          onBusy={setOcupado}
-          baixar={() => {
-            void tarefa(async () => {
-              await salvar();
-              setBaixarInstagram(true);
-              setAba("criativos");
-            });
-          }}
-        />
-      )}
-      {aba === "anunciar" && <Anunciar veiculo={v} irPara={setAba} />}
       {aba === "publicacao" && (
         <div className="panel">
           <h2>Textos para publicação</h2>

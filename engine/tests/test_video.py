@@ -22,6 +22,32 @@ def texto(ws):
     return " ".join(w["w"] for w in ws)
 
 
+class TestVigiaRender(unittest.TestCase):
+    def executar(self, programa, limite):
+        popen = subprocess.Popen
+
+        def abrir(cmd, *args, **kwargs):
+            if cmd[0] == sys.executable:
+                cmd = [cmd[0], *cmd[4:]]  # remove opções exclusivas do FFmpeg
+            return popen(cmd, *args, **kwargs)
+
+        with mock.patch.object(render.subprocess, "Popen", side_effect=abrir), \
+                mock.patch.object(render, "log"):
+            render.run_ffmpeg([sys.executable, "-u", "-c", programa], 10, 40, 98,
+                              "Teste", limite_sem_avanco=limite)
+
+    def test_interrompe_processo_travado_mesmo_com_progresso_repetido(self):
+        with self.assertRaisesRegex(RuntimeError, "sem avanço"):
+            self.executar("import time\nwhile True:\n print('out_time_us=0', flush=True)\n time.sleep(.1)", 0.3)
+
+    def test_avanco_real_renova_o_prazo(self):
+        self.executar("import time\nfor i in range(8):\n print(f'out_time_us={i * 100000}', flush=True)\n time.sleep(.2)", 1)
+
+    def test_preserva_detalhe_de_erro_do_ffmpeg(self):
+        with self.assertRaisesRegex(RuntimeError, "falha simulada"):
+            self.executar("import sys; print('falha simulada', file=sys.stderr); sys.exit(1)", 10)
+
+
 class TestFixWords(unittest.TestCase):
     def test_junta_decimal_separado_pelo_whisper(self):
         r = render.fix_words(palavras("Fiesta", "1", ".6", "manual"), "FORD FIESTA", [])

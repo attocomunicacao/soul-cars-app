@@ -1,10 +1,6 @@
-/* Vitrine: só o ciclorama do veículo passa para branco neutro. */
-#creative6 .v-photo.v-studio { background: radial-gradient(ellipse 85% 85% at 50% 35%, #fff 30%, #f5f5f5 78%, #e7e7e7); }
-#creative6 .v-studio-glow { background: radial-gradient(ellipse 75% 15% at 50% 75%, #00000016, transparent), radial-gradient(ellipse 45% 100% at -10% 30%, #00000024, transparent), radial-gradient(ellipse 45% 100% at 110% 30%, #00000024, transparent); }
-
 /* Mesma família e títulos em itálico do Carrossel. */
-#creative4 { font-family:'Barlow Condensed', 'Roboto Condensed', Arial, sans-serif; }
-#creative4 :is(.g-header, .g-fit, .g-card b, .g-cta > span) { font-family:'Barlow Condensed', 'Roboto Condensed', Arial, sans-serif; }
+#creative4 { font-family:Lato, Arial, sans-serif; }
+#creative4 :is(.g-header, .g-fit, .g-card b, .g-cta > span) { font-family:Lato, Arial, sans-serif; }
 #creative4 :is(.g-title, .g-subtitle, .g-price, .g-card b, .g-cta > span) { font-style:normal; }
 /* A regra geral dos parágrafos não pode desfazer o flex dos contatos. */
 #creative6 .v-contact { display:flex; align-items:center; height:36px; line-height:36px; }

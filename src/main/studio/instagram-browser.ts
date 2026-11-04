@@ -23,7 +23,9 @@ const achar = (labels, raiz) => {
   return undefined;
 };
 const botao = (labels, raiz = area) => achar(labels, raiz) || (raiz === area && area !== document ? achar(labels, document) : undefined);
-const legenda = () => [...area.querySelectorAll('textarea,[contenteditable="true"][role="textbox"],[contenteditable="true"][aria-label]')].find(e => visivel(e) && /caption|legenda/i.test([e.getAttribute('aria-label'),e.getAttribute('placeholder'),e.getAttribute('data-placeholder')].join(' '))) || [...area.querySelectorAll('textarea,[contenteditable="true"][role="textbox"]')].find(visivel);
+const comentario = e => /coment|comment/i.test([e.getAttribute('aria-label'),e.getAttribute('placeholder'),e.getAttribute('data-placeholder')].join(' '));
+// A legenda só existe dentro do editor (diálogo). Sem diálogo, qualquer campo seria o de comentário do feed.
+const legenda = () => area === document ? undefined : [...area.querySelectorAll('textarea,[contenteditable="true"][role="textbox"],[contenteditable="true"][aria-label]')].find(e => visivel(e) && !comentario(e) && /caption|legenda/i.test([e.getAttribute('aria-label'),e.getAttribute('placeholder'),e.getAttribute('data-placeholder')].join(' '))) || (area === document ? undefined : [...area.querySelectorAll('textarea,[contenteditable="true"][role="textbox"]')].find(e => visivel(e) && !comentario(e)));
 `;
 
 export class InstagramBrowser {
@@ -86,6 +88,34 @@ export class InstagramBrowser {
       return achado;
     `);
   }
+  /** Clique com mouse de verdade no centro do elemento: menus do Instagram ignoram element.click(). */
+  private async cliqueReal(codigoElemento: string): Promise<boolean> {
+    const p = await this.avaliar<{ x: number; y: number } | null>(`
+      const e = (() => { ${codigoElemento} })();
+      if (!e) return null;
+      const alvo = e.closest('button,[role="button"],[role="menuitem"],[tabindex]') || e;
+      alvo.scrollIntoView({block:'nearest'});
+      const r = alvo.getBoundingClientRect();
+      return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+    `);
+    if (!p) return false;
+    this.wc.sendInputEvent({ type: "mouseMove", x: p.x, y: p.y });
+    this.wc.sendInputEvent({
+      type: "mouseDown",
+      x: p.x,
+      y: p.y,
+      button: "left",
+      clickCount: 1,
+    });
+    this.wc.sendInputEvent({
+      type: "mouseUp",
+      x: p.x,
+      y: p.y,
+      button: "left",
+      clickCount: 1,
+    });
+    return true;
+  }
   private async clicar(labels: string[], timeout = 25_000) {
     try {
       return await this.esperar(
@@ -122,7 +152,7 @@ export class InstagramBrowser {
     const expressao = `(() => { const inputs = [...document.querySelectorAll('input[type="file"]')];
       const elegiveis = inputs.filter(e => ${tipo === "capa" ? "!e.multiple && /image/i.test(e.accept) && !/video/i.test(e.accept)" : files.length > 1 ? "e.multiple && /image/i.test(e.accept)" : "/video/i.test(e.accept)"});
       const dialogo = [...document.querySelectorAll('[role="dialog"]')].at(-1);
-      return elegiveis.filter(e => dialogo?.contains(e)).at(-1) || elegiveis.at(-1) || null;
+      return elegiveis.filter(e => dialogo?.contains(e)).at(-1) || ${tipo === "capa" ? "null" : "elegiveis.at(-1)"} || null;
     })()`;
     const r = await this.wc.debugger.sendCommand("Runtime.evaluate", {
       expression: expressao,
@@ -141,6 +171,8 @@ export class InstagramBrowser {
           ? [
               "Selecionar do computador",
               "Select from computer",
+              "Selecionar da galeria",
+              "Select from gallery",
               "Carregar capa",
               "Upload cover photo",
             ]
@@ -223,9 +255,16 @@ export class InstagramBrowser {
           "O Instagram ainda não terminou de carregar a mídia.",
           120_000,
         );
+        // Registra a tela atual para diagnosticar mudanças no fluxo do Instagram.
+        const tela = await this.avaliar<string[]>(
+          "return [...new Set([...area.querySelectorAll('*')].filter(e => visivel(e) && !e.children.length).map(e => (e.getAttribute('aria-label') || e.textContent || '').trim()).filter(t => t && t.length < 30))].slice(0, 14);",
+        ).catch(() => [] as string[]);
+        this.log(`Tela ${etapa + 1}: ${tela.join(" | ")}`);
         if (capa && !capaAnexada) {
           const painelCapa = await this.avaliar<boolean>(
-            "return /foto de capa|cover photo|capa do video|cover image/i.test(area.innerText);",
+            `const t = norm(area.innerText);
+            return /foto d[ae] capa|cover photo|capa do video|cover image|\bcapa\b|\bcover\b/.test(t)
+              || !!botao(['Selecionar da galeria','Select from gallery','Carregar capa','Upload cover photo']);`,
           );
           if (painelCapa) {
             await this.anexar([capa], "capa");
@@ -234,17 +273,47 @@ export class InstagramBrowser {
         }
         legendaEncontrada = await this.avaliar<boolean>("return !!legenda();");
         if (legendaEncontrada) break;
-        const recorte = await this.avaliar<boolean>(
-          "const e = botao(['Selecionar corte','Select crop','Selecionar proporção','Select aspect ratio']); if(e){e.click();return true;} return false;",
+        const recorte = await this.cliqueReal(
+          "return botao(['Selecionar corte','Select crop','Selecionar proporção','Select aspect ratio']);",
         );
-        if (recorte) await this.clicar(["Original"]);
+        this.log(
+          recorte
+            ? "Botão de corte encontrado; escolhendo “Original”."
+            : "Botão de corte não encontrado nesta tela.",
+        );
+        // O carrossel deve sair em tamanho real: sem "Original", não publica cortado em 1:1.
+        if (recorte) {
+          await new Promise((resolve) => setTimeout(resolve, 700));
+          const original = await this.esperar(
+            () =>
+              this.cliqueReal(
+                "return botao(['Original']) || [...area.querySelectorAll('*')].find(x => visivel(x) && (norm(x.getAttribute('aria-label')) === 'original' || (!x.children.length && norm(x.textContent) === 'original')));",
+              ),
+            "",
+            6_000,
+          ).catch(() => false);
+          if (!original) {
+            const textos = await this.avaliar<string[]>(
+              "return [...new Set([...area.querySelectorAll('*')].filter(e => visivel(e) && !e.children.length).map(e => (e.getAttribute('aria-label') || e.textContent || '').trim()).filter(t => t && t.length < 40))].slice(0, 50);",
+            ).catch(() => [] as string[]);
+            this.log(`Itens visíveis no corte: ${textos.join(" | ")}`);
+            throw new Error(
+              `Não consegui selecionar o corte “Original” (tamanho real). Não publiquei. Itens visíveis: ${textos.join(" | ")}`,
+            );
+          }
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
         await this.clicar(["Avançar", "Next", "Seguinte"]);
         await new Promise((resolve) => setTimeout(resolve, 600));
       }
-      if (!capaAnexada)
+      if (!capaAnexada) {
+        const textos = await this.avaliar<string[]>(
+          "return [...new Set([...area.querySelectorAll('*')].filter(e => visivel(e) && !e.children.length).map(e => (e.getAttribute('aria-label') || e.textContent || '').trim()).filter(t => t && t.length < 40))].slice(0, 50);",
+        ).catch(() => [] as string[]);
         throw new Error(
-          "O Instagram não ofereceu o envio da capa do Reels. O vídeo não foi publicado. Confira a janela para selecionar a capa de Tráfego Pago.",
+          `O Instagram não ofereceu o envio da capa do Reels. O vídeo não foi publicado. Itens visíveis: ${textos.join(" | ")}`,
         );
+      }
       if (!legendaEncontrada)
         throw new Error(
           "Não encontrei o campo de legenda. A publicação foi interrompida.",
@@ -269,7 +338,7 @@ export class InstagramBrowser {
       await this.esperar(
         () =>
           this.avaliar<boolean>(
-            "return !!botao(['Compartilhar','Share','Publicar','Publish']);",
+            "return area !== document && !!botao(['Compartilhar','Share','Publicar','Publish']);",
           ),
         "O Instagram não mostrou o botão de compartilhar.",
       );
@@ -279,7 +348,7 @@ export class InstagramBrowser {
         () =>
           this.avaliar<boolean>(`
         const t = norm(area.innerText);
-        return !legenda() && /sua publicacao foi compartilhada|your post has been shared|your reel has been shared|publicacao compartilhada|reel compartilhado|sua publicacao foi partilhada/.test(t);
+        return !legenda() && /sua publicacao foi compartilhada|your post has been shared|your reel has been shared|publicacao compartilhada|seu post foi compartilhado|seu reel foi compartilhado|post compartilhado|reel compartilhado|reel compartilhado|sua publicacao foi partilhada/.test(t);
       `),
         "O envio foi iniciado, mas o Instagram não confirmou a publicação. Confira o perfil antes de tentar novamente.",
         300_000,

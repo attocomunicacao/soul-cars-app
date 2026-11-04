@@ -53,9 +53,15 @@
       "output": "dist",
       "buildResources": "resources"
     },
+    "compression": "maximum",
+    "electronLanguages": [
+      "pt-BR",
+      "en-US"
+    ],
+    "artifactName": "SOUL-Cars-Setup-${version}.exe",
     "files": [
       "out/**",
-      "resources/**"
+      "!**/*.map"
     ],
     "extraResources": [
       {
@@ -68,6 +74,7 @@
         "filter": [
           "**/*",
           "!.venv/**",
+          "!tests/**",
           "!**/__pycache__/**",
           "!**/*.pyc",
           "!video/assets/TRILHA.*"
@@ -93,6 +100,7 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
       "shortcutName": "SOUL Cars"
     }
   }

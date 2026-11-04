@@ -24,7 +24,7 @@ window.Layouts = (() => {
     selected = number === 6 ? 6 : 4;
     document.querySelector('#creative4').hidden = selected !== 4;
     document.querySelector('#creative6').hidden = selected !== 6;
-    document.querySelector('#export-button').innerHTML = selected === 6 ? 'Baixar carrossel (3 PNGs) <span>↓</span>' : 'Baixar Tráfego Pago <span>↓</span>';
+    document.querySelector('#export-button').innerHTML = 'Baixar';
     document.querySelectorAll('[data-layout]').forEach(button => {
       const active = Number(button.dataset.layout) === selected;
       button.setAttribute('aria-selected', String(active)); button.tabIndex = active ? 0 : -1;

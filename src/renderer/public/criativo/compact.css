@@ -32,3 +32,17 @@
 .editor-section fieldset { padding:10px 14px; }
 .editor input:not([type="range"]):not([type="file"]):not([type="checkbox"]), .editor select { min-height:36px; margin:4px 0 7px; padding:8px 10px; }
 .intro > p:last-child { margin-bottom:12px; }
+/* Aba Criativos enxuta: sem títulos, legendas nem avisos; só os campos e o botão Baixar.
+   Os elementos continuam no DOM porque o editor lê e escreve neles. */
+.intro,.editor-section > summary,.export-quality,#export-both,.export-note,#status:not(.error) { display:none; }
+/* Só o botão Baixar fica no painel: o formulário segue no DOM, recebendo os dados do veículo. */
+#editor-form { display:none; }
+/* Sem rolagem secundária: a prévia é dimensionada para caber na janela. */
+@media(min-width:661px) { html,body { overflow:hidden; } }
+/* Painel sem caixa: sobra só o botão Baixar. */
+.editor { background:none; border:0; box-shadow:none; padding:0; }
+.export-area { border:0; padding:0; margin:0; }
+/* O Baixar mora no cabeçalho da prévia; o painel lateral fica vazio e sai de cena. */
+.editor { display:none; }
+.workspace { grid-template-columns:minmax(0,1fr); }
+#export-button.quick-export { width:auto; }

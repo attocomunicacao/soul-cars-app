@@ -15,7 +15,7 @@ export type PlanoInstagram = {
   pendencias: string[];
 };
 export type EtapaInstagram =
-  "pendente" | "preparando" | "publicando" | "publicado" | "conferir";
+  "pendente" | "preparando" | "publicando" | "publicado";
 export type RegistroInstagram = {
   veiculoId: number;
   conta: string;

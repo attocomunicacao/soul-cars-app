@@ -2,7 +2,7 @@
    Recomposição da peça de referência (598 × 806): as faixas de texto, cartões e rodapé
    mantêm a altura proporcional; só a área da fotografia foi encurtada, como manda a
    especificação — nada é achatado. Faixas: 0-96 friso · 80-419 cabeçalho ·
-   419-619 cartões · 619-1122 foto · 1122-1350 rodapé. */
+   333-503 cartões · 503-1122 foto · 1122-1350 rodapé. */
 
 #creative6 {
   position: absolute;
@@ -70,7 +70,7 @@
   left: 0;
   top: 80px;
   width: 1080px;
-  height: 339px;
+  height: 253px;
   z-index: 1;
   background:
     radial-gradient(ellipse 78% 130% at 26% 34%, #f3eae6 0%, #efe6e0 46%, #e9e0d8 100%);
@@ -78,7 +78,7 @@
 .v-model {
   position: absolute;
   left: 45px;
-  top: 59px;
+  top: 10px;
   height: 174px;
   line-height: 174px;
   font-weight: 700;
@@ -99,7 +99,7 @@
 .v-year {
   position: absolute;
   right: 97px;
-  top: 59px;
+  top: 10px;
   text-align: right;
   height: 174px;
   line-height: 174px;
@@ -110,10 +110,10 @@
 .v-version {
   position: absolute;
   left: 45px;
-  top: 243px;
+  top: 196px;
   width: 690px;
-  height: 58px;
-  line-height: 58px;
+  height: 52px;
+  line-height: 52px;
   font-weight: 700;
   letter-spacing: 0;
   color: #0b0b0b;
@@ -121,7 +121,7 @@
 .v-extra {
   position: absolute;
   left: 757px;
-  top: 252px;
+  top: 202px;
   height: 40px;
   display: flex;
   align-items: center;
@@ -145,9 +145,9 @@
 .v-cards {
   position: absolute;
   left: 0;
-  top: 419px;
+  top: 333px;
   width: 1080px;
-  height: 200px;
+  height: 170px;
   z-index: 1;
   background: #efe6e0;
 }
@@ -157,24 +157,24 @@
 }
 /* Os vãos entre os três polígonos são os filetes off-white da referência. */
 .v-card-price {
-  clip-path: polygon(0 0, 437px 0, 368px 200px, 0 200px);
+  clip-path: polygon(0 0, 437px 0, 378px 170px, 0 170px);
   background: linear-gradient(135deg, #0e0e0e 0%, #0b0b0b 60%, #080808 100%);
 }
 .v-card-fuel {
-  clip-path: polygon(442px 0, 749px 0, 681px 200px, 374px 200px);
+  clip-path: polygon(442px 0, 749px 0, 691px 170px, 384px 170px);
   background:
     radial-gradient(ellipse 70% 90% at 30% 20%, rgba(255, 221, 187, 0.3) 0%, rgba(255, 221, 187, 0) 70%),
     linear-gradient(130deg, #c98249 0%, #e0a977 44%, #c07c45 74%, #ac6b37 100%);
 }
 .v-card-gear {
-  clip-path: polygon(755px 0, 1080px 0, 1080px 200px, 686px 200px);
+  clip-path: polygon(755px 0, 1080px 0, 1080px 170px, 697px 170px);
   background: linear-gradient(158deg, #e6e0dc 0%, #dcd1ca 58%, #d3c7bf 100%);
 }
 .v-label {
   position: absolute;
   height: 30px;
   line-height: 30px;
-  top: 32px;
+  top: 24px;
   font-size: 31px;
   font-weight: 600;
   font-style: normal;
@@ -195,7 +195,7 @@
 .v-price-rule {
   position: absolute;
   left: 70px;
-  top: 72px;
+  top: 60px;
   width: 242px;
   height: 3px;
   background: linear-gradient(90deg, rgba(150, 112, 77, 0) 0%, #b7794c 25%, #d6a980 50%, #b7794c 75%, rgba(150, 112, 77, 0) 100%);
@@ -203,7 +203,7 @@
 .v-price {
   left: 18px;
   width: 352px;
-  top: 88px;
+  top: 72px;
   height: 76px;
   line-height: 76px;
 }
@@ -224,7 +224,7 @@
 .v-fuel {
   left: 450px;
   width: 234px;
-  top: 76px;
+  top: 62px;
   height: 92px;
   line-height: 92px;
   color: #100d07;
@@ -237,7 +237,7 @@
 .v-gear-rule {
   position: absolute;
   left: 820px;
-  top: 71px;
+  top: 58px;
   width: 164px;
   height: 1px;
   background: rgba(120, 104, 94, 0.45);
@@ -245,7 +245,7 @@
 .v-gear {
   left: 722px;
   width: 322px;
-  top: 86px;
+  top: 72px;
   height: 74px;
   line-height: 74px;
   color: #15110e;
@@ -289,59 +289,42 @@
 .v-photo {
   position: absolute;
   left: 0;
-  top: 619px;
+  top: 503px;
   width: 1080px;
-  height: 503px;
+  height: 619px;
   overflow: hidden;
   z-index: 1;
   isolation: isolate;
   background:
-    radial-gradient(ellipse 90% 30% at 50% 102%, #f2eae3 0%, rgba(242, 234, 227, 0) 78%),
-    radial-gradient(ellipse 55% 95% at 18% 15%, #f7f0e9 0%, rgba(247, 240, 233, 0) 76%),
-    radial-gradient(ellipse 70% 90% at 90% 25%, #eee6df 0%, rgba(238, 230, 223, 0) 78%),
-    linear-gradient(180deg, #e1d7ce 0%, #e6ddd5 66%, #ece3dc 100%);
+    /* Piso acetinado, curva contínua e parede iluminada por uma fonte ampla.
+       A curva fica atrás do carro; não desenha uma linha de horizonte. */
+    radial-gradient(ellipse 70% 38% at 35% 105%, #fffdf8, transparent 95%),
+    radial-gradient(ellipse 58% 85% at 32% 12%, #ffffff 8%, rgba(255, 255, 255, 0) 96%),
+    linear-gradient(180deg, #f2e9d9 0%, #faf6ed 40%, #eee2cc 62%, #f6edde 78%, #fffaf1 100%);
 }
 /* Foto com fundo próprio: preenche a faixa e o estúdio sintético sai de cena. */
 .v-photo.v-real {
   background: none;
 }
-.v-studio-glow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  /* Ciclorama: paredes laterais na sombra, foco central e curva difusa
-     entre parede e piso. Tudo atrás da foto, sem escurecer o recorte. */
-  background:
-    radial-gradient(ellipse 54% 72% at 48% 29%, rgba(255, 252, 245, 0.58) 0%, rgba(255, 252, 245, 0) 85%),
-    radial-gradient(ellipse 74% 16% at 51% 70%, rgba(77, 57, 43, 0.22) 0%, rgba(77, 57, 43, 0) 100%),
-    radial-gradient(ellipse 45% 100% at -8% 32%, rgba(54, 43, 35, 0.36) 0%, rgba(54, 43, 35, 0) 96%),
-    radial-gradient(ellipse 49% 112% at 109% 20%, rgba(54, 43, 35, 0.44) 0%, rgba(54, 43, 35, 0) 96%),
-    linear-gradient(180deg, rgba(53, 40, 30, 0.19) 0%, rgba(53, 40, 30, 0) 42%, rgba(255, 249, 241, 0.18) 100%);
-  opacity: var(--studio-depth, 0.7);
-  z-index: 0;
-}
 .v-layer {
   position: absolute;
   inset: 0;
   width: 1080px;
-  height: 503px;
+  height: 619px;
   pointer-events: none;
 }
-.v-reflection { z-index: 1; }
-.v-backdrop-shadow { z-index: 0; }
 .v-shadow { z-index: 2; }
-.v-light { z-index: 4; }
-.v-contour { z-index: 5; }
-.v-photo:not(.v-studio) .v-studio-glow,
+.v-floor-toggle { display: flex; align-items: center; gap: 8px; }
+.v-floor-toggle input { width: auto; }
 .v-photo:not(.v-studio) .v-layer {
   display: none;
 }
 .v-car {
   position: absolute;
   left: 50%;
-  top: 22px;
-  bottom: 30px;
-  width: 702px;
+  top: 14px;
+  bottom: 26px;
+  width: 860px;
   transform: translateX(-50%);
   z-index: 3;
 }

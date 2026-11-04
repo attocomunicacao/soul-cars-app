@@ -183,7 +183,12 @@ for (const key of fields) form.elements.namedItem(key).addEventListener('input',
 function resizePreview() {
   const [largura, altura] = tamanhoDoLayout(window.Layouts?.current ?? 1);
   const available = document.querySelector('#preview-stage').clientWidth - 38;
-  const maxHeight = window.innerWidth <= 660 ? 560 : Math.max(540, window.innerHeight - 220);
+  // Altura que sobra na janela depois de cabeçalho, abas, navegação e margens da
+  // própria seção: a prévia cabe inteira, sem criar uma segunda barra de rolagem.
+  const secao = document.querySelector('.preview-section');
+  const tamanho = document.querySelector('#preview-size');
+  const ocupado = secao.offsetHeight - tamanho.offsetHeight + secao.getBoundingClientRect().top + window.scrollY;
+  const maxHeight = window.innerWidth <= 660 ? 560 : Math.max(240, window.innerHeight - ocupado - 4);
   // Painel muito estreito não pode virar escala zero ou negativa.
   const scale = Math.max(0.05, Math.min(available / largura, maxHeight / altura, 1));
   const palco = document.querySelector('#preview-scale');
@@ -207,7 +212,9 @@ async function ensureFonts() {
       'A fonte Montserrat não foi encontrada. Mantenha a pasta assets junto do HTML.'
     );
   await Promise.all(
-    [300, 400, 500, 600, 700].map((weight) => document.fonts.load(`${weight} 52px Montserrat`))
+    [300, 400, 500, 600, 700].map((weight) => document.fonts.load(`${weight} 52px Montserrat`)).concat(
+      [300, 400, 700, 900].map((weight) => document.fonts.load(`${weight} 52px Lato`))
+    )
   );
   await document.fonts.ready;
   if (
@@ -303,7 +310,8 @@ async function exportLayouts(numbers) {
           fontEmbedCSS:
             window.SOUL_FONT_CSS +
             (window.SOUL_CONDENSED_CSS || '') +
-            (window.SOUL_BARLOW_CSS || ''),
+            (window.SOUL_BARLOW_CSS || '') +
+            (window.SOUL_LATO_CSS || ''),
           filter: (node) => !(node.tagName === 'IMG' && node.hidden),
           style: { transform: 'none', margin: '0' }
         });

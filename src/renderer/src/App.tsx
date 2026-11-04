@@ -291,49 +291,33 @@ export function App() {
         {(pagina === "crm" || pagina === "bndv" || pagina === "meta") && (
           <Embutida key={pagina} id={pagina} aoErro={setErro} />
         )}
-        <header>
-          <div>
-            <p className="eyebrow">SOUL CARS</p>
-            <h1>
-              {pagina === "estoque"
-                ? "Estoque"
-                : pagina === "financas"
-                  ? "Finanças"
-                  : pagina === "leads"
-                    ? "Leads"
-                    : "Estoque"}
-            </h1>
-            <p>
-              {pagina === "estoque"
-                ? "Veículos, sincronização e balanço da loja."
-                : pagina === "financas"
-                  ? "Contas do mês a partir da planilha financeira."
-                  : pagina === "leads"
-                    ? "Painel do CRM com o desempenho do atendimento e, em aba à parte, a memória da Soul IA."
-                    : "Ficha, produção, criativos e publicação em um só lugar."}
-            </p>
-          </div>
-          <div
-            className="actions"
-            style={
-              pagina === "financas" || pagina === "leads"
-                ? { display: "none" }
-                : undefined
-            }
-          >
+        {(pagina === "estoque" || pagina === "studio") && (
+          <div className="barra-pasta">
             <button disabled={ocupado} onClick={() => tarefa(carregar)}>
               Reler pastas
             </button>
             <button
-              title="Abre no Explorador de Arquivos a pasta ESTOQUE, com uma pasta por veículo."
+              disabled={Boolean(selecionado && !selecionado.pasta)}
+              title={
+                selecionado
+                  ? !selecionado.pasta
+                    ? "Este veículo ainda não tem pasta vinculada."
+                    : "Abre no Explorador de Arquivos a pasta deste veículo."
+                  : "Abre no Explorador de Arquivos a pasta ESTOQUE, com uma pasta por veículo."
+              }
               onClick={() => {
                 setErro("");
-                invoke<{ estoque: string }>("caminhos_app")
-                  .then((c) => openPath(c.estoque))
+                (selecionado
+                  ? Promise.resolve(selecionado.pasta!)
+                  : invoke<{ estoque: string }>("caminhos_app").then(
+                      (c) => c.estoque,
+                    )
+                )
+                  .then((pasta) => openPath(pasta))
                   .catch((e) => setErro(String(e)));
               }}
             >
-              Abrir pasta do estoque
+              {selecionado ? "Abrir pasta" : "Abrir pasta do estoque"}
             </button>
             {pagina === "estoque" && (
               <button
@@ -351,7 +335,20 @@ export function App() {
               </button>
             )}
           </div>
-        </header>
+        )}
+        {(pagina === "financas" || pagina === "leads") && (
+          <header>
+            <div>
+              <p className="eyebrow">SOUL CARS</p>
+              <h1>{pagina === "financas" ? "Finanças" : "Leads"}</h1>
+              <p>
+                {pagina === "financas"
+                  ? "Contas do mês a partir da planilha financeira."
+                  : "Painel do CRM com o desempenho do atendimento e, em aba à parte, a memória da Soul IA."}
+              </p>
+            </div>
+          </header>
+        )}
         {erro && (
           <div role="alert" className="notice error">
             {erro}

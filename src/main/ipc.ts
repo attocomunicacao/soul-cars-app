@@ -188,10 +188,9 @@ const COMANDOS: Record<string, Comando> = {
   instagram_estado: (a) => instagram.estadoInstagram(a.id),
   instagram_conta: (a) => instagram.salvarContaInstagram(a.conta),
   instagram_abrir: () => instagram.abrirInstagram(janela!, emitir),
-  instagram_publicar: (a) => instagram.publicarInstagram(a.id, emitir),
+  instagram_publicar: (a) => instagram.publicarInstagram(a.id, emitir, janela!),
+  instagram_reiniciar: (a) => instagram.reiniciarInstagram(a.id),
   instagram_cancelar: () => instagram.cancelarInstagram(),
-  instagram_confirmar: (a) =>
-    instagram.confirmarInstagram(a.id, a.etapa, a.publicado === true),
   // ---- banco do Studio ----
   // Cada operação do banco é um comando nomeado: a interface não escreve SQL.
   db_veiculos_listar: (a) => repo.listarVeiculos(banco(), a.busca),

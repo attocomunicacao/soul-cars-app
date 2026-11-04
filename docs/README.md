@@ -1,5 +1,9 @@
 # Documentação
 
+Para retomar o projeto em outro chat: [Contexto técnico atualizado](CONTEXTO-PARA-OUTRO-CHAT.md) e [inventário dos arquivos e símbolos](INVENTARIO-CODIGO.md). O guia registra diferenças entre a interface atual e descrições históricas dos manuais.
+
+A leitura completa do recorte autoral está consolidada em [Contratos e detalhes de implementação](DETALHES-IMPLEMENTACAO.md). Consulte a [cobertura da leitura e hashes dos arquivos](COBERTURA-LEITURA.md) para distinguir esta revisão de alterações posteriores e conhecer as exclusões.
+
 0. [Visão geral do app para assistentes de IA](00-visao-geral-para-ia.md) (comece por aqui)
 1. [Instalação e primeiro uso](01-primeiro-uso.md)
 2. [Arquitetura e análise da migração](02-arquitetura-e-migracao.md)
@@ -17,6 +21,12 @@
 14. [CRM: pesquisa de mercado e funcionalidades](14-crm-pesquisa-de-mercado.md)
 15. [CRM: dados e relatórios](15-crm-dados-e-relatorios.md)
 16. [Soul IA: memória do CRM e padrão de atendimento](16-soul-ia.md)
+17. [Legendas editoriais e animações do vídeo](17-legendas-editoriais.md)
+18. [SOUL Motion: motor interno de animações](18-soul-motion.md)
+19. [Tipografia Lato uniforme e glow da mesma cor](19-tipografia-e-glow.md)
+20. [Biblioteca contextual: frases, entradas, saídas e composições](20-biblioteca-contextual-de-legendas.md)
+21. [Layout proporcional e movimento contínuo das tarjas](21-layout-e-movimento-das-tarjas.md)
+22. [Logo animada no encerramento](22-logo-animada-no-encerramento.md)
 
 Planejamento do produto: [planejamento/](planejamento/02-roadmap.md).
 

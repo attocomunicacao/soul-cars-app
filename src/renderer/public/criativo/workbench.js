@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   for (const [index, fieldset] of [...document.querySelectorAll('#editor-form > fieldset')].entries()) {
     const fold = document.createElement('details');
     fold.className = 'editor-section';
-    fold.open = index === 0;
+    fold.open = true;
     const summary = document.createElement('summary');
     summary.textContent = fieldset.querySelector('legend').textContent;
     fieldset.before(fold);
@@ -28,16 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
     'Para maior nitidez, use as fotos originais. Ampliar uma foto pequena não recupera detalhes.';
   // Informação disponível junto da resolução, sem ocupar o painel.
   quality.title = guide.textContent;
-  const topExport = document.createElement('button');
-  topExport.type = 'button';
-  topExport.className = 'quick-export';
-  topExport.textContent = 'Exportar ↓';
-  topExport.onclick = () =>
-    document
-      .querySelector('.export-area')
-      .scrollIntoView({
-        behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
-        block: 'center'
-      });
-  document.querySelector('.preview-heading').append(topExport);
+  // O botão Baixar substitui o antigo "Exportar ↓" no cabeçalho da prévia.
+  const baixar = document.querySelector('#export-button');
+  baixar.classList.add('quick-export');
+  document.querySelector('.preview-heading').append(baixar);
 });

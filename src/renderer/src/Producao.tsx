@@ -238,30 +238,32 @@ export function Producao({
             </article>
           ))}
         </div>
-        <button
-          className="primary"
-          disabled={ocupado || !fotos.length}
-          onClick={() =>
-            tarefa(async () => {
-              await renomearFotos(
-                pasta!,
-                fotos.map((f) => f.nome),
-              );
-              setFotos(await invoke<Foto[]>("producao_fotos", { pasta }));
-            }, "Fotos renomeadas pela ordem do painel.")
-          }
-        >
-          Renomear pela ordem do painel
-        </button>
-        <button
-          disabled={ocupado || !pasta}
-          title="Recorta o fundo das imagens 1, 2 e 4 (as do carrossel)"
-          onClick={() =>
-            tarefa(recortarCarrossel, "Imagens 1, 2 e 4 recortadas.")
-          }
-        >
-          Recortar imagens 1, 2 e 4
-        </button>
+        <div className="actions" style={{ marginTop: 16 }}>
+          <button
+            className="primary"
+            disabled={ocupado || !fotos.length}
+            onClick={() =>
+              tarefa(async () => {
+                await renomearFotos(
+                  pasta!,
+                  fotos.map((f) => f.nome),
+                );
+                setFotos(await invoke<Foto[]>("producao_fotos", { pasta }));
+              }, "Fotos renomeadas pela ordem do painel.")
+            }
+          >
+            Renomear pela ordem do painel
+          </button>
+          <button
+            disabled={ocupado || !pasta}
+            title="Recorta o fundo das imagens 1, 2 e 4 (as do carrossel)"
+            onClick={() =>
+              tarefa(recortarCarrossel, "Imagens 1, 2 e 4 recortadas.")
+            }
+          >
+            Recortar imagens 1, 2 e 4
+          </button>
+        </div>
       </fieldset>
       <fieldset>
         <legend>3 · Vídeo e Editor Mágico</legend>

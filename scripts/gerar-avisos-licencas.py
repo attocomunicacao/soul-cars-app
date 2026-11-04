@@ -95,6 +95,7 @@ EMBUTIDOS = """| Arquivo | Licença | Texto da licença |
 |---|---|---|
 | `engine/tessdata/por.traineddata` (Tesseract, português) | Apache-2.0 | `engine/tessdata/LICENSE-tesseract.txt` |
 | `engine/video/assets/Lato-Black.ttf` (v1.104, sem modificação) | SIL Open Font License 1.1 (© 2010-2011 tyPoland Lukasz Dziedzic; nome reservado "Lato"), conforme o próprio arquivo da fonte | `engine/video/assets/Lato-OFL.txt` (acompanha a fonte no repositório e no instalador) |
+| `engine/video/assets/Lora-SemiBoldItalic.ttf` (sem modificação; origem em `Lora-ORIGEM.md`) | SIL Open Font License 1.1 (The Lora Project Authors; nome reservado "Lora") | `engine/video/assets/Lora-OFL.txt` |
 | Fontes do editor (Montserrat, Barlow Condensed, Roboto Condensed) em `src/renderer/public/criativo/assets` | SIL Open Font License 1.1 | `*-LICENSE.txt` na mesma pasta |
 | `html-to-image` (editor de criativos) | MIT | `src/renderer/public/criativo/assets/html-to-image-LICENSE.txt` |
 | `LOGO_SOUL.jpg` e `logo-soul.*` | Marca da SOUL Cars; pertence à loja | — |

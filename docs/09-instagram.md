@@ -22,9 +22,9 @@ A legenda é exatamente o bloco **1. TEXTO PRINCIPAL**. Depois da confirmação 
 
 Cada envio confirmado fica registrado por veículo e conta. Se o Reels falhar, **Retomar publicação do Reels** conserva o carrossel já publicado. A capa é obrigatória: quando a tela do Instagram não permite anexá-la, a automação interrompe antes de compartilhar o vídeo.
 
-Se o app fechar ou perder a confirmação após clicar em Compartilhar, o envio fica em **Conferir no perfil**. Abra o perfil e use **Já foi publicado** ou **Não foi publicado** conforme o resultado real. Essa verificação evita repetir uma publicação que o Instagram recebeu.
+O app só publica; não há etapa de consulta ou conferência. Se o app fechar ou perder a confirmação após clicar em Compartilhar, a etapa volta a **Pendente** e o resultado no perfil é responsabilidade de quem publica.
 
-Feche um editor/rascunho que ficou aberto na janela antes de retomar. **Interromper automação** para os próximos passos; se o envio já começou, confira o perfil. Mantenha arquivos/legendas do mesmo conjunto durante uma retomada. O histórico impede uma segunda execução completa do mesmo veículo na mesma conta.
+Feche um editor/rascunho que ficou aberto na janela antes de retomar. **Interromper automação** para os próximos passos; se o envio já começou, veja o perfil. Mantenha arquivos/legendas do mesmo conjunto durante uma retomada. Com carrossel e Reels já publicados, o botão vira **Publicar novamente** e refaz as duas etapas (útil se o post foi apagado).
 
 ## Pesquisa de tecnologias
 

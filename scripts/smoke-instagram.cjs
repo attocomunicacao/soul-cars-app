@@ -108,10 +108,9 @@ app.whenReady().then(async () => {
     assert.deepEqual(posts[1].files, ["VIDEO_RENEGADE.mp4"]);
     assert.equal(posts[1].caption, "Legenda do Reels");
     assert.equal(posts[1].cover, "jeep-renegade-2020-trafego-pago.png");
-    await assert.rejects(
-      () => modulo.publicarInstagram(id, emitir),
-      /já foram publicados/,
-    );
+    // Já publicado: uma nova execução publica de novo (o post pode ter sido apagado).
+    await modulo.publicarInstagram(id, emitir);
+    assert.equal((await wc.executeJavaScript("window.posts")).length, 4);
     // Sem capa não compartilha o Reels, e a retomada não duplica o carrossel.
     const segundo = criarVeiculo();
     await wc.executeJavaScript("window.omitirCapa=true");
@@ -120,31 +119,25 @@ app.whenReady().then(async () => {
       /não ofereceu o envio da capa/,
     );
     assert.equal(modulo.registroInstagram(segundo).carrossel, "publicado");
-    assert.equal((await wc.executeJavaScript("window.posts")).length, 3);
+    assert.equal((await wc.executeJavaScript("window.posts")).length, 5);
     await wc.executeJavaScript(
       "window.omitirCapa=false;document.querySelector('main').innerHTML=''",
     );
     await modulo.publicarInstagram(segundo, emitir);
-    assert.equal((await wc.executeJavaScript("window.posts")).length, 4);
-    // Interrupção após Share fica pendente de conferência, sem repetição automática.
+    assert.equal((await wc.executeJavaScript("window.posts")).length, 6);
+    // Interrupção após Share não exige consulta: a etapa volta a pendente.
     const terceiro = criarVeiculo();
     await wc.executeJavaScript("window.omitirConfirmacao=true");
     const publicando = modulo.publicarInstagram(terceiro, emitir);
     const timer = setInterval(async () => {
-      if ((await wc.executeJavaScript("window.posts.length")) === 5) {
+      if ((await wc.executeJavaScript("window.posts.length")) === 7) {
         clearInterval(timer);
         modulo.cancelarInstagram();
       }
     }, 200);
     await assert.rejects(() => publicando, /interrompida/);
     clearInterval(timer);
-    assert.equal(modulo.registroInstagram(terceiro).carrossel, "conferir");
-    await assert.rejects(
-      () => modulo.publicarInstagram(terceiro, emitir),
-      /sem confirmação/,
-    );
-    modulo.confirmarInstagram(terceiro, "carrossel", true);
-    assert.equal(modulo.registroInstagram(terceiro).carrossel, "publicado");
+    assert.equal(modulo.registroInstagram(terceiro).carrossel, "pendente");
     const resultado = {
       carrosselOrdem: [2, 1, 3],
       duasLegendas: true,

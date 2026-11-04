@@ -62,7 +62,7 @@ export function registroInstagram(
     "preparando",
     "publicando",
     "publicado",
-    "conferir",
+    "conferir", // legado: registros antigos viram "pendente" abaixo
   ];
   if (
     !registro ||
@@ -76,11 +76,11 @@ export function registroInstagram(
       "O histórico do Instagram está inconsistente. Confira o backup antes de publicar novamente.",
     );
   }
-  if (!trabalho) {
-    for (const etapa of ["carrossel", "reels"] as const) {
-      if (registro[etapa] === "publicando") registro[etapa] = "conferir";
-      else if (registro[etapa] === "preparando") registro[etapa] = "pendente";
-    }
+  for (const etapa of ["carrossel", "reels"] as const) {
+    const atual = registro[etapa] as string;
+    if (atual === "conferir") registro[etapa] = "pendente";
+    else if (!trabalho && (atual === "publicando" || atual === "preparando"))
+      registro[etapa] = "pendente";
   }
   return registro;
 }
@@ -183,6 +183,12 @@ export async function abrirInstagram(pai: BrowserWindow, emitir: Emitir) {
     "Entre no Instagram e confirme os avisos de login. Depois volte ao Studio e inicie a publicação.",
   );
 }
+export function reiniciarInstagram(id: number) {
+  if (trabalho) throw new Error("Aguarde ou interrompa a publicação atual.");
+  const conta = lerContaInstagram();
+  if (!conta) return;
+  fs.rmSync(caminhoRegistro(id, conta), { force: true });
+}
 export function cancelarInstagram() {
   trabalho?.abort();
 }
@@ -200,11 +206,21 @@ function verificarPagina() {
       "Faça o login e volte para a página do Instagram antes de publicar.",
     );
 }
-export async function publicarInstagram(id: number, emitir: Emitir) {
+export async function publicarInstagram(
+  id: number,
+  emitir: Emitir,
+  pai?: BrowserWindow,
+) {
   if (trabalho)
     throw new Error("Uma publicação do Instagram já está em andamento.");
+  // Abre a janela sozinho: a sessão salva costuma dispensar um novo login.
+  if (!janela || janela.isDestroyed()) {
+    if (!pai)
+      throw new Error("Abra o Instagram no app e faça o login primeiro.");
+    await abrirInstagram(pai, emitir);
+  }
   if (!janela || janela.isDestroyed())
-    throw new Error("Abra o Instagram no app e faça o login primeiro.");
+    throw new Error("A janela do Instagram foi fechada.");
   const conta = lerContaInstagram();
   if (!conta)
     throw new Error("Informe e salve a conta do Instagram na etapa Instagram.");
@@ -232,14 +248,11 @@ export async function publicarInstagram(id: number, emitir: Emitir) {
     detalhe: "",
     assinatura,
   };
-  if (registro.carrossel === "conferir" || registro.reels === "conferir")
-    throw new Error(
-      "Uma publicação anterior está sem confirmação. Confira o perfil e marque se ela foi publicada antes de retomar.",
-    );
-  if (registro.carrossel === "publicado" && registro.reels === "publicado")
-    throw new Error(
-      "O carrossel e o Reels deste veículo já foram publicados nesta conta.",
-    );
+  // Já publicado por completo: começa uma nova publicação (o post pode ter sido apagado).
+  if (registro.carrossel === "publicado" && registro.reels === "publicado") {
+    registro.carrossel = "pendente";
+    registro.reels = "pendente";
+  }
   if (registro.assinatura !== assinatura && registro.carrossel === "publicado")
     throw new Error(
       "Os arquivos ou legendas mudaram após publicar o carrossel. Restaure o conjunto original para retomar o Reels.",
@@ -270,7 +283,13 @@ export async function publicarInstagram(id: number, emitir: Emitir) {
     }
     janela.show();
     janela.focus();
-    const atual = await navegador.conta();
+    // Dá tempo para a página inicial carregar o menu com o botão Perfil.
+    let atual = await navegador.conta();
+    for (let i = 0; !atual && i < 40; i++) {
+      if (controller.signal.aborted) throw new Error("Automação interrompida.");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      atual = await navegador.conta();
+    }
     if (!atual)
       throw new Error(
         "Não identifiquei a conta conectada. Faça login e deixe a página inicial do Instagram aberta, com o botão Perfil visível.",
@@ -324,8 +343,8 @@ export async function publicarInstagram(id: number, emitir: Emitir) {
     return registro;
   } catch (erro) {
     for (const etapa of ["carrossel", "reels"] as const) {
-      if (registro[etapa] === "publicando") registro[etapa] = "conferir";
-      else if (registro[etapa] === "preparando") registro[etapa] = "pendente";
+      if (registro[etapa] === "publicando" || registro[etapa] === "preparando")
+        registro[etapa] = "pendente";
     }
     registro.detalhe = String(erro);
     gravarRegistro(registro);
@@ -334,22 +353,4 @@ export async function publicarInstagram(id: number, emitir: Emitir) {
   } finally {
     trabalho = null;
   }
-}
-export function confirmarInstagram(
-  id: number,
-  etapa: "carrossel" | "reels",
-  publicado: boolean,
-) {
-  if (trabalho) throw new Error("Aguarde ou interrompa a publicação atual.");
-  const registro = registroInstagram(id);
-  if (
-    !registro ||
-    !["carrossel", "reels"].includes(etapa) ||
-    registro[etapa] !== "conferir"
-  )
-    throw new Error("Não há publicação sem confirmação nesta etapa.");
-  registro[etapa] = publicado ? "publicado" : "pendente";
-  registro.detalhe = `${etapa}: resultado conferido manualmente no Instagram.`;
-  gravarRegistro(registro);
-  return registro;
 }

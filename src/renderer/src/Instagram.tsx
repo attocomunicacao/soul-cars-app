@@ -12,7 +12,6 @@ const tituloEstado = {
   preparando: "Preparando",
   publicando: "Enviando",
   publicado: "✓ Publicado",
-  conferir: "Conferir no perfil",
 };
 export function Instagram({
   veiculo,
@@ -97,8 +96,6 @@ export function Instagram({
   const registro = estado?.registro;
   const terminou =
     registro?.carrossel === "publicado" && registro?.reels === "publicado";
-  const conferir =
-    registro?.carrossel === "conferir" || registro?.reels === "conferir";
   const trabalhando = ocupado || !!estado?.ocupado;
   // "Pendente" só quer dizer "ainda não publicado": com os arquivos conferidos, mostra que está pronto.
   const rotulo = (etapa: "carrossel" | "reels") => {
@@ -118,9 +115,7 @@ export function Instagram({
       ? 'Resolva os itens de "Antes de publicar".'
       : !estado?.conta
         ? "Informe e salve a conta do Instagram."
-        : !estado.aberto
-          ? 'Clique em "Abrir Instagram no app" e faça login.'
-          : "";
+        : "";
   return (
     <section className="panel instagram">
       <div className="actions">
@@ -230,13 +225,7 @@ export function Instagram({
         <button
           className="primary"
           disabled={
-            trabalhando ||
-            !!plano?.pendencias.length ||
-            !plano ||
-            !estado?.aberto ||
-            !estado.conta ||
-            terminou ||
-            conferir
+            trabalhando || !!plano?.pendencias.length || !plano || !estado?.conta
           }
           onClick={() =>
             tarefa(async () => {
@@ -246,13 +235,22 @@ export function Instagram({
           }
         >
           {terminou
-            ? "✓ Instagram concluído"
+            ? "Publicar novamente carrossel e Reels"
             : registro?.carrossel === "publicado"
               ? "Retomar publicação do Reels"
               : "Publicar carrossel e depois Reels"}
         </button>
-        {!terminou && !conferir && !trabalhando && motivoBloqueio && (
+        {!trabalhando && motivoBloqueio && (
           <span role="status">{motivoBloqueio}</span>
+        )}
+        {!terminou && registro?.carrossel === "publicado" && !trabalhando && (
+          <button
+            onClick={() =>
+              tarefa(() => invoke("instagram_reiniciar", { id: veiculo.id }))
+            }
+          >
+            Recomeçar do carrossel
+          </button>
         )}
         {trabalhando && (
           <button
@@ -267,46 +265,6 @@ export function Instagram({
         )}
       </div>
       {registro?.detalhe && <p role="status">{registro.detalhe}</p>}
-      {(["carrossel", "reels"] as const)
-        .filter((e) => registro?.[e] === "conferir")
-        .map((etapa) => (
-          <div className="notice" key={etapa}>
-            <p>
-              Confira no perfil se o {etapa} foi publicado. O app aguarda esta
-              verificação para evitar duplicatas.
-            </p>
-            <div className="actions">
-              <button
-                disabled={trabalhando}
-                onClick={() =>
-                  tarefa(() =>
-                    invoke("instagram_confirmar", {
-                      id: veiculo.id,
-                      etapa,
-                      publicado: true,
-                    }),
-                  )
-                }
-              >
-                Já foi publicado
-              </button>
-              <button
-                disabled={trabalhando}
-                onClick={() =>
-                  tarefa(() =>
-                    invoke("instagram_confirmar", {
-                      id: veiculo.id,
-                      etapa,
-                      publicado: false,
-                    }),
-                  )
-                }
-              >
-                Não foi publicado
-              </button>
-            </div>
-          </div>
-        ))}
       {!!logs.length && <pre aria-live="polite">{logs.join("\n")}</pre>}
     </section>
   );

@@ -150,12 +150,9 @@ export type CartaoCampanha = {
   mensagens: BlocoCopia[];
 };
 
-/** Troca o prefixo [LEAD]/[VENDA]/… do nome da campanha por [VENDA]. */
+/** Tira o prefixo [LEAD]/[VENDA]/… do nome da campanha: o padrão é só "Marca Modelo Ano". */
 export function nomeComPrefixoVenda(nome: string): string {
-  const limpo = nome.trim();
-  return /^\[[^\]]*\]/.test(limpo)
-    ? limpo.replace(/^\[[^\]]*\]/, PREFIXO_VENDA)
-    : `${PREFIXO_VENDA} ${limpo}`;
+  return nome.trim().replace(/^\[[^\]]*\]\s*/, "");
 }
 
 /**
