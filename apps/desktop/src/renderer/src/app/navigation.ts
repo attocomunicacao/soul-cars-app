@@ -18,9 +18,18 @@ export type Pagina =
 /** Item do menu lateral: página de destino e rótulo exibido. */
 export type ItemMenu = { pagina: Pagina; rotulo: string };
 
-/** Itens do menu lateral, na ordem em que aparecem. */
+/** Itens do menu lateral, na ordem em que aparecem (desde a 1.0.3, só o Estoque). */
 export const MENU: readonly ItemMenu[] = [
   { pagina: "estoque", rotulo: "01 · Estoque" },
+];
+
+/**
+ * Páginas fora do menu desde a versão 1.0.3. O código delas continua no app
+ * (pages/leads, pages/finance, pages/embedded); para trazer uma de volta, mova o
+ * item para `MENU`. O login do BNDV não depende do item "04 · BNDV": o botão
+ * "Atualizar BNDV" abre a janela de login sozinho quando a sessão expira.
+ */
+export const MENU_OCULTO: readonly ItemMenu[] = [
   { pagina: "crm", rotulo: "02 · CRM" },
   { pagina: "leads", rotulo: "03 · Leads e Soul IA" },
   { pagina: "bndv", rotulo: "04 · BNDV" },

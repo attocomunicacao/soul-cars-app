@@ -301,6 +301,24 @@ const desenho = (
 <rect x="1010" y="470" width="45" height="18" rx="6" fill="#f6e7c4"/><rect x="175" y="478" width="40" height="16" rx="6" fill="#b3261e"/></g>
 <text x="600" y="90" text-anchor="middle" fill="#d9b07a" font-family="Segoe UI" font-size="28" letter-spacing="6">SOUL CARS · DEMO</text></svg></body></html>`;
 
+/**
+ * Captura a janela com novas tentativas: logo depois de carregar ou trocar de tela, o
+ * Chromium às vezes ainda não desenhou o quadro e devolve "UnknownVizError".
+ */
+async function capturarTela(janela, tentativas = 6) {
+  for (let i = 1; ; i++) {
+    try {
+      janela.webContents.invalidate();
+      const imagem = await janela.webContents.capturePage();
+      if (!imagem.isEmpty()) return imagem;
+      throw new Error("captura vazia");
+    } catch (erro) {
+      if (i >= tentativas) throw erro;
+      await new Promise((r) => setTimeout(r, 400 * i));
+    }
+  }
+}
+
 async function renderizarFotos() {
   const janela = new BrowserWindow({
     show: true,
@@ -322,7 +340,7 @@ async function renderizarFotos() {
           encodeURIComponent(desenho(carro[11], escala)),
       );
       await new Promise((r) => setTimeout(r, 500));
-      const png = (await janela.webContents.capturePage()).toPNG();
+      const png = (await capturarTela(janela)).toPNG();
       fs.writeFileSync(path.join(pastaFotos, `${i}-${n}.png`), png);
       process.stdout.write(".");
     }
@@ -386,7 +404,7 @@ async function salvar(w, nome) {
     for(const i of document.querySelectorAll('input'))if(i.value.includes(de))i.value=i.value.split(de).join(para);
     window.scrollTo(0,0);document.querySelector('main')?.scrollTo(0,0);})()`);
   await esperar(300);
-  const img = await w.webContents.capturePage();
+  const img = await capturarTela(w);
   fs.writeFileSync(path.join(SAIDA, nome), img.toPNG());
   console.log("print:", nome);
 }
