@@ -2,6 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [Unreleased]
+
+- Atualização do Launcher não falha mais com "ENOENT … rename": o botão fica desativado durante o download e pedidos repetidos compartilham um único download
+- O instalador do Launcher só começa depois que o Launcher fecha, para conseguir substituir os arquivos
+- Downloads mais resistentes ao antivírus (novas tentativas ao renomear o arquivo baixado)
+
 ## [1.0.1]
 
 - Notas da versão no Launcher sem asteriscos: negrito e código aparecem formatados

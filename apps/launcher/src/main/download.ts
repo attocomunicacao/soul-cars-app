@@ -20,11 +20,69 @@ export async function sha256DoArquivo(arquivo: string): Promise<string> {
   return hash.digest("hex");
 }
 
+/** Downloads em andamento por arquivo de destino (um pedido repetido reaproveita o mesmo). */
+const emAndamento = new Map<
+  string,
+  { promessa: Promise<string>; ouvintes: Set<(fracao: number) => void> }
+>();
+
 /**
  * Baixa `download.url` para `destino`, avisando a fração concluída (0 a 1).
  * Se o destino já existe com o SHA-256 certo (download anterior), não baixa de novo.
+ *
+ * Dois pedidos para o mesmo destino ao mesmo tempo (ex.: dois cliques em "Atualizar")
+ * compartilham um único download: antes, cada um gravava no mesmo `.part` e o segundo
+ * falhava com ENOENT quando o primeiro renomeava o arquivo.
  */
-export async function baixarVerificado(
+export function baixarVerificado(
+  download: Download,
+  destino: string,
+  aoProgresso: (fracao: number) => void,
+  sinal?: AbortSignal,
+): Promise<string> {
+  const chave = path.resolve(destino).toLowerCase();
+  const atual = emAndamento.get(chave);
+  if (atual) {
+    atual.ouvintes.add(aoProgresso);
+    return atual.promessa;
+  }
+  const ouvintes = new Set([aoProgresso]);
+  const promessa = baixar(
+    download,
+    destino,
+    (f) => ouvintes.forEach((o) => o(f)),
+    sinal,
+  ).finally(() => emAndamento.delete(chave));
+  emAndamento.set(chave, { promessa, ouvintes });
+  return promessa;
+}
+
+const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Renomeia o `.part` para o nome final. O antivírus do Windows costuma prender um .exe
+ * recém-gravado por alguns instantes (EBUSY/EPERM): tenta de novo antes de desistir.
+ */
+async function renomearComInsistencia(origem: string, destino: string) {
+  for (let tentativa = 1; ; tentativa++) {
+    try {
+      fs.rmSync(destino, { force: true });
+      fs.renameSync(origem, destino);
+      return;
+    } catch (erro) {
+      const codigo = (erro as NodeJS.ErrnoException).code;
+      if (
+        tentativa >= 8 ||
+        !["EBUSY", "EPERM", "EACCES"].includes(codigo ?? "")
+      )
+        throw erro;
+      await esperar(400 * tentativa);
+    }
+  }
+}
+
+/** O download de fato: grava num `.part` exclusivo, confere tamanho e SHA-256, renomeia. */
+async function baixar(
   download: Download,
   destino: string,
   aoProgresso: (fracao: number) => void,
@@ -38,7 +96,8 @@ export async function baixarVerificado(
     aoProgresso(1);
     return destino;
   }
-  const parcial = `${destino}.part`;
+  // Nome exclusivo: nem outro processo nem um resto de tentativa anterior usam o mesmo arquivo.
+  const parcial = `${destino}.${process.pid}-${Date.now()}.part`;
   const resposta = await fetch(download.url, {
     redirect: "follow",
     signal: sinal,
@@ -77,6 +136,6 @@ export async function baixarVerificado(
       "O arquivo baixado não confere com a assinatura SHA-256 do manifesto. Tente de novo.",
     );
   }
-  fs.renameSync(parcial, destino);
+  await renomearComInsistencia(parcial, destino);
   return destino;
 }

@@ -189,11 +189,32 @@ function desenhar(novo: EstadoLauncher) {
     faixa.replaceChildren(
       el("span", "", `Nova versão do Launcher: v${novo.novoLauncher.version}.`),
     );
-    const botao = el("button", "primary mono", "ATUALIZAR LAUNCHER");
+    // O estado do botão vem do progresso (não do clique): cada redesenho durante o download
+    // mantém o botão desabilitado, e um segundo clique não começa outro download.
+    const andamento = progresso.get("launcher");
+    const botao = el(
+      "button",
+      "primary mono",
+      andamento
+        ? andamento.fracao !== undefined && andamento.fracao >= 1
+          ? "INSTALANDO…"
+          : `BAIXANDO ${Math.round((andamento.fracao ?? 0) * 100)}%`
+        : "ATUALIZAR LAUNCHER",
+    );
+    botao.disabled = !!andamento;
     botao.onclick = () => {
-      botao.disabled = true;
-      botao.textContent = "BAIXANDO…";
-      void acao(() => window.launcher.atualizarLauncher());
+      progresso.set("launcher", {
+        appId: "launcher",
+        etapa: "baixando",
+        fracao: 0,
+      });
+      desenhar(novo);
+      void window.launcher.atualizarLauncher().catch((e) => {
+        // Falhou: libera o botão para tentar de novo e mostra o motivo.
+        progresso.delete("launcher");
+        mostrarErro(textoErro(e));
+        if (estado) desenhar(estado);
+      });
     };
     faixa.append(botao);
   }

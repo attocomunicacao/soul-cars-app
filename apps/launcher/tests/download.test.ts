@@ -16,9 +16,12 @@ const sha = createHash("sha256").update(conteudo).digest("hex");
 const pasta = fs.mkdtempSync(path.join(os.tmpdir(), "launcher-download-"));
 let servidor: http.Server;
 let base = "";
+/** Quantos downloads chegaram ao servidor (para provar que dois pedidos viram um). */
+let pedidos = 0;
 
 beforeAll(async () => {
   servidor = http.createServer((_req, res) => {
+    pedidos++;
     res.writeHead(200, { "content-length": conteudo.length });
     res.end(conteudo);
   });
@@ -57,6 +60,33 @@ describe("baixarVerificado", () => {
       ),
     ).rejects.toThrow(/SHA-256/);
     expect(fs.existsSync(destino)).toBe(false);
-    expect(fs.existsSync(`${destino}.part`)).toBe(false);
+    expect(fs.readdirSync(pasta).filter((n) => n.endsWith(".part"))).toEqual(
+      [],
+    );
+  });
+
+  it("dois pedidos ao mesmo tempo compartilham um download (antes: ENOENT no rename)", async () => {
+    const destino = path.join(pasta, "duplo.exe");
+    const pacote = {
+      url: `${base}/duplo.exe`,
+      sha256: sha,
+      size: conteudo.length,
+    };
+    const pedidosAntes = pedidos;
+    const progressoA: number[] = [];
+    const progressoB: number[] = [];
+    const [a, b] = await Promise.all([
+      baixarVerificado(pacote, destino, (f) => progressoA.push(f)),
+      baixarVerificado(pacote, destino, (f) => progressoB.push(f)),
+    ]);
+    expect(a).toBe(destino);
+    expect(b).toBe(destino);
+    expect(pedidos).toBe(pedidosAntes + 1);
+    expect(fs.readFileSync(destino).equals(conteudo)).toBe(true);
+    expect(progressoA.at(-1)).toBe(1);
+    expect(progressoB.at(-1)).toBe(1);
+    expect(fs.readdirSync(pasta).filter((n) => n.endsWith(".part"))).toEqual(
+      [],
+    );
   });
 });

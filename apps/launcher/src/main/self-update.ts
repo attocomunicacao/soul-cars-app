@@ -23,8 +23,25 @@ export function novoLauncher(manifesto: Manifest | null, plataforma: string) {
     : null;
 }
 
+/** Atualização em andamento: um segundo pedido espera a mesma, em vez de começar outra. */
+let atualizacao: Promise<void> | null = null;
+
 /** Baixa o instalador novo, executa em silêncio e encerra o Launcher atual. */
-export async function atualizarLauncher(
+export function atualizarLauncher(
+  manifesto: Manifest,
+  plataforma: string,
+  aoProgresso: (fracao: number) => void,
+): Promise<void> {
+  atualizacao ??= executarAtualizacao(manifesto, plataforma, aoProgresso).catch(
+    (erro) => {
+      atualizacao = null; // falhou: libera para tentar de novo
+      throw erro;
+    },
+  );
+  return atualizacao;
+}
+
+async function executarAtualizacao(
   manifesto: Manifest,
   plataforma: string,
   aoProgresso: (fracao: number) => void,
@@ -37,10 +54,22 @@ export async function atualizarLauncher(
     `soul-cars-launcher-setup-${manifesto.launcher.version}.exe`,
   );
   await baixarVerificado(download, destino, aoProgresso);
+  // O instalador só começa ~3 s depois, quando este Launcher já fechou: com o app aberto,
+  // o NSIS silencioso não consegue substituir os arquivos.
   // /S = silencioso (NSIS one-click); --force-run reabre o Launcher ao terminar.
-  spawn(destino, ["/S", "--updated", "--force-run"], {
-    detached: true,
-    stdio: "ignore",
-  }).unref();
-  setTimeout(() => app.quit(), 300);
+  spawn(
+    process.env.ComSpec ?? "cmd.exe",
+    [
+      "/d",
+      "/c",
+      `ping -n 4 127.0.0.1 >nul & start "" "${destino}" /S --updated --force-run`,
+    ],
+    {
+      detached: true,
+      stdio: "ignore",
+      windowsHide: true,
+      windowsVerbatimArguments: true,
+    },
+  ).unref();
+  app.quit();
 }
