@@ -17,6 +17,7 @@ Documentação do Soul Cars, organizada por assunto (pastas e arquivos em inglê
 | [studio-flow.md](guides/studio-flow.md) | Fluxo de produção no Studio |
 | [instagram.md](guides/instagram.md) | Instagram: conexão, automação e pesquisa |
 | [data-and-backup.md](guides/data-and-backup.md) | Onde ficam os dados e como fazer backup |
+| [smart-app-control.md](guides/smart-app-control.md) | O Windows bloqueou o Soul Cars (Smart App Control) |
 
 ## `architecture/` — como o sistema é montado
 

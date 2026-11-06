@@ -18,6 +18,7 @@ import type { AppRelease } from "../shared/manifest";
 import { versoesParaLimpar } from "../shared/manifest";
 import { pastaDaVersao, pastaDoApp, pastaDownloads } from "./config";
 import { baixarVerificado } from "./download";
+import { abrirExecutavel } from "./launch";
 import { gravarEstado, lerEstado } from "./state";
 
 /** Etapas avisadas à interface durante a instalação. */
@@ -159,7 +160,7 @@ export function versaoInstalada(appId: string): string | null {
 }
 
 /** Abre o app instalado como processo independente do Launcher. */
-export function abrirApp(release: AppRelease): void {
+export async function abrirApp(release: AppRelease): Promise<void> {
   const versao = versaoInstalada(release.id);
   if (!versao) throw new Error(`${release.name} ainda não está instalado.`);
   const pasta = pastaDaVersao(release.id, versao);
@@ -168,13 +169,8 @@ export function abrirApp(release: AppRelease): void {
     throw new Error(
       `Instalação incompleta de ${release.name}. Reinstale pelo Launcher.`,
     );
-  const filho = spawn(exe, [], {
-    cwd: path.dirname(exe),
-    detached: true,
-    stdio: "ignore",
-    windowsHide: false,
-  });
-  filho.unref();
+  // Espera o app realmente começar; se o Windows bloquear, a mensagem explica o motivo.
+  await abrirExecutavel(exe, { nomeApp: release.name });
 }
 
 /** Pasta onde o app está (versão ativa) ou a pasta geral do app. */

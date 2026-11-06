@@ -6,6 +6,10 @@
  * `window.launcher` (preload); erros aparecem na faixa vermelha do topo.
  */
 import "./styles.css";
+import {
+  AJUDA_SMART_APP_CONTROL,
+  MARCA_SMART_APP_CONTROL,
+} from "../../shared/launch-errors";
 import { linhasDasNotas, trechosDaLinha } from "../../shared/release-notes";
 import type {
   EstadoApp,
@@ -32,7 +36,29 @@ const progresso = new Map<string, Progresso>();
 function mostrarErro(mensagem: string) {
   const faixa = $("error");
   faixa.hidden = !mensagem;
-  faixa.textContent = mensagem;
+  faixa.replaceChildren(el("span", "", mensagem));
+  // Bloqueio do Smart App Control: oferece a página que explica como liberar.
+  if (mensagem.includes(MARCA_SMART_APP_CONTROL)) {
+    const ajuda = el("button", "ghost mono", "COMO LIBERAR");
+    ajuda.onclick = () =>
+      void window.launcher.abrirLink(AJUDA_SMART_APP_CONTROL);
+    faixa.append(ajuda);
+  }
+}
+
+/** Apps sendo abertos agora (o botão mostra "ABRINDO…" e fica desativado). */
+const abrindo = new Set<string>();
+
+/** Abre o app e mantém o botão ocupado até o Launcher confirmar que ele começou. */
+function abrirApp(appId: string) {
+  abrindo.add(appId);
+  if (estado) desenhar(estado);
+  void acao(() =>
+    window.launcher.abrir(appId).finally(() => {
+      abrindo.delete(appId);
+      if (estado) desenhar(estado);
+    }),
+  );
 }
 
 /** Texto do erro de uma promessa rejeitada pelo IPC (sem o prefixo técnico do Electron). */
@@ -121,9 +147,9 @@ function cartao(item: EstadoApp): HTMLElement {
     principal.onclick = () =>
       void acao(() => window.launcher.instalar(release.id));
   } else if (situacao === "atualizado") {
-    principal.textContent = "ABRIR";
-    principal.onclick = () =>
-      void acao(() => window.launcher.abrir(release.id));
+    principal.textContent = abrindo.has(release.id) ? "ABRINDO…" : "ABRIR";
+    principal.disabled = abrindo.has(release.id);
+    principal.onclick = () => abrirApp(release.id);
   } else {
     principal.textContent = "INDISPONÍVEL";
     principal.disabled = true;
@@ -131,7 +157,8 @@ function cartao(item: EstadoApp): HTMLElement {
   botoes.append(principal);
   if (situacao === "atualizacao-disponivel" && !ocupado) {
     const abrir = el("button", "ghost mono", `ABRIR v${instalada}`);
-    abrir.onclick = () => void acao(() => window.launcher.abrir(release.id));
+    abrir.disabled = abrindo.has(release.id);
+    abrir.onclick = () => abrirApp(release.id);
     botoes.append(abrir);
   }
   if (instalada) {

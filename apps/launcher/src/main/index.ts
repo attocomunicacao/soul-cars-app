@@ -38,6 +38,8 @@ import {
   pastaParaMostrar,
   versaoInstalada,
 } from "./installer";
+import { ErroAoAbrir } from "./launch";
+import { registrar } from "./log";
 import { atualizarLauncher, novoLauncher } from "./self-update";
 import { gravarEstado, lerEstado } from "./state";
 
@@ -113,6 +115,15 @@ function comando<A extends unknown[], R>(
   });
 }
 
+/** Registra no log por que um app não abriu (com os detalhes técnicos da falha). */
+function registrarFalhaAoAbrir(nome: string, erro: unknown) {
+  const detalhe =
+    erro instanceof ErroAoAbrir
+      ? `${JSON.stringify(erro.falha)} bloqueadoPeloWindows=${erro.bloqueadoPeloWindows}`
+      : String(erro);
+  registrar(`Falha ao abrir ${nome}: ${detalhe}`);
+}
+
 function registrarComandos() {
   comando(CANAIS.estado, () => estadoAtual());
   comando(CANAIS.verificar, () => verificar());
@@ -125,15 +136,28 @@ function registrarComandos() {
       avisar({ appId: release.id, etapa: "concluido" });
     } catch (erro) {
       const mensagem = erro instanceof Error ? erro.message : String(erro);
+      registrar(
+        `Falha ao instalar ${release.name} ${release.version}: ${mensagem}`,
+      );
       avisar({ appId: release.id, etapa: "erro", mensagem });
       throw erro;
     }
     return estadoAtual();
   });
-  comando(CANAIS.abrir, (appId: string) => {
-    abrirApp(releaseDe(String(appId)));
-    if (lerEstado().preferencias.fecharAoAbrir)
-      setTimeout(() => app.quit(), 800);
+  comando(CANAIS.abrir, async (appId: string) => {
+    const release = releaseDe(String(appId));
+    try {
+      await abrirApp(release);
+      registrar(`${release.name} aberto.`);
+    } catch (erro) {
+      registrarFalhaAoAbrir(release.name, erro);
+      // Erro simples: a interface recebe só a mensagem pronta para o usuário.
+      throw new Error(erro instanceof Error ? erro.message : String(erro), {
+        cause: erro,
+      });
+    }
+    // Só fecha o Launcher depois que o app abriu de fato.
+    if (lerEstado().preferencias.fecharAoAbrir) app.quit();
   });
   comando(CANAIS.abrirPasta, async (appId: string) => {
     await shell.openPath(pastaParaMostrar(String(appId)));
