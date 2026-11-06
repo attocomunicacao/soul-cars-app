@@ -129,14 +129,20 @@ export async function instalarMotor(emitir: Emitir) {
     );
   const uv = await garantirUv(emitir);
   return new Promise<void>((resolver, rejeitar) => {
-    const p = spawn(uv, ["sync", "--all-groups", "--project", pasta], {
-      windowsHide: true,
-      env: {
-        ...process.env,
-        UV_PROJECT_ENVIRONMENT: path.join(caminhos.userData(), "engine-venv"),
-        UV_CACHE_DIR: path.join(caminhos.userData(), "uv-cache"),
+    // --frozen: usa o uv.lock como está e nunca grava na pasta do motor, que é somente
+    // leitura quando o app vem da Microsoft Store (MSIX, em C:\Program Files\WindowsApps).
+    const p = spawn(
+      uv,
+      ["sync", "--frozen", "--all-groups", "--project", pasta],
+      {
+        windowsHide: true,
+        env: {
+          ...process.env,
+          UV_PROJECT_ENVIRONMENT: path.join(caminhos.userData(), "engine-venv"),
+          UV_CACHE_DIR: path.join(caminhos.userData(), "uv-cache"),
+        },
       },
-    });
+    );
     let ultima = "";
     const log = (bytes: Buffer) => {
       ultima = bytes.toString("utf8");

@@ -2,6 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [Unreleased]
+
+- Pacote para a Microsoft Store (MSIX), gerado a cada versão: assinado pela Microsoft, abre com o Smart App Control ligado
+- Instalação do motor Python não grava mais na pasta do app (necessário na versão da Store)
+- Política de privacidade publicada no site
+
 ## [1.0.4]
 
 - O Launcher confirma que o Soul Cars abriu de verdade; se não abrir, explica o motivo em vez de não fazer nada

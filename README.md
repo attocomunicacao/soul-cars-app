@@ -53,6 +53,11 @@ junta tudo num fluxo só, **carro por carro**, e deixa cada anúncio pronto para
 
 ## 03 / Instalar
 
+> **Windows 11 com Smart App Control ligado:** o pacote do GitHub ainda não tem assinatura
+> digital e pode ser bloqueado. A versão da **Microsoft Store** é assinada pela Microsoft e
+> abre normalmente (em preparação: veja [docs/guides/microsoft-store.md](docs/guides/microsoft-store.md)
+> e [docs/guides/smart-app-control.md](docs/guides/smart-app-control.md)).
+
 1. Baixe **`soul-cars-launcher-setup-<versão>.exe`** na [última release](../../releases/latest).
 2. Execute. Na primeira vez o Windows pode mostrar *"O Windows protegeu o seu PC"* (o instalador
    ainda não tem assinatura digital paga): clique em **Mais informações › Executar assim mesmo**.
