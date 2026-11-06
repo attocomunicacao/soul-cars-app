@@ -129,7 +129,7 @@ jobs:
           gh release create "v$V" "${ARQUIVOS[@]}" \
             --title "Soul Cars v$V" --notes-file release-notes.md
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: github.event_name == 'workflow_dispatch'
         with:
           name: soul-cars-${{ steps.versao.outputs.valor }}
