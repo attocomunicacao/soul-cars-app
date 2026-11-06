@@ -1,9 +1,8 @@
 # Changelog
 
-Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/).
-Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
+Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
-## [Unreleased]
+## [1.0.1]
 
 - Notas da versão no Launcher sem asteriscos: negrito e código aparecem formatados
 - O manifesto grava as notas como texto simples (também corrige o Launcher 1.0.0 já instalado)

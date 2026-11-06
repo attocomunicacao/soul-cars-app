@@ -55,11 +55,15 @@ jobs:
         shell: bash
         run: |
           # Trecho do CHANGELOG.md desta versão (entre "## [x.y.z]" e o próximo "## [").
+          # Aceita também "## \[x.y.z\]" (alguns editores escapam os colchetes ao salvar).
           awk -v v="${{ steps.versao.outputs.valor }}" '
-            $0 ~ "^## \\[" v "\\]" {on=1; next}
-            on && /^## \[/ {exit}
-            on {print}' CHANGELOG.md > release-notes.md
-          [ -s release-notes.md ] || echo "Soul Cars ${{ steps.versao.outputs.valor }}." > release-notes.md
+            { n = split($0, p, sprintf("%c", 92)); l = ""; for (i = 1; i <= n; i++) l = l p[i] }
+            substr(l, 1, 4) == "## [" { if (on) exit; if (index(l, "## [" v "]") == 1) { on = 1; next } }
+            on { print }' CHANGELOG.md > release-notes.md
+          if ! grep -q '[^[:space:]]' release-notes.md; then
+            echo "::warning::CHANGELOG.md não tem a seção ## [${{ steps.versao.outputs.valor }}]; notas padrão usadas."
+            echo "Soul Cars ${{ steps.versao.outputs.valor }}." > release-notes.md
+          fi
 
       - name: Gerar manifest.json
         shell: bash
