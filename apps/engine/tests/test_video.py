@@ -106,11 +106,14 @@ TEM_FFMPEG = bool(shutil.which("ffmpeg") and shutil.which("ffprobe"))
 
 
 def criar_video_final(destino: Path) -> None:
-    """Vídeo mínimo (2 s, 270x480) com áudio, a 20 Mbps: bem mais pesado que a versão leve."""
+    """Vídeo mínimo (2 s, 270x480) com áudio, sem perdas (qp 0): sempre mais pesado que a versão leve.
+
+    Uma taxa fixa (-b:v) não serve: com conteúdo simples, o x264 de cada versão do FFmpeg
+    gasta menos que o pedido, e o "original" podia sair menor que a versão leve."""
     subprocess.run(
         ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
          "-f", "lavfi", "-i", "testsrc2=s=270x480:r=30:d=2", "-f", "lavfi", "-i", "sine=d=2",
-         "-c:v", "libx264", "-b:v", "20M", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", str(destino)],
+         "-c:v", "libx264", "-qp", "0", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", str(destino)],
         check=True)
 
 

@@ -17,6 +17,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from documents import ocr  # noqa: E402
 
 QA = Path(__file__).resolve().parent / "fixtures" / "expected-equipment.json"
+
+
+def _tem_tesseract() -> bool:
+    """O OCR precisa do programa Tesseract instalado (o CI não tem; a máquina da loja tem)."""
+    try:
+        ocr._tesseract()
+        return True
+    except (RuntimeError, ImportError):
+        return False
+
+
+TEM_TESSERACT = _tem_tesseract()
 CHAVES = {"ocr-safety": "seguranca", "ocr-comfort": "conforto", "ocr-media": "infotenimento"}
 TITULOS = {"seguranca": "SEGURANÇA", "conforto": "CONFORTO", "infotenimento": "INFOTENIMENTO"}
 OPCIONAL = "Rodas de liga leve"
@@ -58,6 +70,7 @@ def gerar_print(esperado: dict, escala: float = 1.0) -> bytes:
 
 
 @unittest.skipUnless(QA.exists(), "resultado de referência indisponível")
+@unittest.skipUnless(TEM_TESSERACT, "Tesseract OCR não encontrado")
 class TestOcr(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

@@ -1,0 +1,17 @@
+# Fim de linha LF em todo texto, inclusive no checkout do Windows (o Prettier e o CI exigem LF).
+* text=auto eol=lf
+
+# Scripts do Windows precisam de CRLF.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.vbs text eol=crlf
+
+# Binários (nunca converter).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.ttf binary
+*.traineddata binary
+*.zip binary
+*.exe binary
