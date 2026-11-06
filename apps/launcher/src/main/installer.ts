@@ -2,6 +2,9 @@
  * Instalação, atualização e abertura dos apps do catálogo.
  *
  * Fluxo de instalar/atualizar um app:
+ *   0. se o manifesto traz um pacote só de código e há uma versão instalada com o mesmo
+ *      Electron, copia essa versão e troca só `resources` (o executável é o já liberado
+ *      pelo Windows); se algo falhar, segue para o pacote completo;
  *   1. baixa o pacote .zip da plataforma (download.ts, com SHA-256);
  *   2. extrai numa pasta temporária ao lado (`<versão>.extraindo`);
  *   3. confere se o executável existe e renomeia para `apps/<id>/<versão>`;
@@ -16,10 +19,16 @@ import fs from "node:fs";
 import path from "node:path";
 import type { AppRelease } from "../shared/manifest";
 import type { ResultadoAbertura } from "../shared/api";
-import { versoesAlternativas, versoesParaLimpar } from "../shared/manifest";
+import {
+  compararVersoes,
+  versoesAlternativas,
+  versoesParaLimpar,
+} from "../shared/manifest";
 import { pastaDaVersao, pastaDoApp, pastaDownloads } from "./config";
 import { baixarVerificado } from "./download";
 import { abrirExecutavel, ErroAoAbrir } from "./launch";
+import { registrar } from "./log";
+import { idDoRuntime } from "./runtime";
 import { gravarEstado, lerEstado } from "./state";
 
 /** Etapas avisadas à interface durante a instalação. */
@@ -80,6 +89,70 @@ function nomeExecutavel(release: AppRelease): string {
   return nome;
 }
 
+/**
+ * Pasta (raiz do Electron) de uma versão instalada que serve de base para o pacote de código:
+ * a que tem o mesmo runtime do manifesto. Prefere a última que abriu de fato (sabidamente
+ * aceita pelo Windows), depois a ativa e as demais, da mais nova para a mais antiga.
+ */
+function acharBase(release: AppRelease, runtime: string): string | null {
+  const instalacao = lerEstado().instalados[release.id];
+  if (!instalacao) return null;
+  const ordem = [
+    instalacao.ultimaQueAbriu,
+    instalacao.ativa,
+    ...[...instalacao.versoes].sort((a, b) => compararVersoes(b, a)),
+  ].filter((v): v is string => !!v && v !== release.version);
+  const exe = nomeExecutavel(release);
+  for (const versao of new Set(ordem)) {
+    const pasta = pastaDaVersao(release.id, versao);
+    if (!fs.existsSync(pasta)) continue;
+    const achado = acharExecutavel(pasta, exe);
+    if (!achado) continue;
+    const raiz = path.dirname(achado);
+    if (idDoRuntime(raiz) === runtime) return raiz;
+  }
+  return null;
+}
+
+/**
+ * Monta `destino` copiando uma versão já instalada (sem a pasta `resources`) e extraindo por
+ * cima o pacote de código. O executável copiado é o mesmo que o Windows já liberou, então a
+ * versão nova abre na hora. Devolve false se não há pacote ou versão base compatível.
+ */
+async function instalarPorPacoteDeCodigo(
+  release: AppRelease,
+  plataforma: string,
+  destino: string,
+  avisar: AvisoInstalacao,
+): Promise<boolean> {
+  const patch = release.patch;
+  const download = patch?.downloads[plataforma];
+  if (!patch || !download) return false;
+  const base = acharBase(release, patch.runtime);
+  if (!base) return false;
+  const zip = path.join(
+    pastaDownloads(),
+    `${release.id}-${release.version}-${plataforma}-codigo.zip`,
+  );
+  avisar("baixando", 0);
+  await baixarVerificado(download, zip, (f) => avisar("baixando", f));
+  avisar("verificando");
+  avisar("extraindo");
+  fs.cpSync(base, destino, {
+    recursive: true,
+    filter: (origem) =>
+      path.relative(base, origem).split(path.sep)[0] !== "resources",
+  });
+  await extrairZip(zip, destino);
+  fs.rmSync(zip, { force: true });
+  if (!fs.existsSync(path.join(destino, "resources", "app.asar")))
+    throw new Error("O pacote de código não contém resources/app.asar.");
+  registrar(
+    `${release.name} ${release.version} montado só com o código novo, sobre o executável de ${base}.`,
+  );
+  return true;
+}
+
 /** Baixa e instala a versão do manifesto; devolve a pasta instalada. */
 export async function instalarApp(
   release: AppRelease,
@@ -96,24 +169,41 @@ export async function instalarApp(
   emAndamento.add(release.id);
   try {
     const executavel = nomeExecutavel(release);
-    const zip = path.join(
-      pastaDownloads(),
-      `${release.id}-${release.version}-${plataforma}.zip`,
-    );
-    avisar("baixando", 0);
-    await baixarVerificado(download, zip, (f) => avisar("baixando", f));
-    avisar("verificando");
-
     const final = pastaDaVersao(release.id, release.version);
     const temporaria = `${final}.extraindo`;
     fs.rmSync(temporaria, { recursive: true, force: true });
-    avisar("extraindo");
-    await extrairZip(zip, temporaria);
+
+    // Preferência: pacote só de código sobre um executável já liberado pelo Windows.
+    let pronta = false;
+    try {
+      pronta = await instalarPorPacoteDeCodigo(
+        release,
+        plataforma,
+        temporaria,
+        avisar,
+      );
+    } catch (erro) {
+      registrar(
+        `Pacote de código de ${release.version} falhou (${String(erro)}); usando o pacote completo.`,
+      );
+      fs.rmSync(temporaria, { recursive: true, force: true });
+    }
+    if (!pronta) {
+      const zip = path.join(
+        pastaDownloads(),
+        `${release.id}-${release.version}-${plataforma}.zip`,
+      );
+      avisar("baixando", 0);
+      await baixarVerificado(download, zip, (f) => avisar("baixando", f));
+      avisar("verificando");
+      avisar("extraindo");
+      await extrairZip(zip, temporaria);
+      fs.rmSync(zip, { force: true });
+    }
     if (!acharExecutavel(temporaria, executavel))
       throw new Error(`O pacote baixado não contém ${executavel}.`);
     fs.rmSync(final, { recursive: true, force: true });
     fs.renameSync(temporaria, final);
-    fs.rmSync(zip, { force: true });
 
     // Marca como ativa e limpa versões antigas (se alguma estiver aberta, fica para depois).
     const estado = gravarEstado((e) => {

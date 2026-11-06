@@ -1,6 +1,6 @@
 {
   "name": "soul-cars-launcher",
-  "version": "1.0.0",
+  "version": "1.0.6",
   "private": true,
   "description": "Soul Cars Launcher — instala, atualiza e abre os apps Soul Cars a partir das GitHub Releases",
   "author": "Atto Comunicação",

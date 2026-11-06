@@ -50,6 +50,21 @@ describe("lerManifesto", () => {
     expect(m.launcher.version).toBe("1.0.0");
   });
 
+  it("lê o pacote de código opcional e valida o id do runtime", () => {
+    const patch = {
+      runtime: "b".repeat(64),
+      downloads: {
+        "win32-x64": { url: "https://example.com/p.zip", sha256: SHA, size: 5 },
+      },
+    };
+    const m = manifesto();
+    (m.apps[0] as Record<string, unknown>).patch = patch;
+    expect(lerManifesto(m).apps[0].patch?.runtime).toBe("b".repeat(64));
+    expect(lerManifesto(manifesto()).apps[0].patch).toBeUndefined();
+    (m.apps[0] as Record<string, unknown>).patch = { ...patch, runtime: "x" };
+    expect(() => lerManifesto(m)).toThrow(/patch.runtime/);
+  });
+
   it("recusa download sem https", () => {
     const m = manifesto();
     (m.apps[0].downloads["win32-x64"] as { url: string }).url =

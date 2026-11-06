@@ -36,6 +36,12 @@ export type AppRelease = {
   executable: Record<string, string>;
   /** Pacotes por plataforma (ex.: "win32-x64"). */
   downloads: Record<string, Download>;
+  /**
+   * Pacote só de código (a pasta `resources` do app), opcional. Serve para atualizar sem trocar
+   * o executável: o Launcher copia uma versão já instalada cujo runtime (Electron) tem o id
+   * `runtime` e só troca a pasta `resources`. Sem versão compatível, usa o pacote completo.
+   */
+  patch?: { runtime: string; downloads: Record<string, Download> };
 };
 
 /** Versão mais recente do próprio Launcher. */
@@ -150,6 +156,20 @@ export function lerManifesto(
       );
       executable[so] = nome;
     }
+    let patch: AppRelease["patch"];
+    if (a.patch) {
+      const p = a.patch as Record<string, unknown>;
+      const runtime = texto(p.runtime, `apps[${i}].patch.runtime`, 64);
+      exigir(SHA256.test(runtime), `apps[${i}].patch.runtime`);
+      patch = {
+        runtime,
+        downloads: lerDownloads(
+          p.downloads,
+          `apps[${i}].patch.downloads`,
+          opcoes,
+        ),
+      };
+    }
     return {
       id,
       name: texto(a.name, `apps[${i}].name`, 80),
@@ -159,6 +179,7 @@ export function lerManifesto(
       notes: texto(a.notes ?? "", `apps[${i}].notes`),
       executable,
       downloads: lerDownloads(a.downloads, `apps[${i}].downloads`, opcoes),
+      ...(patch ? { patch } : {}),
     } satisfies AppRelease;
   });
   return {

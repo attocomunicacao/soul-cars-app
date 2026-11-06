@@ -12,6 +12,13 @@
  *     --launcher-exe apps/launcher/dist/soul-cars-launcher-setup-1.0.0.exe \
  *     --base-url https://github.com/<dono>/<repo>/releases/download/v1.0.0/ \
  *     [--notes CHANGELOG-trecho.md] [--out dist/manifest.json]
+ *     [--patch-zip <zip só de código> --runtime <id do Electron>]
+ *     [--previous-manifest <manifest.json anterior> --launcher-version <versão>]
+ *
+ * Com --previous-manifest e --launcher-version iguais à versão do Launcher no manifesto
+ * anterior, o bloco do Launcher é copiado dele: o Launcher não mudou, então não é oferecido
+ * instalador novo (e o Windows não precisa conhecer um executável novo). Nesse caso
+ * --launcher-exe é dispensável.
  */
 import { createHash } from "node:crypto";
 import fs from "node:fs";
@@ -23,6 +30,10 @@ const { values: a } = parseArgs({
     version: { type: "string" },
     "app-zip": { type: "string" },
     "launcher-exe": { type: "string" },
+    "patch-zip": { type: "string" },
+    runtime: { type: "string" },
+    "previous-manifest": { type: "string" },
+    "launcher-version": { type: "string" },
     "base-url": { type: "string" },
     notes: { type: "string" },
     out: { type: "string", default: "manifest.json" },
@@ -69,16 +80,28 @@ const notas =
     ? notasSemMarcacao(fs.readFileSync(a.notes, "utf8").trim())
     : `Soul Cars ${versao}.`;
 
-const manifesto = {
-  schemaVersion: 1,
-  generatedAt: new Date().toISOString(),
-  launcher: {
-    version: versao,
+/** Bloco do Launcher: copiado do manifesto anterior quando o Launcher não mudou. */
+function blocoLauncher() {
+  if (a["previous-manifest"] && a["launcher-version"]) {
+    const anterior = JSON.parse(
+      fs.readFileSync(a["previous-manifest"], "utf8"),
+    );
+    if (anterior.launcher?.version === a["launcher-version"])
+      return anterior.launcher;
+  }
+  return {
+    version: a["launcher-version"] ?? versao,
     notes: notas,
     downloads: a["launcher-exe"]
       ? { "win32-x64": pacote(a["launcher-exe"]) }
       : {},
-  },
+  };
+}
+
+const manifesto = {
+  schemaVersion: 1,
+  generatedAt: new Date().toISOString(),
+  launcher: blocoLauncher(),
   apps: [
     {
       id: "soul-cars",
@@ -90,6 +113,14 @@ const manifesto = {
       notes: notas,
       executable: { win32: "SoulCars.exe" },
       downloads: { "win32-x64": pacote(exigir(a["app-zip"], "app-zip")) },
+      ...(a["patch-zip"]
+        ? {
+            patch: {
+              runtime: exigir(a.runtime, "runtime"),
+              downloads: { "win32-x64": pacote(a["patch-zip"]) },
+            },
+          }
+        : {}),
     },
   ],
 };

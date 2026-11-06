@@ -29,6 +29,25 @@ git tag v1.1.0 && git push origin v1.1.0
   Launcher lê https://github.com/<dono>/<repo>/releases/latest/download/manifest.json
 ```
 
+## Atualização sem esperar o Windows (pacote de código)
+
+O Smart App Control só abre executáveis que a Microsoft já conhece, e um `.exe` novo leva horas
+para ser liberado. Por isso cada release publica, além do zip completo, um **pacote só de código**
+(`soul-cars-desktop-<versão>-patch.zip`, a pasta `resources` do app, poucos MB) e o manifesto
+informa o `patch.runtime`: o SHA-256 dos arquivos do Electron (`scripts/release/runtime-id.mjs`,
+mesmo algoritmo de `apps/launcher/src/main/runtime.ts`).
+
+Ao atualizar, o Launcher procura uma versão instalada com o mesmo runtime (preferindo a última
+que abriu), copia essa pasta sem `resources` e extrai o pacote de código por cima. O executável é
+o mesmo que o Windows já liberou, então a versão nova abre na hora. Sem base compatível (primeira
+instalação, Electron novo) ou se algo falhar, usa o zip completo e a espera do Windows volta a
+valer. Atualizar o Electron (`electron` em `apps/desktop/package.json`) é, portanto, a única
+mudança que reintroduz a espera.
+
+O Launcher tem versão própria em `apps/launcher/package.json` e o workflow só empacota um
+instalador novo quando ela muda; nas demais releases o bloco `launcher` do manifesto é copiado do
+manifesto anterior. Mude essa versão apenas quando o código do Launcher mudar.
+
 ## Fluxo no computador da loja
 
 1. O Launcher abre e (se a preferência estiver ligada) verifica o catálogo.

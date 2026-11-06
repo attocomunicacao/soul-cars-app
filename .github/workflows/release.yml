@@ -5,7 +5,9 @@ name: Release
 #
 # Gera e anexa à GitHub Release:
 #   - soul-cars-desktop-<versão>-win-x64.zip   (app, baixado e instalado pelo Launcher)
-#   - soul-cars-launcher-setup-<versão>.exe    (instalador do Launcher, para a equipe)
+#   - soul-cars-desktop-<versão>-patch.zip     (só a pasta resources: atualização sem trocar o .exe)
+#   - soul-cars-launcher-setup-<versão>.exe    (instalador do Launcher; só quando a versão em
+#                                               apps/launcher/package.json mudou)
 #   - manifest.json                             (catálogo lido pelo Launcher: versões + SHA-256)
 #
 # O Launcher sempre lê .../releases/latest/download/manifest.json, então a release
@@ -41,15 +43,42 @@ jobs:
           echo "valor=$V" >> "$GITHUB_OUTPUT"
 
       - run: npm ci
-      - name: Aplicar a versão aos apps
+      # O app leva a versão da tag. O Launcher tem versão própria (apps/launcher/package.json):
+      # só muda quando o Launcher muda. Assim as releases comuns não oferecem instalador novo do
+      # Launcher (um .exe novo, que o Windows precisaria conhecer de novo antes de abrir).
+      - name: Aplicar a versão ao app
+        run: npm version ${{ steps.versao.outputs.valor }} --no-git-tag-version --allow-same-version -w apps/desktop
+
+      - name: Decidir se o Launcher precisa ser empacotado
+        id: launcher
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          npm version ${{ steps.versao.outputs.valor }} --no-git-tag-version --allow-same-version -w apps/desktop
-          npm version ${{ steps.versao.outputs.valor }} --no-git-tag-version --allow-same-version -w apps/launcher
+          LV=$(node -p "require('./apps/launcher/package.json').version")
+          echo "versao=$LV" >> "$GITHUB_OUTPUT"
+          PREV=""
+          if gh release download --pattern manifest.json --output manifest-anterior.json --clobber 2>/dev/null; then
+            PREV=$(node -p "require('./manifest-anterior.json').launcher.version")
+            echo "anterior=manifest-anterior.json" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "$PREV" = "$LV" ]; then echo "empacotar=nao" >> "$GITHUB_OUTPUT"; else echo "empacotar=sim" >> "$GITHUB_OUTPUT"; fi
+          echo "Launcher $LV (publicado: ${PREV:-nenhum}) → empacotar: $(grep empacotar "$GITHUB_OUTPUT" | cut -d= -f2)"
 
       - run: npm run typecheck
       - run: npm test
       - run: npm run package:desktop
-      - run: npm run package:launcher
+      - name: Pacote só de código do app
+        id: patch
+        shell: bash
+        run: |
+          V="${{ steps.versao.outputs.valor }}"
+          OUT=$(node scripts/release/create-patch.mjs --unpacked apps/desktop/dist/win-unpacked --out "apps/desktop/dist/soul-cars-desktop-$V-patch.zip")
+          echo "$OUT"
+          echo "runtime=$(echo "$OUT" | grep '^runtime=' | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+      - name: Empacotar o Launcher
+        if: steps.launcher.outputs.empacotar == 'sim'
+        run: npm run package:launcher
 
       - name: Notas da versão
         shell: bash
@@ -69,13 +98,21 @@ jobs:
         shell: bash
         run: |
           V="${{ steps.versao.outputs.valor }}"
-          node scripts/release/create-manifest.mjs \
-            --version "$V" \
-            --app-zip "apps/desktop/dist/soul-cars-desktop-$V-win-x64.zip" \
-            --launcher-exe "apps/launcher/dist/soul-cars-launcher-setup-$V.exe" \
-            --base-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v$V/" \
-            --notes release-notes.md \
-            --out manifest.json
+          LV="${{ steps.launcher.outputs.versao }}"
+          ARGS=(--version "$V"
+            --app-zip "apps/desktop/dist/soul-cars-desktop-$V-win-x64.zip"
+            --patch-zip "apps/desktop/dist/soul-cars-desktop-$V-patch.zip"
+            --runtime "${{ steps.patch.outputs.runtime }}"
+            --launcher-version "$LV"
+            --base-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v$V/"
+            --notes release-notes.md
+            --out manifest.json)
+          if [ "${{ steps.launcher.outputs.empacotar }}" = "sim" ]; then
+            ARGS+=(--launcher-exe "apps/launcher/dist/soul-cars-launcher-setup-$LV.exe")
+          else
+            ARGS+=(--previous-manifest "${{ steps.launcher.outputs.anterior }}")
+          fi
+          node scripts/release/create-manifest.mjs "${ARGS[@]}"
 
       - name: Publicar a Release
         if: github.ref_type == 'tag'
@@ -84,10 +121,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           V="${{ steps.versao.outputs.valor }}"
-          gh release create "v$V" \
-            "apps/desktop/dist/soul-cars-desktop-$V-win-x64.zip" \
-            "apps/launcher/dist/soul-cars-launcher-setup-$V.exe" \
-            manifest.json \
+          LV="${{ steps.launcher.outputs.versao }}"
+          ARQUIVOS=("apps/desktop/dist/soul-cars-desktop-$V-win-x64.zip" "apps/desktop/dist/soul-cars-desktop-$V-patch.zip" manifest.json)
+          if [ "${{ steps.launcher.outputs.empacotar }}" = "sim" ]; then
+            ARQUIVOS+=("apps/launcher/dist/soul-cars-launcher-setup-$LV.exe")
+          fi
+          gh release create "v$V" "${ARQUIVOS[@]}" \
             --title "Soul Cars v$V" --notes-file release-notes.md
 
       - uses: actions/upload-artifact@v4
