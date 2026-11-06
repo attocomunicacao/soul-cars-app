@@ -15,7 +15,12 @@ import type { Manifest } from "../shared/manifest";
 import { arquivoEstado } from "./config";
 
 /** Versões de um app no disco. */
-export type Instalacao = { ativa: string; versoes: string[] };
+export type Instalacao = {
+  ativa: string;
+  versoes: string[];
+  /** Última versão que abriu de fato (reserva quando o Windows bloqueia uma nova). */
+  ultimaQueAbriu?: string;
+};
 
 export type Estado = {
   instalados: Record<string, Instalacao>;

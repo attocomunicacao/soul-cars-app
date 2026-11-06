@@ -45,12 +45,19 @@ export type Progresso = {
   mensagem?: string;
 };
 
+/** Resultado de abrir um app: qual versão abriu e, se for o caso, qual o Windows bloqueou. */
+export type ResultadoAbertura = {
+  versaoAberta: string;
+  /** Versão ativa que o Smart App Control bloqueou (abriu-se a anterior no lugar). */
+  versaoBloqueada?: string;
+};
+
 /** Métodos expostos em `window.launcher` pelo preload. */
 export type LauncherApi = {
   estado: () => Promise<EstadoLauncher>;
   verificar: () => Promise<EstadoLauncher>;
   instalar: (appId: string) => Promise<EstadoLauncher>;
-  abrir: (appId: string) => Promise<void>;
+  abrir: (appId: string) => Promise<ResultadoAbertura>;
   abrirPasta: (appId: string) => Promise<void>;
   atualizarLauncher: () => Promise<void>;
   salvarPreferencias: (p: Partial<Preferencias>) => Promise<EstadoLauncher>;

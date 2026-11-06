@@ -213,16 +213,39 @@ export function situacaoDoApp(
   return "atualizado";
 }
 
-/** Versões a apagar depois de instalar: mantém a ativa e a anterior (para voltar atrás). */
+/**
+ * Versões a apagar depois de instalar: mantém a ativa, a anterior (para voltar atrás) e
+ * a última que abriu de fato. Esta é a reserva quando o Windows (Smart App Control) ainda
+ * bloqueia uma versão nova: ela nunca é apagada, mesmo após várias atualizações seguidas.
+ */
 export function versoesParaLimpar(
   instaladas: string[],
   ativa: string,
   manter = 2,
+  ultimaQueAbriu?: string,
 ): string[] {
   const ordenadas = [...instaladas].sort((a, b) => compararVersoes(b, a));
   const preservar = new Set([
     ativa,
     ...ordenadas.filter((v) => v !== ativa).slice(0, manter - 1),
   ]);
+  if (ultimaQueAbriu) preservar.add(ultimaQueAbriu);
   return ordenadas.filter((v) => !preservar.has(v));
+}
+
+/**
+ * Versões para tentar quando a ativa é bloqueada pelo Windows, em ordem: primeiro a última
+ * que abriu de fato; depois as demais instaladas, da mais nova para a mais antiga.
+ */
+export function versoesAlternativas(
+  instaladas: string[],
+  ativa: string,
+  ultimaQueAbriu?: string,
+): string[] {
+  const outras = [...new Set(instaladas)]
+    .filter((v) => v !== ativa)
+    .sort((a, b) => compararVersoes(b, a));
+  if (ultimaQueAbriu && outras.includes(ultimaQueAbriu))
+    return [ultimaQueAbriu, ...outras.filter((v) => v !== ultimaQueAbriu)];
+  return outras;
 }

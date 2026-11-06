@@ -51,36 +51,6 @@ jobs:
       - run: npm run package:desktop
       - run: npm run package:launcher
 
-      # Pacote MSIX para a Microsoft Store (a Microsoft assina na publicação, de graça).
-      # A identidade vem do Partner Center: Produto › Gerenciamento de produto › Identidade do
-      # produto. Cadastre em Settings › Secrets and variables › Actions › Variables:
-      #   STORE_IDENTITY_NAME (Package/Identity/Name), STORE_PUBLISHER (Package/Identity/Publisher)
-      #   e STORE_PUBLISHER_DISPLAY_NAME (Package/Properties/PublisherDisplayName).
-      - name: Pacote da Microsoft Store (MSIX)
-        shell: bash
-        env:
-          STORE_IDENTITY_NAME: ${{ vars.STORE_IDENTITY_NAME }}
-          STORE_PUBLISHER: ${{ vars.STORE_PUBLISHER }}
-          STORE_PUBLISHER_DISPLAY_NAME: ${{ vars.STORE_PUBLISHER_DISPLAY_NAME }}
-        run: |
-          ARGS=()
-          [ -n "$STORE_IDENTITY_NAME" ] && ARGS+=("-c.appx.identityName=$STORE_IDENTITY_NAME")
-          [ -n "$STORE_PUBLISHER" ] && ARGS+=("-c.appx.publisher=$STORE_PUBLISHER")
-          [ -n "$STORE_PUBLISHER_DISPLAY_NAME" ] && ARGS+=("-c.appx.publisherDisplayName=$STORE_PUBLISHER_DISPLAY_NAME")
-          if [ -z "$STORE_PUBLISHER" ]; then
-            echo "::warning::Variáveis STORE_* não cadastradas: o MSIX sai com identidade provisória e não pode ser enviado à Store."
-          fi
-          cd apps/desktop
-          npx electron-builder --win appx --x64 --publish never "${ARGS[@]}"
-
-      - name: Guardar o MSIX para enviar à Store
-        uses: actions/upload-artifact@v4
-        with:
-          name: soul-cars-store-${{ steps.versao.outputs.valor }}
-          path: apps/desktop/dist/*.appx
-          if-no-files-found: error
-          retention-days: 90
-
       - name: Notas da versão
         shell: bash
         run: |

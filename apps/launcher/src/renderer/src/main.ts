@@ -52,13 +52,30 @@ const abrindo = new Set<string>();
 /** Abre o app e mantém o botão ocupado até o Launcher confirmar que ele começou. */
 function abrirApp(appId: string) {
   abrindo.add(appId);
+  mostrarAviso("");
   if (estado) desenhar(estado);
-  void acao(() =>
-    window.launcher.abrir(appId).finally(() => {
+  void acao(async () => {
+    try {
+      const r = await window.launcher.abrir(appId);
+      // O Windows bloqueou a versão nova: abrimos a anterior e explicamos (não é erro).
+      if (r.versaoBloqueada)
+        mostrarAviso(
+          `O Windows ainda está verificando a versão ${r.versaoBloqueada} (Smart App Control). ` +
+            `Abrimos a versão ${r.versaoAberta}, que já foi liberada. A nova passa a abrir sozinha ` +
+            "quando o Windows terminar, normalmente em algumas horas.",
+        );
+    } finally {
       abrindo.delete(appId);
       if (estado) desenhar(estado);
-    }),
-  );
+    }
+  });
+}
+
+/** Mostra um aviso informativo na faixa dourada (vazio esconde). */
+function mostrarAviso(mensagem: string) {
+  const faixa = $("notice");
+  faixa.hidden = !mensagem;
+  faixa.replaceChildren(el("span", "", mensagem));
 }
 
 /** Texto do erro de uma promessa rejeitada pelo IPC (sem o prefixo técnico do Electron). */

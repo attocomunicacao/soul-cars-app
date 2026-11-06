@@ -4,8 +4,9 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões
 
 ## [Unreleased]
 
-- Pacote para a Microsoft Store (MSIX), gerado a cada versão: assinado pela Microsoft, abre com o Smart App Control ligado
-- Instalação do motor Python não grava mais na pasta do app (necessário na versão da Store)
+- Quando o Windows (Smart App Control) ainda bloqueia a versão nova, o Launcher abre a versão anterior que já funcionava e avisa
+- O Launcher guarda sempre a última versão que abriu, para ter essa reserva mesmo depois de várias atualizações
+- Instalação do motor Python não grava mais na pasta do app (usa o uv.lock como está)
 - Política de privacidade publicada no site
 
 ## [1.0.4]

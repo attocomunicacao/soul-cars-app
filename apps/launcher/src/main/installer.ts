@@ -15,10 +15,11 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import type { AppRelease } from "../shared/manifest";
-import { versoesParaLimpar } from "../shared/manifest";
+import type { ResultadoAbertura } from "../shared/api";
+import { versoesAlternativas, versoesParaLimpar } from "../shared/manifest";
 import { pastaDaVersao, pastaDoApp, pastaDownloads } from "./config";
 import { baixarVerificado } from "./download";
-import { abrirExecutavel } from "./launch";
+import { abrirExecutavel, ErroAoAbrir } from "./launch";
 import { gravarEstado, lerEstado } from "./state";
 
 /** Etapas avisadas à interface durante a instalação. */
@@ -121,11 +122,14 @@ export async function instalarApp(
         versoes: [],
       };
       const versoes = [...new Set([...atual.versoes, release.version])];
-      e.instalados[release.id] = { ativa: release.version, versoes };
+      // Mantém a "última que abriu": é a reserva se o Windows bloquear a versão nova.
+      e.instalados[release.id] = { ...atual, ativa: release.version, versoes };
     });
     const sobras = versoesParaLimpar(
       estado.instalados[release.id].versoes,
       release.version,
+      2,
+      estado.instalados[release.id].ultimaQueAbriu,
     );
     const apagadas = sobras.filter((v) => {
       try {
@@ -159,18 +163,70 @@ export function versaoInstalada(appId: string): string | null {
     : null;
 }
 
-/** Abre o app instalado como processo independente do Launcher. */
-export async function abrirApp(release: AppRelease): Promise<void> {
+/** Executável de uma versão instalada (ou null se a pasta estiver incompleta). */
+function executavelDaVersao(
+  release: AppRelease,
+  versao: string,
+): string | null {
+  const pasta = pastaDaVersao(release.id, versao);
+  return fs.existsSync(pasta)
+    ? acharExecutavel(pasta, nomeExecutavel(release))
+    : null;
+}
+
+/** Guarda a versão que abriu de fato (reserva para quando o Windows bloquear uma nova). */
+function registrarQueAbriu(appId: string, versao: string) {
+  gravarEstado((e) => {
+    const atual = e.instalados[appId];
+    if (atual) atual.ultimaQueAbriu = versao;
+  });
+}
+
+/**
+ * Abre o app instalado como processo independente do Launcher.
+ *
+ * Se o Windows (Smart App Control) bloquear a versão ativa — o que acontece com cada versão
+ * nova até a Microsoft conhecer o arquivo —, abre a versão anterior que já funcionou e
+ * devolve qual foi bloqueada, para a interface avisar. Nada é desativado no Windows: a
+ * versão anterior simplesmente já é aceita por ele.
+ */
+export async function abrirApp(
+  release: AppRelease,
+): Promise<ResultadoAbertura> {
   const versao = versaoInstalada(release.id);
   if (!versao) throw new Error(`${release.name} ainda não está instalado.`);
-  const pasta = pastaDaVersao(release.id, versao);
-  const exe = acharExecutavel(pasta, nomeExecutavel(release));
+  const exe = executavelDaVersao(release, versao);
   if (!exe)
     throw new Error(
       `Instalação incompleta de ${release.name}. Reinstale pelo Launcher.`,
     );
-  // Espera o app realmente começar; se o Windows bloquear, a mensagem explica o motivo.
-  await abrirExecutavel(exe, { nomeApp: release.name });
+  try {
+    await abrirExecutavel(exe, { nomeApp: release.name });
+    registrarQueAbriu(release.id, versao);
+    return { versaoAberta: versao };
+  } catch (erro) {
+    if (!(erro instanceof ErroAoAbrir) || !erro.bloqueadoPeloWindows)
+      throw erro;
+    const instalacao = lerEstado().instalados[release.id];
+    const alternativas = versoesAlternativas(
+      instalacao?.versoes ?? [],
+      versao,
+      instalacao?.ultimaQueAbriu,
+    );
+    for (const anterior of alternativas) {
+      const exeAnterior = executavelDaVersao(release, anterior);
+      if (!exeAnterior) continue;
+      try {
+        await abrirExecutavel(exeAnterior, { nomeApp: release.name });
+        registrarQueAbriu(release.id, anterior);
+        return { versaoAberta: anterior, versaoBloqueada: versao };
+      } catch (outro) {
+        // Também bloqueada (ou falhou): tenta a próxima; sem alternativas, vale o erro original.
+        if (!(outro instanceof ErroAoAbrir)) throw outro;
+      }
+    }
+    throw erro;
+  }
 }
 
 /** Pasta onde o app está (versão ativa) ou a pasta geral do app. */

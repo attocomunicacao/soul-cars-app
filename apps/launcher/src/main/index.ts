@@ -146,9 +146,14 @@ function registrarComandos() {
   });
   comando(CANAIS.abrir, async (appId: string) => {
     const release = releaseDe(String(appId));
+    let resultado;
     try {
-      await abrirApp(release);
-      registrar(`${release.name} aberto.`);
+      resultado = await abrirApp(release);
+      registrar(
+        resultado.versaoBloqueada
+          ? `${release.name} ${resultado.versaoBloqueada} bloqueado pelo Windows; aberta a ${resultado.versaoAberta}.`
+          : `${release.name} ${resultado.versaoAberta} aberto.`,
+      );
     } catch (erro) {
       registrarFalhaAoAbrir(release.name, erro);
       // Erro simples: a interface recebe só a mensagem pronta para o usuário.
@@ -156,8 +161,11 @@ function registrarComandos() {
         cause: erro,
       });
     }
-    // Só fecha o Launcher depois que o app abriu de fato.
-    if (lerEstado().preferencias.fecharAoAbrir) app.quit();
+    // Só fecha o Launcher depois que o app abriu de fato, e fica aberto quando precisou
+    // usar a versão anterior (para o aviso aparecer).
+    if (lerEstado().preferencias.fecharAoAbrir && !resultado.versaoBloqueada)
+      app.quit();
+    return resultado;
   });
   comando(CANAIS.abrirPasta, async (appId: string) => {
     await shell.openPath(pastaParaMostrar(String(appId)));

@@ -129,8 +129,8 @@ export async function instalarMotor(emitir: Emitir) {
     );
   const uv = await garantirUv(emitir);
   return new Promise<void>((resolver, rejeitar) => {
-    // --frozen: usa o uv.lock como está e nunca grava na pasta do motor, que é somente
-    // leitura quando o app vem da Microsoft Store (MSIX, em C:\Program Files\WindowsApps).
+    // --frozen: usa o uv.lock como está e nunca grava na pasta do motor (que fica dentro
+    // da instalação do app e não deve ser alterada; o ambiente vai para engine-venv).
     const p = spawn(
       uv,
       ["sync", "--frozen", "--all-groups", "--project", pasta],

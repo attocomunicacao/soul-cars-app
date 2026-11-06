@@ -16,8 +16,7 @@
     "smoke": "electron scripts/smoke.cjs",
     "smoke:instagram": "node scripts/prepare-instagram-smoke.cjs && electron scripts/instagram-smoke.cjs",
     "screenshots": "electron scripts/capture-screenshots.cjs",
-    "package": "electron-vite build && electron-builder --win --publish never",
-    "package:store": "electron-vite build && electron-builder --win appx --x64 --publish never"
+    "package": "electron-vite build && electron-builder --win --publish never"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -52,11 +51,7 @@
     "extraResources": [
       {
         "from": "resources",
-        "to": ".",
-        "filter": [
-          "**/*",
-          "!appx/**"
-        ]
+        "to": "."
       },
       {
         "to": "engine",
@@ -85,20 +80,6 @@
         }
       ],
       "icon": "resources/icon.ico"
-    },
-    "appx": {
-      "applicationId": "SoulCars",
-      "identityName": "AttoComunicacao.SoulCars",
-      "publisher": "CN=00000000-0000-0000-0000-000000000000",
-      "publisherDisplayName": "Atto Comunicação",
-      "displayName": "Soul Cars",
-      "backgroundColor": "#191919",
-      "languages": [
-        "pt-BR"
-      ],
-      "showNameOnTiles": false,
-      "minVersion": "10.0.17763.0",
-      "artifactName": "soul-cars-store-${version}-${arch}.${ext}"
     }
   }
 }

@@ -16,6 +16,21 @@ Windows atribui ao arquivo naquele momento, ele pode ser bloqueado. O bloqueio p
 num dia e não no outro, e é diferente do aviso azul "O Windows protegeu o seu PC" (SmartScreen),
 que tem o botão **Executar assim mesmo**: o Smart App Control **não tem** essa opção.
 
+## O que o Launcher faz sozinho
+
+Cada versão nova é um arquivo que a Microsoft ainda não conhece, então costuma ser bloqueada
+nas primeiras horas e liberada depois. Por isso o Launcher:
+
+1. **Guarda a última versão que abriu** e nunca a apaga ao atualizar.
+2. **Abre essa versão anterior** quando o Windows bloqueia a nova, e mostra o aviso
+   *"O Windows ainda está verificando a versão X… Abrimos a versão Y"*.
+3. Na próxima vez que você clicar em **Abrir**, tenta de novo a versão nova; quando o Windows
+   liberar, ela passa a abrir normalmente.
+
+Nada é desativado no Windows: a versão anterior simplesmente já é aceita por ele. A mensagem
+de bloqueio só aparece quando **nenhuma** versão instalada pode abrir (por exemplo, logo na
+primeira instalação). Aí, espere algumas horas e tente de novo, ou veja as opções abaixo.
+
 ## Como conferir se o Smart App Control está ligado
 
 **Configurações › Privacidade e segurança › Segurança do Windows › Controle de aplicativos e
