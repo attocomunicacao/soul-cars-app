@@ -10,13 +10,16 @@ import {
 } from "../src/renderer/src/app/navigation";
 
 describe("menu lateral", () => {
-  it("mostra só o 01 · Estoque", () => {
-    expect(MENU).toEqual([{ pagina: "estoque", rotulo: "01 · Estoque" }]);
+  it("mostra o 01 · Estoque e o 02 · CRM", () => {
+    expect(MENU.map((i) => [i.pagina, i.rotulo])).toEqual([
+      ["estoque", "01 · Estoque"],
+      ["crm", "02 · CRM"],
+    ]);
+    expect(MENU.every((i) => !!i.icone)).toBe(true);
   });
 
   it("guarda as páginas ocultas para voltar depois, sem repetir o Estoque", () => {
     expect(MENU_OCULTO.map((i) => i.pagina)).toEqual([
-      "crm",
       "leads",
       "bndv",
       "meta",

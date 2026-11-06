@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.0.6]
+
+- O CRM (Umbler Talk) volta ao menu lateral como 02 · CRM e abre dentro do app
+- O menu lateral pode ser recolhido pelo botão « ao lado de SEU ESPAÇO DE TRABALHO: os textos viram ícones (» expande de novo) e a escolha fica guardada
+
 ## [1.0.5]
 
 - Quando o Windows (Smart App Control) ainda bloqueia a versão nova, o Launcher abre a versão anterior que já funcionava e avisa

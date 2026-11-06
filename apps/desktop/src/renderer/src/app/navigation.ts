@@ -16,21 +16,24 @@ export type Pagina =
   "estoque" | "studio" | "crm" | "leads" | "bndv" | "meta" | "financas";
 
 /** Item do menu lateral: página de destino e rótulo exibido. */
-export type ItemMenu = { pagina: Pagina; rotulo: string };
+export type ItemMenu = { pagina: Pagina; rotulo: string; icone?: string };
 
-/** Itens do menu lateral, na ordem em que aparecem (desde a 1.0.3, só o Estoque). */
+/**
+ * Itens do menu lateral, na ordem em que aparecem. `icone` é o que sobra no menu
+ * recolhido (o rótulo some e fica só o ícone).
+ */
 export const MENU: readonly ItemMenu[] = [
-  { pagina: "estoque", rotulo: "01 · Estoque" },
+  { pagina: "estoque", rotulo: "01 · Estoque", icone: "🚗" },
+  { pagina: "crm", rotulo: "02 · CRM", icone: "💬" },
 ];
 
 /**
- * Páginas fora do menu desde a versão 1.0.3. O código delas continua no app
+ * Páginas fora do menu desde a versão 1.0.3 (o CRM voltou na 1.0.6). O código delas continua no app
  * (pages/leads, pages/finance, pages/embedded); para trazer uma de volta, mova o
  * item para `MENU`. O login do BNDV não depende do item "04 · BNDV": o botão
  * "Atualizar BNDV" abre a janela de login sozinho quando a sessão expira.
  */
 export const MENU_OCULTO: readonly ItemMenu[] = [
-  { pagina: "crm", rotulo: "02 · CRM" },
   { pagina: "leads", rotulo: "03 · Leads e Soul IA" },
   { pagina: "bndv", rotulo: "04 · BNDV" },
   { pagina: "meta", rotulo: "05 · Meta ADS" },

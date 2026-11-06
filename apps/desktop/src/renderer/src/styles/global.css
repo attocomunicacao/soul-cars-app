@@ -75,6 +75,36 @@ aside button {
   border-color: #41413b;
   text-align: left;
 }
+.aside-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+aside .aside-toggle {
+  padding: 4px 10px;
+  text-align: center;
+}
+aside.collapsed {
+  width: 76px;
+  min-width: 76px;
+  padding: 28px 10px;
+}
+aside.collapsed img {
+  width: 48px;
+  margin-bottom: 14px;
+  object-fit: cover;
+  object-position: top;
+}
+aside.collapsed .aside-head {
+  justify-content: center;
+}
+aside.collapsed button {
+  text-align: center;
+  padding-left: 0;
+  padding-right: 0;
+  font-size: 18px;
+}
 .aside-bottom {
   margin-top: auto;
   display: grid;
