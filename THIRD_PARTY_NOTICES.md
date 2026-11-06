@@ -1,7 +1,7 @@
 # Avisos de terceiros
 
-Gerado por `scripts/gerar-avisos-licencas.py`. **Não edite à mão**: rode o script depois de mudar `engine/pyproject.toml`
-ou `engine/uv.lock` (o teste `engine/tests/test_licencas.py` avisa se esta lista ficar desatualizada).
+Gerado por `scripts/generate-license-notices.py`. **Não edite à mão**: rode o script depois de mudar `apps/engine/pyproject.toml`
+ou `apps/engine/uv.lock` (o teste `apps/engine/tests/test_licenses.py` avisa se esta lista ficar desatualizada).
 
 O código do SOUL Cars é proprietário (veja `LICENSE`). Os componentes abaixo continuam sob as licenças próprias,
 todas permitindo uso comercial e em software fechado.
@@ -9,7 +9,7 @@ todas permitindo uso comercial e em software fechado.
 ## Motor Python: bibliotecas
 
 As bibliotecas **não são redistribuídas** no instalador nem no repositório: o usuário as instala pelo `uv` a partir do
-`engine/uv.lock`. Cada uma traz o seu texto de licença no pacote instalado.
+`apps/engine/uv.lock`. Cada uma traz o seu texto de licença no pacote instalado.
 
 - Licenças de copyleft forte (GPL, AGPL, LGPL e semelhantes): **nenhuma**.
 - Copyleft fraco (MPL-2.0, por arquivo): certifi, tqdm. São usadas sem modificação, o que não impõe obrigação ao restante do código.
@@ -75,11 +75,11 @@ As bibliotecas **não são redistribuídas** no instalador nem no repositório: 
 
 | Modelo | Uso | Licença | Onde conferir |
 |---|---|---|---|
-| BiRefNet-lite (`birefnet-general-lite`, via rembg) | Recorte do carro (padrão) (`engine/fundo.py`) | MIT (mesmo projeto do BiRefNet) | https://huggingface.co/ZhengPeng7/BiRefNet |
+| BiRefNet-lite (`birefnet-general-lite`, via rembg) | Recorte do carro (padrão) (`apps/engine/media/background_removal.py`) | MIT (mesmo projeto do BiRefNet) | https://huggingface.co/ZhengPeng7/BiRefNet |
 | BiRefNet (`birefnet-general`, via rembg) | Recorte de qualidade, opcional e mais lento (`MODELO_QUALIDADE`) | MIT | https://huggingface.co/ZhengPeng7/BiRefNet |
 | ISNet general use (`isnet-general-use`, via rembg) | Recorte rápido, opcional (`MODELO_RAPIDO`) | Apache-2.0 | https://github.com/xuebinqin/DIS |
-| CLIP ViT-B/32 em ONNX (`Xenova/clip-vit-base-patch32`) | Ordenar as fotos (`engine/visao.py`) | O repositório Xenova **não declara licença**; o modelo original, OpenAI CLIP, é MIT | https://github.com/openai/CLIP/blob/main/LICENSE |
-| Whisper large-v3-turbo em CTranslate2 (`mobiuslabsgmbh/faster-whisper-large-v3-turbo`) | Transcrição do vídeo (`engine/video/transcribe.py`) | MIT | https://huggingface.co/mobiuslabsgmbh/faster-whisper-large-v3-turbo |
+| CLIP ViT-B/32 em ONNX (`Xenova/clip-vit-base-patch32`) | Ordenar as fotos (`apps/engine/media/vision.py`) | O repositório Xenova **não declara licença**; o modelo original, OpenAI CLIP, é MIT | https://github.com/openai/CLIP/blob/main/LICENSE |
+| Whisper large-v3-turbo em CTranslate2 (`mobiuslabsgmbh/faster-whisper-large-v3-turbo`) | Transcrição do vídeo (`apps/engine/video/transcribe.py`) | MIT | https://huggingface.co/mobiuslabsgmbh/faster-whisper-large-v3-turbo |
 
 Os modelos **não ficam no repositório nem no instalador**: são baixados no primeiro uso, para a pasta de dados do usuário.
 
@@ -87,15 +87,15 @@ Os modelos **não ficam no repositório nem no instalador**: são baixados no pr
 
 | Arquivo | Licença | Texto da licença |
 |---|---|---|
-| `engine/tessdata/por.traineddata` (Tesseract, português) | Apache-2.0 | `engine/tessdata/LICENSE-tesseract.txt` |
-| `engine/video/assets/Lato-Black.ttf` (v1.104, sem modificação) | SIL Open Font License 1.1 (© 2010-2011 tyPoland Lukasz Dziedzic; nome reservado "Lato"), conforme o próprio arquivo da fonte | `engine/video/assets/Lato-OFL.txt` (acompanha a fonte no repositório e no instalador) |
-| `engine/video/assets/Lora-SemiBoldItalic.ttf` (sem modificação; origem em `Lora-ORIGEM.md`) | SIL Open Font License 1.1 (The Lora Project Authors; nome reservado "Lora") | `engine/video/assets/Lora-OFL.txt` |
-| Fontes do editor (Montserrat, Barlow Condensed, Roboto Condensed) em `src/renderer/public/criativo/assets` | SIL Open Font License 1.1 | `*-LICENSE.txt` na mesma pasta |
-| `html-to-image` (editor de criativos) | MIT | `src/renderer/public/criativo/assets/html-to-image-LICENSE.txt` |
+| `apps/engine/tessdata/por.traineddata` (Tesseract, português) | Apache-2.0 | `apps/engine/tessdata/LICENSE-tesseract.txt` |
+| `apps/engine/video/assets/Lato-Black.ttf` (v1.104, sem modificação) | SIL Open Font License 1.1 (© 2010-2011 tyPoland Lukasz Dziedzic; nome reservado "Lato"), conforme o próprio arquivo da fonte | `apps/engine/video/assets/Lato-OFL.txt` (acompanha a fonte no repositório e no instalador) |
+| `apps/engine/video/assets/Lora-SemiBoldItalic.ttf` (sem modificação; origem em `Lora-ORIGIN.md`) | SIL Open Font License 1.1 (The Lora Project Authors; nome reservado "Lora") | `apps/engine/video/assets/Lora-OFL.txt` |
+| Fontes do editor (Montserrat, Barlow Condensed, Roboto Condensed) em `apps/desktop/src/renderer/public/creative-editor/assets` | SIL Open Font License 1.1 | `*-LICENSE.txt` na mesma pasta |
+| `html-to-image` (editor de criativos) | MIT | `apps/desktop/src/renderer/public/creative-editor/assets/html-to-image-LICENSE.txt` |
 | `LOGO_SOUL.jpg` e `logo-soul.*` | Marca da SOUL Cars; pertence à loja | — |
-| Trilha do vídeo (`TRILHA.flac`) | **Não é distribuída**: fica fora do Git (`.gitignore`) e fora do instalador. Origem e licença não documentadas; cada computador usa a sua trilha (veja `docs/08-fluxo-studio.md`) | — |
+| Trilha do vídeo (`TRILHA.flac`) | **Não é distribuída**: fica fora do Git (`.gitignore`) e fora do instalador. Origem e licença não documentadas; cada computador usa a sua trilha (veja `docs/guides/studio-flow.md`) | — |
 
-O ffmpeg e o Tesseract (programas) **não são distribuídos** com o app: o usuário os instala à parte (veja `docs/05-motor-python.md`).
+O ffmpeg e o Tesseract (programas) **não são distribuídos** com o app: o usuário os instala à parte (veja `docs/architecture/python-engine.md`).
 
 ## Aplicativo (Node/Electron)
 

@@ -1,0 +1,39 @@
+name: Pages
+
+# Publica a página de apresentação (website/) no GitHub Pages, com os prints do README.
+# Ative em Settings › Pages › Source: GitHub Actions.
+on:
+  push:
+    branches: [main]
+    paths: ["website/**", "docs/assets/screenshots/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Montar o site
+        run: |
+          mkdir -p _site/screenshots
+          cp -r website/. _site/
+          cp docs/assets/screenshots/*.png _site/screenshots/
+          cp apps/desktop/resources/soul-logo.jpg _site/soul-logo.jpg
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

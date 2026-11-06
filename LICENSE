@@ -10,7 +10,7 @@ Atto Comunicação.
 Componentes de terceiros incluídos no projeto (bibliotecas, fontes, modelos e
 o Tesseract) continuam sob as suas próprias licenças, cujos avisos acompanham
 os respectivos arquivos (por exemplo, os arquivos *-LICENSE.txt em
-src/renderer/public/criativo/assets e engine/tessdata). Marca, logo e trilha
+apps/desktop/src/renderer/public/creative-editor/assets e apps/engine/tessdata). Marca, logo e trilha
 sonora pertencem aos seus titulares.
 
 O SOFTWARE É FORNECIDO "NO ESTADO EM QUE SE ENCONTRA", SEM GARANTIA DE QUALQUER

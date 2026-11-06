@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Sem rede na interface: só arquivos locais, estilos e imagens do próprio pacote. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    />
+    <title>Soul Cars Launcher</title>
+    <link rel="icon" href="./favicon.ico" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <img src="./icon.png" alt="" />
+        <span>SOUL CARS</span>
+        <span class="mono muted">LAUNCHER</span>
+      </div>
+      <nav class="tabs" aria-label="Seções">
+        <button data-tab="library" class="active">Biblioteca</button>
+        <button data-tab="settings">Configurações</button>
+        <button data-tab="about">Sobre</button>
+      </nav>
+      <button id="check" class="ghost mono">Verificar atualizações</button>
+    </header>
+
+    <div id="launcher-update" class="banner" hidden></div>
+    <div id="error" class="banner error" role="alert" hidden></div>
+
+    <main>
+      <section id="tab-library" class="tab">
+        <p class="eyebrow mono">01 / BIBLIOTECA</p>
+        <h1>Seus apps.<br /><span class="gold">Sempre atualizados.</span></h1>
+        <p class="lead">
+          O Launcher instala o Soul Cars, mantém tudo na última versão e abre o
+          app com um clique. Seus dados ficam no seu computador.
+        </p>
+        <div id="apps" class="apps" aria-live="polite"></div>
+      </section>
+
+      <section id="tab-settings" class="tab" hidden>
+        <p class="eyebrow mono">02 / CONFIGURAÇÕES</p>
+        <h1>Preferências</h1>
+        <label class="toggle">
+          <input type="checkbox" id="pref-close" />
+          <span>Fechar o Launcher depois de abrir um app</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="pref-check" />
+          <span>Verificar atualizações ao iniciar</span>
+        </label>
+        <div class="field">
+          <span class="mono muted">PASTA DE INSTALAÇÃO</span>
+          <code id="install-dir"></code>
+          <small class="muted"
+            >Cada versão fica numa pasta própria. A versão anterior é mantida
+            para voltar atrás. Seus dados (banco, estoque, configurações) ficam
+            na pasta de dados do app e nunca são apagados pelo Launcher.</small
+          >
+        </div>
+      </section>
+
+      <section id="tab-about" class="tab" hidden>
+        <p class="eyebrow mono">03 / SOBRE</p>
+        <h1>Soul Cars</h1>
+        <p class="lead">
+          Plataforma desktop para revendas de veículos: do estoque ao anúncio
+          publicado, com CRM, Soul IA e finanças. Local-first e sem mensalidade
+          de API.
+        </p>
+        <ul class="principles">
+          <li>
+            <b>Local-first.</b> Banco, fotos e documentos ficam na sua máquina.
+          </li>
+          <li><b>Sem custo por uso.</b> Nenhuma API paga, nenhuma chave.</li>
+          <li>
+            <b>Atualização segura.</b> Cada pacote é conferido por SHA-256.
+          </li>
+          <li><b>Lado a lado.</b> A versão em uso nunca é sobrescrita.</li>
+        </ul>
+        <p class="muted mono" id="about-version"></p>
+        <button id="open-repo" class="ghost mono">
+          Abrir projeto no GitHub
+        </button>
+      </section>
+    </main>
+
+    <footer class="statusbar mono">
+      <span id="status">Carregando…</span>
+      <span id="platform" class="muted"></span>
+    </footer>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

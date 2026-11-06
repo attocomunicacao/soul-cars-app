@@ -1,0 +1,69 @@
+{
+  "name": "soul-cars-launcher",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Soul Cars Launcher — instala, atualiza e abre os apps Soul Cars a partir das GitHub Releases",
+  "author": "Atto Comunicação",
+  "license": "UNLICENSED",
+  "main": "./out/main/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "start": "electron-vite preview",
+    "build": "electron-vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "test": "vitest run",
+    "package": "electron-vite build && electron-builder --win --publish never"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "electron": "44.10.2",
+    "electron-builder": "^26.0.0",
+    "electron-vite": "^4.0.0",
+    "vite": "^7.0.0"
+  },
+  "build": {
+    "appId": "com.soulcars.launcher",
+    "productName": "Soul Cars Launcher",
+    "executableName": "SoulCarsLauncher",
+    "directories": {
+      "output": "dist",
+      "buildResources": "resources"
+    },
+    "compression": "maximum",
+    "electronLanguages": [
+      "pt-BR",
+      "en-US"
+    ],
+    "artifactName": "soul-cars-launcher-setup-${version}.${ext}",
+    "files": [
+      "out/**",
+      "!**/*.map"
+    ],
+    "extraResources": [
+      {
+        "from": "resources",
+        "to": "."
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "resources/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false,
+      "shortcutName": "Soul Cars Launcher",
+      "createDesktopShortcut": "always",
+      "runAfterFinish": true
+    }
+  }
+}

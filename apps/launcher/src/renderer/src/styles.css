@@ -1,0 +1,337 @@
+/*
+ * Estilo do Launcher: escuro, tipografia mono em rótulos e o dourado/bronze da marca
+ * Soul Cars. Tokens no :root; nada de fontes ou imagens externas (CSP só 'self').
+ */
+:root {
+  color-scheme: dark;
+  --bg: #121110;
+  --panel: #1b1a18;
+  --panel-2: #23211e;
+  --line: #2f2c28;
+  --ink: #f2ede6;
+  --muted: #a39b8f;
+  --gold: #d9b07a;
+  --gold-2: #b98a52;
+  --on-gold: #1b140c;
+  --ok: #8fc79a;
+  --danger: #ff9b8a;
+  --radius: 14px;
+  --mono: "Cascadia Mono", "Consolas", ui-monospace, monospace;
+  --sans: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+body {
+  display: grid;
+  grid-template-rows: auto auto auto 1fr auto;
+  background:
+    radial-gradient(900px 400px at 85% -10%, #d9b07a14, transparent 60%),
+    var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 var(--sans);
+}
+.mono {
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+  font-size: 12px;
+}
+.muted {
+  color: var(--muted);
+}
+.gold {
+  background: linear-gradient(180deg, #f1d4a6, var(--gold-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------- topo ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--line);
+  background: #121110cc;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.brand img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+.tabs {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+.tabs button {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--muted);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font: 600 13px var(--sans);
+  cursor: pointer;
+}
+.tabs button:hover {
+  color: var(--ink);
+}
+.tabs button.active {
+  color: var(--ink);
+  border-color: var(--line);
+  background: var(--panel);
+}
+
+/* ---------- botões ---------- */
+button {
+  font-family: inherit;
+}
+.primary,
+.ghost {
+  border-radius: 10px;
+  padding: 10px 18px;
+  cursor: pointer;
+  font-weight: 700;
+  transition:
+    transform 0.08s ease,
+    background 0.15s ease;
+}
+.primary {
+  border: 0;
+  color: var(--on-gold);
+  background: linear-gradient(180deg, #ecc995, var(--gold-2));
+}
+.primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.ghost {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+}
+.ghost:hover {
+  border-color: var(--gold-2);
+}
+button:focus-visible,
+input:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ---------- faixas ---------- */
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 12px 24px 0;
+  padding: 10px 16px;
+  border: 1px solid var(--gold-2);
+  border-radius: 10px;
+  background: #d9b07a14;
+}
+.banner.error {
+  border-color: var(--danger);
+  background: #ff9b8a14;
+  color: var(--danger);
+}
+.banner[hidden] {
+  display: none;
+}
+
+/* ---------- conteúdo ---------- */
+main {
+  overflow: auto;
+  padding: 28px 24px 40px;
+}
+.tab {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+.eyebrow {
+  color: var(--gold);
+  margin: 0 0 8px;
+}
+h1 {
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.05;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+}
+.lead {
+  color: var(--muted);
+  max-width: 640px;
+  margin: 0 0 28px;
+}
+
+/* ---------- cartão do app ---------- */
+.apps {
+  display: grid;
+  gap: 20px;
+}
+.app-card {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--panel);
+}
+.app-cover {
+  background: #1a1a1a;
+  display: grid;
+  place-items: center;
+  border-right: 1px solid var(--line);
+}
+.app-cover img {
+  width: 100%;
+  height: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  padding: 20px;
+}
+.app-body {
+  padding: 22px 24px;
+}
+.app-body h2 {
+  margin: 0 0 4px;
+  font-size: 26px;
+}
+.app-body p {
+  margin: 0 0 12px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 16px;
+}
+.chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 10px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.chip.ok {
+  color: var(--ok);
+  border-color: #8fc79a55;
+}
+.chip.gold {
+  color: var(--gold);
+  border-color: #d9b07a66;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.progress {
+  height: 6px;
+  margin-top: 14px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  overflow: hidden;
+}
+.progress span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-2), #f1d4a6);
+  transition: width 0.2s ease;
+}
+.error-text {
+  color: var(--danger);
+  margin-top: 12px;
+}
+.notes {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+.notes summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.notes ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+/* ---------- configurações e sobre ---------- */
+.toggle {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+.toggle input {
+  accent-color: var(--gold);
+  width: 18px;
+  height: 18px;
+}
+.field {
+  display: grid;
+  gap: 6px;
+  margin-top: 20px;
+}
+.field code {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  font-family: var(--mono);
+  word-break: break-all;
+}
+.principles {
+  padding-left: 18px;
+  color: var(--muted);
+}
+.principles b {
+  color: var(--ink);
+}
+
+/* ---------- rodapé ---------- */
+.statusbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 24px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+
+@media (max-width: 760px) {
+  .app-card {
+    grid-template-columns: 1fr;
+  }
+  .app-cover {
+    max-height: 200px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+}

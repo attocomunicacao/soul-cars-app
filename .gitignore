@@ -2,7 +2,7 @@ node_modules/
 .tmp/
 out/
 dist/
-engine/.venv/
+apps/engine/.venv/
 **/__pycache__/
 *.pyc
 *.tsbuildinfo
@@ -17,9 +17,9 @@ engine/.venv/
 *.db-shm
 *.log
 .DS_Store
-docs/smoke.*
-docs/smoke-error.txt
-docs/smoke-instagram.json
+
+
+
 
 # Dados da loja e projetos anteriores (locais, nunca vão para o GitHub)
 /dados-loja/
@@ -27,4 +27,8 @@ docs/smoke-instagram.json
 
 # Trilha do vídeo: origem/licença não documentada, não é redistribuída. Coloque a sua em
 # %APPDATA%/soul-cars-app/trilha/TRILHA.flac (ou em PROJETO/ASSETS do veículo).
-engine/video/assets/TRILHA.*
+apps/engine/video/assets/TRILHA.*
+
+# Restos locais da reestruturação
+.restructure/
+.ruff_cache/

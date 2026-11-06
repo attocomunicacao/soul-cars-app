@@ -5,7 +5,7 @@ updates:
     schedule: { interval: weekly }
     open-pull-requests-limit: 5
   - package-ecosystem: uv
-    directory: /engine
+    directory: /apps/engine
     schedule: { interval: weekly }
     open-pull-requests-limit: 3
   - package-ecosystem: github-actions

@@ -1,0 +1,187 @@
+<!doctype html>
+<!--
+  Página de apresentação do Soul Cars (GitHub Pages).
+  Publicada por .github/workflows/pages.yml, que copia esta pasta e acrescenta
+  screenshots/ (de docs/assets/screenshots) e soul-logo.jpg. Sem dependências externas.
+-->
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Soul Cars — do estoque ao anúncio publicado</title>
+    <meta
+      name="description"
+      content="Plataforma desktop para revendas de veículos: estoque, ficha, fotos, vídeo, criativos, anúncios, Instagram, CRM e finanças. Local-first, sem mensalidade de API."
+    />
+    <link rel="icon" href="soul-logo.jpg" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #121110;
+        --panel: #1b1a18;
+        --line: #2f2c28;
+        --ink: #f2ede6;
+        --muted: #a39b8f;
+        --gold: #d9b07a;
+        --gold-2: #b98a52;
+        --mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+        --sans: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: radial-gradient(1100px 500px at 80% -10%, #d9b07a1c, transparent 60%), var(--bg);
+        color: var(--ink);
+        font: 16px/1.6 var(--sans);
+      }
+      a { color: inherit; }
+      .mono { font-family: var(--mono); letter-spacing: 0.08em; font-size: 12px; text-transform: uppercase; }
+      .muted { color: var(--muted); }
+      .gold {
+        background: linear-gradient(180deg, #f1d4a6, var(--gold-2));
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+      }
+      .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+      nav.top {
+        position: sticky; top: 0; z-index: 2; backdrop-filter: blur(10px);
+        background: #121110cc; border-bottom: 1px solid var(--line);
+      }
+      nav.top .wrap { display: flex; align-items: center; gap: 20px; height: 60px; }
+      nav.top img { width: 30px; height: 30px; border-radius: 6px; }
+      nav.top b { letter-spacing: 0.1em; }
+      nav.top .links { margin-left: auto; display: flex; gap: 18px; }
+      nav.top .links a { text-decoration: none; color: var(--muted); }
+      nav.top .links a:hover { color: var(--ink); }
+      .btn {
+        display: inline-block; text-decoration: none; border-radius: 10px; padding: 12px 20px;
+        font: 700 13px var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
+      }
+      .btn.primary { color: #1b140c; background: linear-gradient(180deg, #ecc995, var(--gold-2)); }
+      .btn.ghost { border: 1px solid var(--line); background: var(--panel); }
+      .btn:hover { transform: translateY(-1px); }
+      header.hero { padding: 88px 0 40px; text-align: center; }
+      header.hero img.logo { width: 120px; border-radius: 16px; }
+      h1 { font-size: clamp(36px, 6vw, 68px); line-height: 1.02; margin: 18px 0; letter-spacing: -0.03em; }
+      .lead { max-width: 680px; margin: 0 auto 28px; color: var(--muted); font-size: 18px; }
+      .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+      .badges { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; margin-top: 22px; color: var(--muted); }
+      .shot { margin: 48px auto 0; max-width: 980px; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: 0 30px 80px #0008; }
+      .shot img { display: block; width: 100%; }
+      section { padding: 72px 0; border-top: 1px solid var(--line); }
+      .eyebrow { color: var(--gold); margin: 0 0 10px; }
+      h2 { font-size: clamp(28px, 4vw, 44px); line-height: 1.08; margin: 0 0 14px; letter-spacing: -0.02em; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 28px; }
+      .card { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); padding: 22px; }
+      .card .n { color: var(--gold); }
+      .card h3 { margin: 8px 0 6px; font-size: 19px; }
+      .card p { margin: 0; color: var(--muted); font-size: 15px; }
+      .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-top: 28px; }
+      .gallery figure { margin: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--panel); }
+      .gallery img { display: block; width: 100%; }
+      .gallery figcaption { padding: 12px 16px; color: var(--muted); font-size: 14px; }
+      .steps { counter-reset: s; list-style: none; padding: 0; display: grid; gap: 12px; margin-top: 24px; }
+      .steps li { counter-increment: s; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px 16px 64px; position: relative; background: var(--panel); }
+      .steps li::before { content: "0" counter(s); position: absolute; left: 18px; top: 15px; font: 700 14px var(--mono); color: var(--gold); }
+      footer { padding: 40px 0 60px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+      footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+      @media (max-width: 640px) { nav.top .links { display: none; } header.hero { padding-top: 56px; } }
+    </style>
+  </head>
+  <body>
+    <nav class="top">
+      <div class="wrap">
+        <img src="soul-logo.jpg" alt="" />
+        <b>SOUL CARS</b>
+        <div class="links mono">
+          <a href="#recursos">Recursos</a>
+          <a href="#telas">Telas</a>
+          <a href="#launcher">Launcher</a>
+          <a href="#principios">Princípios</a>
+        </div>
+        <a class="btn primary" href="https://github.com/attocomunicacao/soul-cars-app/releases/latest">Baixar</a>
+      </div>
+    </nav>
+
+    <header class="hero wrap">
+      <img class="logo" src="soul-logo.jpg" alt="Soul Cars" />
+      <h1>Do estoque ao anúncio.<br /><span class="gold">Num app só.</span></h1>
+      <p class="lead">
+        A plataforma desktop da revenda: estoque do BNDV, ficha e documento, fotos, vídeo,
+        criativos, anúncios, Instagram, CRM e finanças, carro por carro, no seu computador.
+      </p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/attocomunicacao/soul-cars-app/releases/latest">Baixar o Launcher</a>
+        <a class="btn ghost" href="https://github.com/attocomunicacao/soul-cars-app">Ver no GitHub</a>
+      </div>
+      <div class="badges mono">
+        <span>Windows 10/11</span><span>·</span><span>Local-first</span><span>·</span><span>Sem mensalidade de API</span><span>·</span><span>Atualização automática</span>
+      </div>
+      <div class="shot"><img src="screenshots/01-inventory.png" alt="Tela do estoque do Soul Cars" /></div>
+    </header>
+
+    <section id="recursos">
+      <div class="wrap">
+        <p class="eyebrow mono">01 / Recursos</p>
+        <h2>Tudo que um carro precisa para virar anúncio.</h2>
+        <p class="muted">Sete etapas que hoje vivem em sete ferramentas diferentes.</p>
+        <div class="grid">
+          <div class="card"><span class="n mono">01</span><h3>Estoque sincronizado</h3><p>Veículos e vendas do BNDV, uma pasta por carro, patrimônio, giro e margem.</p></div>
+          <div class="card"><span class="n mono">02</span><h3>Ficha automática</h3><p>Leitura do CRLV (PDF ou escaneado) e ficha técnica da web na descrição do anúncio.</p></div>
+          <div class="card"><span class="n mono">03</span><h3>Studio de produção</h3><p>Fotos ordenadas e recortadas, vídeo com tarjas e legendas animadas, criativos prontos.</p></div>
+          <div class="card"><span class="n mono">04</span><h3>Pronto para anunciar</h3><p>Checklist, textos e arquivos com botão de copiar; aviso para pausar quando vender.</p></div>
+          <div class="card"><span class="n mono">05</span><h3>Instagram</h3><p>Carrossel e Reels pelo navegador integrado, com retomada e sem duplicatas.</p></div>
+          <div class="card"><span class="n mono">06</span><h3>CRM e Soul IA</h3><p>Leads por etiqueta, demanda por modelo e desempenho do atendimento.</p></div>
+          <div class="card"><span class="n mono">07</span><h3>Finanças</h3><p>Contas do mês direto da planilha da loja, com backup a cada edição.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="telas">
+      <div class="wrap">
+        <p class="eyebrow mono">02 / Telas</p>
+        <h2>Feito para o dia a dia da loja.</h2>
+        <div class="gallery">
+          <figure><img src="screenshots/02-showcase.png" alt="Vitrine do estoque" /><figcaption>Vitrine: o estoque atual com foto, preço e dias parado.</figcaption></figure>
+          <figure><img src="screenshots/03-full-report.png" alt="Relatório completo" /><figcaption>Relatório: patrimônio, margem, giro e lucro por mês, em PDF A4.</figcaption></figure>
+          <figure><img src="screenshots/04-vehicle-sheet.png" alt="Ficha do veículo" /><figcaption>Ficha: documento, dados do veículo e do anúncio.</figcaption></figure>
+          <figure><img src="screenshots/05-production.png" alt="Produção" /><figcaption>Produção: fotos, recorte de fundo e Editor Mágico de vídeo.</figcaption></figure>
+        </div>
+        <p class="muted" style="font-size: 13px; margin-top: 14px">Telas com dados e ilustrações fictícios.</p>
+      </div>
+    </section>
+
+    <section id="launcher">
+      <div class="wrap">
+        <p class="eyebrow mono">03 / Launcher</p>
+        <h2>Instale uma vez. <span class="gold">Atualize com um clique.</span></h2>
+        <p class="muted">O Soul Cars Launcher instala o app, avisa quando há versão nova e mantém a anterior guardada.</p>
+        <div class="shot" style="margin-top: 28px"><img src="screenshots/00-launcher.png" alt="Soul Cars Launcher" /></div>
+        <ol class="steps">
+          <li>Baixe o instalador do Launcher na última versão publicada.</li>
+          <li>Clique em <b>Instalar</b> no cartão do Soul Cars.</li>
+          <li>Clique em <b>Abrir</b>. Nas próximas versões, o botão vira <b>Atualizar</b>.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="principios">
+      <div class="wrap">
+        <p class="eyebrow mono">04 / Princípios</p>
+        <h2>Construído do jeito certo.</h2>
+        <div class="grid">
+          <div class="card"><span class="n mono">01</span><h3>Local-first</h3><p>Banco, fotos, vídeos e documentos ficam na máquina da loja. LGPD sem drama.</p></div>
+          <div class="card"><span class="n mono">02</span><h3>Custo zero por uso</h3><p>Nenhuma API paga, nenhuma chave. IA por prompt pronto no chat que você já usa.</p></div>
+          <div class="card"><span class="n mono">03</span><h3>Humano no controle</h3><p>O app prepara tudo; uma pessoa revisa e publica. Nada vai ao ar sozinho.</p></div>
+          <div class="card"><span class="n mono">04</span><h3>Seguro por padrão</h3><p>Interface isolada, comandos validados, token cifrado e pacotes com SHA-256.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">
+        <span>© 2026 Atto Comunicação · Soul Cars — Carros com Alma</span>
+        <span class="mono">Electron · React · TypeScript · Python</span>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,33 +1,57 @@
-# Documentação
+# Documentation
 
-Para retomar o projeto em outro chat: [Contexto técnico atualizado](CONTEXTO-PARA-OUTRO-CHAT.md) e [inventário dos arquivos e símbolos](INVENTARIO-CODIGO.md). O guia registra diferenças entre a interface atual e descrições históricas dos manuais.
+Documentação do Soul Cars, organizada por assunto (pastas e arquivos em inglês; textos em português).
 
-A leitura completa do recorte autoral está consolidada em [Contratos e detalhes de implementação](DETALHES-IMPLEMENTACAO.md). Consulte a [cobertura da leitura e hashes dos arquivos](COBERTURA-LEITURA.md) para distinguir esta revisão de alterações posteriores e conhecer as exclusões.
+## Comece aqui
 
-0. [Visão geral do app para assistentes de IA](00-visao-geral-para-ia.md) (comece por aqui)
-1. [Instalação e primeiro uso](01-primeiro-uso.md)
-2. [Arquitetura e análise da migração](02-arquitetura-e-migracao.md)
-3. [Alterações com vibe code](03-vibe-code.md)
-4. [Dados e backup](04-dados-e-backup.md)
-5. [Motor Python](05-motor-python.md)
-6. [GitHub](06-github.md)
-7. [Validação](07-validacao.md)
-8. [Fluxo de produção no Studio](08-fluxo-studio.md)
-9. [Instagram: conexão, automação e pesquisa](09-instagram.md)
-10. [Avaliação: testes, erros, melhorias e pontos fortes](10-avaliacao-erros-melhorias.md)
-11. [Manual do Usuário: do estoque ao anúncio](11-manual-do-usuario.md)
-12. [Manual do Desenvolvedor: fluxo técnico e roadmap de manutenção](12-manual-do-desenvolvedor.md)
-13. [Biblioteca da API do uTalk](13-api-utalk-biblioteca.md)
-14. [CRM: pesquisa de mercado e funcionalidades](14-crm-pesquisa-de-mercado.md)
-15. [CRM: dados e relatórios](15-crm-dados-e-relatorios.md)
-16. [Soul IA: memória do CRM e padrão de atendimento](16-soul-ia.md)
-17. [Legendas editoriais e animações do vídeo](17-legendas-editoriais.md)
-18. [SOUL Motion: motor interno de animações](18-soul-motion.md)
-19. [Tipografia Lato uniforme e glow da mesma cor](19-tipografia-e-glow.md)
-20. [Biblioteca contextual: frases, entradas, saídas e composições](20-biblioteca-contextual-de-legendas.md)
-21. [Layout proporcional e movimento contínuo das tarjas](21-layout-e-movimento-das-tarjas.md)
-22. [Logo animada no encerramento](22-logo-animada-no-encerramento.md)
+- [Technology stack](architecture/technology-stack.md) — tecnologias, motores e ferramentas.
+- [Technical review and roadmap](architecture/technical-review.md) — crítica técnica e melhorias recomendadas (trilhos do roadmap.sh).
+- [AI assistant overview](development/ai-assistant-overview.md) — mapa do app para assistentes de IA.
 
-Planejamento do produto: [planejamento/](planejamento/02-roadmap.md).
+## `guides/` — uso do app
 
-Assistentes: leiam primeiro 00, depois 02, 03 e 04, depois o módulo da alteração.
+| Documento | Assunto |
+|---|---|
+| [getting-started.md](guides/getting-started.md) | Instalação e primeiro uso |
+| [user-manual.md](guides/user-manual.md) | Manual do usuário: do estoque ao anúncio |
+| [studio-flow.md](guides/studio-flow.md) | Fluxo de produção no Studio |
+| [instagram.md](guides/instagram.md) | Instagram: conexão, automação e pesquisa |
+| [data-and-backup.md](guides/data-and-backup.md) | Onde ficam os dados e como fazer backup |
+
+## `architecture/` — como o sistema é montado
+
+| Documento | Assunto |
+|---|---|
+| [technology-stack.md](architecture/technology-stack.md) | Inventário de tecnologias |
+| [technical-review.md](architecture/technical-review.md) | Crítica e roadmap técnico |
+| [launcher-and-updates.md](architecture/launcher-and-updates.md) | Launcher, manifesto e fluxo de releases |
+| [architecture-and-migration.md](architecture/architecture-and-migration.md) | Arquitetura e histórico da migração |
+| [python-engine.md](architecture/python-engine.md) | Motor Python |
+| [implementation-details.md](architecture/implementation-details.md) | Contratos e detalhes de implementação |
+| [code-inventory.md](architecture/code-inventory.md) / [reading-coverage.md](architecture/reading-coverage.md) | Inventário histórico (anterior à reestruturação v1) |
+
+## `development/` — para quem mexe no código
+
+| Documento | Assunto |
+|---|---|
+| [developer-manual.md](development/developer-manual.md) | Manual do desenvolvedor |
+| [vibe-coding-guide.md](development/vibe-coding-guide.md) | Alterações com assistentes de IA |
+| [validation.md](development/validation.md) | Validação (testes, smokes) |
+| [github-workflow.md](development/github-workflow.md) | GitHub, CI e releases |
+| [handoff-context.md](development/handoff-context.md) | Contexto técnico para retomar o projeto |
+
+## `crm/` — CRM e Soul IA
+
+[utalk-api-library.md](crm/utalk-api-library.md) · [crm-market-research.md](crm/crm-market-research.md) · [crm-data-and-reports.md](crm/crm-data-and-reports.md) · [soul-ai.md](crm/soul-ai.md)
+
+## `video/` — Editor Mágico de vídeo
+
+[editorial-captions.md](video/editorial-captions.md) · [soul-motion.md](video/soul-motion.md) · [typography-and-glow.md](video/typography-and-glow.md) · [contextual-caption-library.md](video/contextual-caption-library.md) · [banner-layout-and-motion.md](video/banner-layout-and-motion.md) · [animated-closing-logo.md](video/animated-closing-logo.md)
+
+## `planning/` — produto
+
+[product-roadmap.md](planning/product-roadmap.md) · [decisions-log.md](planning/decisions-log.md) · [assessment-2026-10.md](planning/assessment-2026-10.md) · [claude-code-prompt-guide.md](planning/claude-code-prompt-guide.md)
+
+> Documentos anteriores à versão 1.0 reestruturada podem citar nomes antigos de arquivos
+> em português; os caminhos foram atualizados automaticamente, mas descrições históricas
+> foram mantidas como registro.

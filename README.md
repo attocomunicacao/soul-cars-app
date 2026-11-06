@@ -1,159 +1,156 @@
-# SOUL Cars App
+<div align="center">
 
-> Projeto privado da **Atto Comunicação** para a loja **SOUL Cars**. Uso interno; não é distribuído ao público.
+<img src="apps/desktop/resources/soul-logo.jpg" alt="Soul Cars" width="160" />
 
-Aplicativo de desktop para Windows que leva um carro do **estoque** até o **anúncio publicado**: lê o estoque do BNDV, organiza uma pasta por veículo, ajuda a produzir ficha, fotos, vídeo e criativos, deixa o anúncio pronto para o Meta Ads e prepara a postagem no Instagram. Tudo roda no computador da loja, com dados locais.
+# Soul Cars
 
-**Stack:** Electron 44 · React 19 · TypeScript · Vite (electron-vite) · Tailwind 4 · SQLite (`node:sqlite`) · motor Python 3.12 (OCR, recorte, visão e vídeo). **Nenhuma aplicação paga:** sem API, sem chave, sem cobrança por uso.
+**Do estoque ao anúncio publicado. Num app só, no seu computador.**
 
----
+Plataforma desktop para revendas de veículos: estoque do BNDV, ficha e documento,
+fotos, vídeo, criativos, anúncio, Instagram, CRM, Soul IA e finanças.
 
-## Baixar e instalar (equipe da loja)
+[**Baixar o Launcher**](../../releases/latest) · [Apresentação](website/index.html) · [Documentação](docs/README.md) · [Changelog](CHANGELOG.md)
 
-1. Abra a página de **Releases** do repositório (se ele estiver privado, entre antes com a conta GitHub que recebeu acesso; o dono convida em **Settings › Collaborators**).
-2. Baixe `SOUL-Cars-Setup-<versão>.exe` da versão mais recente.
-3. Execute o instalador (Windows 10/11 x64). O Windows vai mostrar **"O Windows protegeu o seu PC"** (SmartScreen). Isso é esperado: o app é de uso interno e o instalador não tem assinatura digital paga. Para continuar:
-   1. Clique em **Mais informações** (link logo abaixo do texto).
-   2. Clique em **Executar assim mesmo**.
+`WINDOWS 10/11 x64` · `LOCAL-FIRST` · `SEM MENSALIDADE DE API` · `ATUALIZAÇÃO AUTOMÁTICA`
 
-   Só é preciso fazer isso na primeira vez de cada versão. Se o navegador bloquear o download, clique em **Manter** ou **Manter mesmo assim**. Confirme sempre que o arquivo veio da Release oficial deste repositório.
-4. Abra o **SOUL Cars** e entre no BNDV pela aba **Estoque**: o app sincroniza o estoque e cria as pastas dos veículos em `Documentos\SOUL Cars`. Fotos, vídeos e dados **não** vêm no instalador.
-5. Para as automações de documento, foto e vídeo, use **Configurações › Instalar motor**; o app baixa o que precisa sozinho (o OCR de escaneados ainda exige Tesseract e o vídeo exige FFmpeg).
+<img src="docs/assets/screenshots/00-launcher.png" alt="Soul Cars Launcher" width="860" />
 
-Para publicar uma nova versão: `git tag vX.Y.Z` e `git push origin vX.Y.Z` (workflow `release.yml`).
-
-## Sumário
-
-- [O que o app faz](#o-que-o-app-faz)
-- [As duas interfaces](#as-duas-interfaces)
-- [Como o app é montado](#como-o-app-é-montado)
-- [Estrutura de pastas](#estrutura-de-pastas)
-- [Instalação e execução](#instalação-e-execução)
-- [Comandos](#comandos)
-- [Onde ficam os dados](#onde-ficam-os-dados)
-- [Segurança e privacidade](#segurança-e-privacidade)
-- [Documentação](#documentação)
-- [Estado atual](#estado-atual)
-- [Licença e autoria](#licença-e-autoria)
+</div>
 
 ---
 
-## O que o app faz
+## 01 / Por que Soul Cars
 
-| Etapa | O que acontece | Onde |
-|---|---|---|
-| 1. Estoque | Abre o BNDV numa janela própria, lê veículos e vendas pela API GraphQL, grava CSVs e cria/atualiza uma pasta por veículo (`INFO.md`, `CRIATIVO`, `FOTOS`, `VIDEO`). | Aba **Estoque** |
-| 2. Balanço | Calcula patrimônio, lucro, giro e margem; mostra gráficos (inclusive lucro dos últimos 12 meses) e gera um relatório HTML. | Estoque › Relatório completo |
-| 3. Entrada de arquivos | Vigia uma pasta sincronizada (Google Drive/OneDrive). Fotos, vídeo e documento enviados pela equipe, com a placa no nome da pasta, são **copiados** (nunca movidos) para a pasta do veículo. | Estoque › Entrada |
-| 4. Ficha e documento | Lê o CRLV (PDF, com ou sem senha, ou escaneado via OCR), preenche a ficha, busca a ficha técnica na web (Carros na Web, com o Ficha Completa como reserva) e gera `DOC.md` e `DES.md` (descrição do anúncio). | Ficha › veículo |
-| 5. Produção | Painel de fotos (reordenar, renomear, recorte de fundo), Editor Mágico de vídeo (tarjas, legendas, trilha) e versão leve do vídeo para anúncio. | Studio › Produção |
-| 6. Criativos | Editor de artes (layouts 4 e 6, sombra, piso) com exportação de PNG para `CRIATIVO`. | Ficha › Criativos |
-| 7. Pronto para anunciar | Checklist de prontidão e cartão de campanha com textos, títulos, descrições e arquivos, com botões de copiar. Registro do anúncio e lembrete de pausa quando o carro é vendido. | Studio › Pronto para anunciar |
-| 8. Publicação | Blocos de texto para o Gerenciador de Anúncios, prontos para copiar. | Ficha › Publicação |
-| 9. Instagram | Publica carrossel e depois Reels pelo navegador integrado, com retomada e prevenção de duplicatas. | Ficha › Instagram |
+Uma revenda passa o dia trocando de ferramenta: o sistema de estoque, o Drive com as fotos,
+o editor de vídeo, o Canva, o Gerenciador de Anúncios, o CRM, a planilha do mês. O Soul Cars
+junta tudo num fluxo só, **carro por carro**, e deixa cada anúncio pronto para publicar.
 
-**Regra de ouro:** nenhuma automação ativa campanha sozinha. O app deixa tudo pronto; a pessoa cria e ativa o anúncio. O app não usa nenhum serviço pago: sem API, sem chave, sem cobrança por uso. Os textos de IA do anúncio saem pelo prompt pronto, colado no chat que a pessoa já usa.
+| | |
+|---|---|
+| **Estoque sincronizado** | Lê veículos e vendas do BNDV, cria uma pasta por carro e calcula patrimônio, giro e margem. |
+| **Ficha automática** | Lê o CRLV (PDF ou escaneado), busca a ficha técnica na web e gera a descrição do anúncio. |
+| **Studio de produção** | Ordena e recorta fotos, monta o vídeo com tarjas e legendas animadas, gera os criativos. |
+| **Pronto para anunciar** | Checklist, textos, títulos e arquivos do anúncio com botão de copiar; lembrete de pausa ao vender. |
+| **Instagram** | Carrossel e Reels publicados pelo navegador integrado, com retomada e sem duplicatas. |
+| **CRM e Soul IA** | Leads por etiqueta, demanda por modelo, desempenho do atendimento e memória das conversas. |
+| **Finanças** | Contas do mês direto da planilha da loja, com backup a cada edição. |
 
-## As duas interfaces
+## 02 / Telas
 
-O menu lateral tem **01 · Estoque**, **02 · CRM** (visão geral do uTalk), **03 · Leads e Soul IA**, **04 · BNDV**, **05 · Meta ADS** e **06 · Finanças**, além de Configurações. O app abre em **01 · Estoque** (lista de veículos, vitrine, entrada de arquivos e relatório completo). Ao clicar em **Abrir ficha →** num veículo da lista abre-se a ficha dele, com as abas, na ordem: **Ficha → Produção → Criativos → Pronto para anunciar → Publicação → Instagram**, além de Configurações.
+<table>
+<tr>
+<td width="50%"><img src="docs/assets/screenshots/01-inventory.png" alt="Estoque" /><br /><sub><b>Estoque</b> — métricas do balanço e situação de produção de cada carro.</sub></td>
+<td width="50%"><img src="docs/assets/screenshots/02-showcase.png" alt="Vitrine" /><br /><sub><b>Vitrine</b> — o estoque atual em cartões, com foto, preço e dias em estoque.</sub></td>
+</tr>
+<tr>
+<td><img src="docs/assets/screenshots/03-full-report.png" alt="Relatório completo" /><br /><sub><b>Relatório completo</b> — patrimônio, margem média, giro e lucro por mês, com PDF A4.</sub></td>
+<td><img src="docs/assets/screenshots/05-production.png" alt="Produção" /><br /><sub><b>Produção</b> — fotos ordenadas, recorte de fundo e Editor Mágico de vídeo.</sub></td>
+</tr>
+</table>
 
-## Como o app é montado
+> Prints gerados com dados e ilustrações **fictícios** (`npm run screenshots`). Nenhum dado
+> real de veículo, cliente ou loja é versionado neste repositório.
+
+## 03 / Instalar
+
+1. Baixe **`soul-cars-launcher-setup-<versão>.exe`** na [última release](../../releases/latest).
+2. Execute. Na primeira vez o Windows pode mostrar *"O Windows protegeu o seu PC"* (o instalador
+   ainda não tem assinatura digital paga): clique em **Mais informações › Executar assim mesmo**.
+3. No Launcher, clique em **Instalar** no cartão do Soul Cars e depois em **Abrir**.
+
+Pronto. Quando sair uma versão nova, o cartão mostra **Atualizar para vX.Y.Z**; o Launcher baixa,
+confere a assinatura SHA-256 e instala ao lado da versão atual, sem tocar nos seus dados.
+
+<details>
+<summary><b>Como as atualizações funcionam</b></summary>
 
 ```text
-React (renderer) ──► preload (window.soul.invocar / ouvir) ──► IPC do Electron (main)
-                                                                 ├─ estoque/  BNDV, CSV, pastas, balanço, relatório
-                                                                 ├─ studio/   SQLite, arquivos, entrada, Instagram, motor
-                                                                 └─ Python    CRLV, OCR, CNW, visão, recorte, vídeo
+tag v1.1.0 ──► GitHub Actions ──► Release: app .zip + Launcher .exe + manifest.json
+                                             │
+Launcher ◄── releases/latest/download/manifest.json (versão, notas, SHA-256)
+   │
+   ├─ baixa o .zip (.part) → confere tamanho e SHA-256 → extrai em apps\soul-cars\<versão>
+   ├─ ativa a nova versão e guarda a anterior (volta atrás se precisar)
+   └─ se houver Launcher novo: baixa, confere e se reinstala em silêncio
 ```
 
-- O **renderer não tem Node**: tudo passa pela ponte do preload, que só expõe `invocar` e `ouvir`.
-- O **main** valida o remetente do IPC e executa comandos de uma tabela fechada (`src/main/ipc.ts`).
-- O **motor Python** conversa por JSON de uma linha por mensagem (`engine/main.py`); bibliotecas pesadas só carregam quando usadas.
-- As janelas remotas (BNDV, Instagram) **não recebem preload** nem acesso a Node.
+Detalhes em [docs/architecture/launcher-and-updates.md](docs/architecture/launcher-and-updates.md).
+</details>
 
-Detalhes em [docs/02-arquitetura-e-migracao.md](docs/02-arquitetura-e-migracao.md) e no [Manual do Desenvolvedor](docs/12-manual-do-desenvolvedor.md).
+## 04 / Princípios
 
-## Estrutura de pastas
+- **Local-first.** Banco, fotos, vídeos e documentos ficam na máquina da loja.
+- **Custo zero por uso.** Nenhuma API paga, nenhuma chave. Textos de IA saem por um *prompt pronto*
+  colado no chat que a equipe já usa.
+- **Nada é publicado sozinho.** O app deixa tudo pronto; uma pessoa revisa e publica.
+- **Seguro por padrão.** Interface sem acesso a Node, comandos IPC com esquema, sites externos sem
+  ponte, token do CRM cifrado, pacotes conferidos por SHA-256.
+
+## 05 / Arquitetura
 
 ```text
-soul-cars-app/
-├── src/
-│   ├── main/            processo principal: janela, IPC, banco, disco, BNDV, Instagram, motor
-│   │   ├── estoque/     extração BNDV, sincronização de pastas, balanço, relatório, vendas
-│   │   ├── studio/      banco/esquema SQLite, arquivos, entrada, Instagram, motor Python
-│   │   └── soulia/      memória do CRM (uTalk), análise de atendimento e planilha
-│   ├── preload/         ponte segura window.soul
-│   ├── compartilhado/   regras puras usadas por main e renderer (anúncio, entrada, publicação)
-│   └── renderer/        interface React (src/) e recursos estáticos, incluindo o editor de criativos (public/criativo)
-├── engine/              motor Python (CRLV, OCR, CNW, fotos, visão, vídeo) + testes
-├── resources/           ícone e logo empacotados
-├── scripts/             instalação (.cmd) e testes de fumaça (smoke)
-├── testes/              testes Vitest e fixtures
-├── docs/                visão geral para IA, guias, manuais, CRM/Soul IA e planejamento
-├── dados-loja/          (local, fora do Git) ESTOQUE/ e dados/ da loja
-└── legado/              (local, fora do Git) projetos anteriores usados como referência
+soul-cars/
+├── apps/
+│   ├── launcher/        Soul Cars Launcher — Electron + TypeScript puro
+│   │   └── src/{main,preload,shared,renderer}
+│   ├── desktop/         Soul Cars — Electron + React 19 + TypeScript
+│   │   ├── src/main/        core · ipc · window · inventory · studio · crm · soul-ai · finance
+│   │   ├── src/preload/     ponte segura window.soul
+│   │   ├── src/shared/      regras puras (anúncio, entrada, Instagram, vitrine…)
+│   │   ├── src/renderer/    app/ (shell) · pages/<área>/ · lib/ · public/creative-editor
+│   │   ├── tests/           Vitest + fixtures
+│   │   └── scripts/         smoke em Electron real e prints do README
+│   └── engine/          motor Python 3.12 (uv): documents · specs · media · spreadsheets · video
+├── scripts/release/     gera o manifest.json da release
+├── website/             página de apresentação (GitHub Pages)
+├── docs/                guias, arquitetura, desenvolvimento, CRM, vídeo, planejamento
+└── .github/workflows/   CI (lint, tipos, testes, motor, smoke) e Release por tag
 ```
 
-## Instalação e execução
+| Camada | Tecnologia |
+|---|---|
+| Desktop | Electron 44 · electron-vite · Vite 7 · React 19 · TypeScript 5 (strict) |
+| Dados | SQLite embutido (`node:sqlite`), migrações versionadas |
+| Motor | Python 3.12 + uv · pdfplumber · Tesseract · rembg/ONNX · CLIP · faster-whisper · FFmpeg · openpyxl |
+| Qualidade | ESLint · Prettier · Vitest · unittest · smoke e E2E em Electron real · GitHub Actions |
+| Entrega | electron-builder (zip + NSIS) · GitHub Releases · manifesto com SHA-256 |
 
-Requisitos: Windows 10/11 x64, Git para Windows e Node.js 22.16+. Para as automações: [uv](https://docs.astral.sh/uv/), Tesseract (com português) e FFmpeg.
+Inventário completo em [technology-stack.md](docs/architecture/technology-stack.md) e a crítica
+técnica com o roadmap em [technical-review.md](docs/architecture/technical-review.md).
 
-```bat
-cd /d "CAMINHO\ate\soul-cars-app"
-scripts\instalar.cmd
-npm run dev
+## 06 / Desenvolvimento
+
+Requisitos: Windows 10/11 x64, Node.js 22.16+, Git. Para o motor: [uv](https://docs.astral.sh/uv/),
+Tesseract (português) e FFmpeg.
+
+```bash
+npm install
+npm run dev               # app desktop com recarga automática
+npm run dev:launcher      # Launcher
 ```
-
-Para o dia a dia, use o atalho `SOUL Cars` (na pasta acima de `soul-cars-app`): ele abre o app **sem terminal**, com uma tela de carregamento, e só recompila se o código mudou (`scripts/iniciar-oculto.vbs` → `iniciar.cmd` → `iniciar.mjs`; erros ficam em `.tmp/iniciar.log`). `scripts/iniciar-dev.cmd` abre o modo de desenvolvimento, com terminal. Para o motor Python, execute `scripts\instalar-motor.cmd` (veja [docs/05-motor-python.md](docs/05-motor-python.md)). Passo a passo de uso em [docs/01-primeiro-uso.md](docs/01-primeiro-uso.md).
-
-## Comandos
 
 | Comando | Para quê |
 |---|---|
-| `npm run dev` | Abre o app em desenvolvimento |
-| `npm run build` / `npm start` | Gera e abre o build (verifica `file://`) |
-| `npm run lint` | ESLint, sem nenhum aviso aceito (promessas esquecidas, hooks do React, erros comuns) |
-| `npm run tipos` | TypeScript (main/preload e React) |
-| `npm test` | Vitest |
-| `npm run test:engine` | Testes Python do motor |
-| `npm run smoke` / `npm run smoke:instagram` | Testes de fumaça em Electron real, com dados temporários; o Instagram é simulado |
-| `npm run formatar` / `npm run formatar:check` | Prettier |
-| `npm run empacotar` | Instalador NSIS Windows x64 em `dist/` |
+| `npm run lint` / `npm run typecheck` / `npm run format:check` | Qualidade (zero avisos) |
+| `npm test` | Vitest do app e do Launcher |
+| `npm run test:engine` | Testes do motor Python |
+| `npm run smoke` · `npm run smoke:instagram` | Electron real com dados temporários |
+| `npm run e2e:launcher` | Launcher instala o app de um feed local (exige `package:desktop`) |
+| `npm run screenshots` | Regera os prints do README com dados fictícios |
+| `npm run package:desktop` · `npm run package:launcher` | Pacotes em `apps/*/dist` |
 
-## Onde ficam os dados
+**Publicar uma versão:** adicione a seção em `CHANGELOG.md`, depois
 
-| O quê | Onde |
-|---|---|
-| Banco, preferências, fotos do editor, backups, histórico do Instagram | `%APPDATA%\soul-cars-app\` |
-| Pastas dos veículos e CSVs do BNDV | Raiz de dados escolhida em Configurações (por padrão `dados-loja/` ao lado do app) |
-| Sessões do BNDV e do Instagram | Partições persistentes do Electron, dentro de `%APPDATA%\soul-cars-app\` |
+```bash
+git tag v1.1.0
+git push origin v1.1.0
+```
 
-Veja [docs/04-dados-e-backup.md](docs/04-dados-e-backup.md).
+O workflow `release.yml` testa, empacota, gera o `manifest.json` e publica a release; os
+Launchers instalados avisam a equipe na próxima abertura.
 
-## Segurança e privacidade
+## 07 / Licença
 
-- Repositório **privado**. Nunca versionar bancos, CSVs, documentos, fotos, sessões, `.env` ou chaves (o `.gitignore` já cobre os locais padrão).
-- Sem caminhos pessoais, senhas ou tokens no código.
-- Migrações de banco distribuídas são imutáveis; novas mudanças viram uma nova versão.
-- Pastas existentes e IDs BNDV são preservados; pastas órfãs nunca são apagadas.
-
-## Documentação
-
-Índice completo em [docs/README.md](docs/README.md). Destaques:
-
-- [Visão geral para assistentes de IA](docs/00-visao-geral-para-ia.md): mapa do app inteiro, regras e onde mexer (leia primeiro).
-- [Manual do Usuário](docs/11-manual-do-usuario.md): fluxo completo, do estoque ao anúncio.
-- [Manual do Desenvolvedor](docs/12-manual-do-desenvolvedor.md): fluxo técnico, roadmap de manutenção e receitas.
-- [Avaliação: erros, melhorias e pontos fortes](docs/10-avaliacao-erros-melhorias.md): retrato de 11/10/2026; os números atuais estão em [Estado atual](#estado-atual).
-- [Soul IA](docs/16-soul-ia.md): memória das conversas do CRM, planilha e padrão de atendimento (base do futuro agente de WhatsApp).
-- [Roadmap do produto](docs/planejamento/02-roadmap.md).
-- [Avisos de terceiros](THIRD_PARTY_NOTICES.md): licenças das dependências do motor, modelos e arquivos embutidos.
-
-## Estado atual
-
-Versão **1.0.0**. Em 16/10/2026: tipos e lint sem erros, 214 testes Vitest (2 pulados) e 74 testes Python (5 pulados) passando e build gerado. O resultado completo dos smokes em Electron real está na avaliação de 11/10/2026 (`npm run smoke` e `npm run smoke:instagram` repetem a conferência).
-
-## Licença e autoria
-
-Desenvolvido e assinado pela **Atto Comunicação**, para uso privado da SOUL Cars. **Todos os direitos reservados** (veja [LICENSE](LICENSE)); bibliotecas, fontes e modelos de terceiros seguem as suas próprias licenças, e os avisos delas permanecem. Confirme os direitos de marca, logo e trilha antes de qualquer distribuição pública.
+© 2026 **Atto Comunicação**. Todos os direitos reservados — veja [LICENSE](LICENSE). Bibliotecas,
+fontes e modelos de terceiros seguem as próprias licenças ([THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
+Marca e logo Soul Cars pertencem aos seus titulares.

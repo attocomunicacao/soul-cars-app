@@ -1,0 +1,40 @@
+{
+  // Tipos do lado Node: processo principal, preload, regras compartilhadas e os testes que os importam.
+  "compilerOptions": {
+    "composite": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": { "@shared/*": ["src/shared/*"] }
+  },
+  "include": [
+    "src/main/**/*.ts",
+    "src/preload/**/*.ts",
+    "src/shared/**/*.ts",
+    "electron.vite.config.ts",
+    "tests/intake.test.ts",
+    "tests/legacy-ai-cleanup.test.ts",
+    "tests/validation.test.ts",
+    "tests/repository.test.ts",
+    "tests/bndv-graphql.test.ts",
+    "tests/showcase.test.ts",
+    "tests/bndv-extras.test.ts",
+    "tests/report-print.test.ts",
+    "tests/config-json.test.ts",
+    "tests/models.test.ts",
+    "tests/gpu.test.ts",
+    "tests/utalk-api.test.ts",
+    "tests/crm-tags.test.ts",
+    "tests/soul-ai.test.ts",
+    "tests/performance.test.ts"
+  ]
+}

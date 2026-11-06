@@ -1,0 +1,85 @@
+{
+  "name": "soul-cars-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Soul Cars Desktop — estoque, studio de produção, CRM e finanças da revenda (Electron + React + TypeScript)",
+  "author": "Atto Comunicação",
+  "license": "UNLICENSED",
+  "main": "./out/main/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "start": "electron-vite preview",
+    "build": "electron-vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "test": "vitest run",
+    "smoke": "electron scripts/smoke.cjs",
+    "smoke:instagram": "node scripts/prepare-instagram-smoke.cjs && electron scripts/instagram-smoke.cjs",
+    "screenshots": "electron scripts/capture-screenshots.cjs",
+    "package": "electron-vite build && electron-builder --win --publish never"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "electron": "44.10.2",
+    "electron-builder": "^26.0.0",
+    "electron-vite": "^4.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "vite": "^7.0.0"
+  },
+  "build": {
+    "appId": "com.soulcars.app",
+    "productName": "SOUL Cars",
+    "executableName": "SoulCars",
+    "directories": {
+      "output": "dist",
+      "buildResources": "resources"
+    },
+    "compression": "normal",
+    "electronLanguages": [
+      "pt-BR",
+      "en-US"
+    ],
+    "artifactName": "soul-cars-desktop-${version}-win-${arch}.${ext}",
+    "files": [
+      "out/**",
+      "!**/*.map"
+    ],
+    "extraResources": [
+      {
+        "from": "resources",
+        "to": "."
+      },
+      {
+        "to": "engine",
+        "from": "../engine",
+        "filter": [
+          "**/*",
+          "!.venv/**",
+          "!tests/**",
+          "!**/__pycache__/**",
+          "!**/*.pyc",
+          "!video/assets/TRILHA.*"
+        ]
+      },
+      {
+        "from": "../../THIRD_PARTY_NOTICES.md",
+        "to": "THIRD_PARTY_NOTICES.md"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "resources/icon.ico"
+    }
+  }
+}

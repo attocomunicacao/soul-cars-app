@@ -1,16 +1,18 @@
+/**
+ * ESLint do monorepo (apps/desktop e apps/launcher).
+ *
+ * Regras pensadas para pegar bugs reais (promessas esquecidas, efeitos do React),
+ * sem brigar com o estilo, que o Prettier já cuida. Rode com `npm run lint`.
+ */
 import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
-// Regras pensadas para pegar bugs reais (promessas esquecidas, efeitos do React),
-// sem brigar com o estilo, que o Prettier já cuida.
-const tipado = {
+/** Regras que exigem informação de tipos (cada app aponta para os seus tsconfig). */
+const tipado = (projetos) => ({
   languageOptions: {
-    parserOptions: {
-      project: ["./tsconfig.node.json", "./tsconfig.web.json"],
-      tsconfigRootDir: import.meta.dirname,
-    },
+    parserOptions: { project: projetos, tsconfigRootDir: import.meta.dirname },
   },
   rules: {
     "@typescript-eslint/no-floating-promises": "error",
@@ -20,20 +22,30 @@ const tipado = {
     ],
     "@typescript-eslint/await-thenable": "error",
   },
-};
+});
+const DESKTOP = tipado([
+  "./apps/desktop/tsconfig.node.json",
+  "./apps/desktop/tsconfig.web.json",
+]);
+const LAUNCHER = tipado([
+  "./apps/launcher/tsconfig.node.json",
+  "./apps/launcher/tsconfig.web.json",
+]);
 
 export default tseslint.config(
   {
     ignores: [
-      "out/**",
-      "dist/**",
-      "node_modules/**",
-      ".tmp/**",
+      "**/out/**",
+      "**/dist/**",
+      "**/node_modules/**",
+      "**/.tmp/**",
+      ".restructure/**",
       "legado/**",
       "dados-loja/**",
-      "engine/**",
+      "apps/engine/**",
       // Editor de criativos: JavaScript próprio, fora do TypeScript.
-      "src/renderer/public/**",
+      "apps/desktop/src/renderer/public/**",
+      "website/**",
       "**/*.tsbuildinfo",
     ],
   },
@@ -56,31 +68,42 @@ export default tseslint.config(
     },
   },
   {
-    files: [
-      "src/main/**/*.ts",
-      "src/preload/**/*.ts",
-      "src/compartilhado/**/*.ts",
-    ],
+    files: ["apps/desktop/src/{main,preload,shared}/**/*.ts"],
     languageOptions: { globals: globals.node },
-    ...tipado,
+    ...DESKTOP,
   },
   {
-    files: ["src/renderer/src/**/*.{ts,tsx}"],
+    files: ["apps/desktop/src/renderer/src/**/*.{ts,tsx}"],
     languageOptions: { globals: globals.browser },
     plugins: { "react-hooks": reactHooks },
-    ...tipado,
+    ...DESKTOP,
     rules: {
-      ...tipado.rules,
+      ...DESKTOP.rules,
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
     },
   },
   {
-    files: ["testes/**/*.ts"],
+    files: ["apps/launcher/src/{main,preload,shared}/**/*.ts"],
+    languageOptions: { globals: globals.node },
+    ...LAUNCHER,
+  },
+  {
+    files: ["apps/launcher/src/renderer/src/**/*.ts"],
+    languageOptions: { globals: globals.browser },
+    ...LAUNCHER,
+  },
+  {
+    files: ["apps/*/tests/**/*.ts"],
     languageOptions: { globals: globals.node },
   },
   {
-    files: ["testes/**/*.mjs", "scripts/**/*.{cjs,mjs}", "*.config.{js,ts}"],
+    files: [
+      "apps/*/tests/**/*.mjs",
+      "apps/*/scripts/**/*.{cjs,mjs}",
+      "scripts/**/*.{cjs,mjs}",
+      "**/*.config.{js,ts}",
+    ],
     languageOptions: {
       globals: { ...globals.node, ...globals.browser },
       sourceType: "commonjs",
@@ -88,7 +111,7 @@ export default tseslint.config(
     rules: { "@typescript-eslint/no-require-imports": "off" },
   },
   {
-    files: ["testes/**/*.mjs", "scripts/**/*.mjs", "*.config.js"],
+    files: ["apps/*/tests/**/*.mjs", "scripts/**/*.mjs", "**/*.config.js"],
     languageOptions: { sourceType: "module" },
   },
 );

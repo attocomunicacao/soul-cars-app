@@ -1,4 +1,7 @@
-name: Verificar SOUL Cars
+name: CI
+
+# Verifica cada push e pull request: lint, tipos, formatação, testes, build,
+# motor Python e smokes em Electron real (Windows, igual à máquina da loja).
 on:
   push:
   pull_request:
@@ -10,27 +13,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  app:
-    name: Código (lint, tipos, testes, build)
+  apps:
+    name: Apps (lint, tipos, testes, build)
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
       - run: npm ci
       - run: npm run lint
-      - run: npm run tipos
-      - run: npm run formatar:check
+      - run: npm run typecheck
+      - run: npm run format:check
       - run: npm test
       - run: npm run build
-      # Só falha em vulnerabilidade alta ou crítica; os avisos moderados conhecidos
-      # estão na cadeia do electron-builder (ferramenta de empacotamento).
+      # Só falha em vulnerabilidade alta ou crítica (avisos moderados conhecidos vêm do electron-builder).
       - run: npm audit --audit-level=high
 
-  motor:
+  engine:
     name: Motor Python (testes)
     runs-on: windows-latest
     timeout-minutes: 20
@@ -39,33 +41,33 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-          cache-dependency-glob: engine/uv.lock
+          cache-dependency-glob: apps/engine/uv.lock
       # Só os grupos que os testes usam; recorte e transcrição (modelos grandes) ficam de fora.
-      - run: uv sync --group documentos
-        working-directory: engine
+      - run: uv sync --group documentos --group planilha
+        working-directory: apps/engine
       # O FFmpeg faz rodarem os testes da versão leve do vídeo.
       - run: choco install ffmpeg -y --no-progress
       - run: uv run --no-sync python -m unittest discover -s tests -p "test_*.py"
-        working-directory: engine
+        working-directory: apps/engine
 
   smoke:
     name: Smoke (Electron real)
     runs-on: windows-latest
     timeout-minutes: 25
-    needs: [app]
+    needs: [apps]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-          cache-dependency-glob: engine/uv.lock
+          cache-dependency-glob: apps/engine/uv.lock
       - run: npm ci
       - run: uv sync --group documentos
-        working-directory: engine
-      - run: npm run build
+        working-directory: apps/engine
+      - run: npm run build -w apps/desktop
       - run: npm run smoke
       - run: npm run smoke:instagram

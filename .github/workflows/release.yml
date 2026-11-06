@@ -1,37 +1,96 @@
-name: Publicar instalador
+name: Release
 
-# Cria o instalador do Windows e anexa a uma Release do GitHub.
-# Para publicar uma versão:  git tag v1.0.0  e  git push origin v1.0.0
+# Publica uma versão para o Soul Cars Launcher.
+#   git tag v1.1.0 && git push origin v1.1.0
+#
+# Gera e anexa à GitHub Release:
+#   - soul-cars-desktop-<versão>-win-x64.zip   (app, baixado e instalado pelo Launcher)
+#   - soul-cars-launcher-setup-<versão>.exe    (instalador do Launcher, para a equipe)
+#   - manifest.json                             (catálogo lido pelo Launcher: versões + SHA-256)
+#
+# O Launcher sempre lê .../releases/latest/download/manifest.json, então a release
+# precisa ser pública e não marcada como pré-lançamento para chegar aos usuários.
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Versão (ex.: 1.1.0) para um build de teste, sem publicar"
+        required: true
 
 permissions:
   contents: write
 
 jobs:
-  instalador:
+  build:
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
+
+      - name: Definir versão
+        id: versao
+        shell: bash
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then V="${GITHUB_REF_NAME#v}"; else V="${{ inputs.version }}"; fi
+          echo "valor=$V" >> "$GITHUB_OUTPUT"
+
       - run: npm ci
-      - run: npm run empacotar
-      - name: Criar Release com o instalador
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Aplicar a versão aos apps
+        run: |
+          npm version ${{ steps.versao.outputs.valor }} --no-git-tag-version --allow-same-version -w apps/desktop
+          npm version ${{ steps.versao.outputs.valor }} --no-git-tag-version --allow-same-version -w apps/launcher
+
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run package:desktop
+      - run: npm run package:launcher
+
+      - name: Notas da versão
+        shell: bash
+        run: |
+          # Trecho do CHANGELOG.md desta versão (entre "## [x.y.z]" e o próximo "## [").
+          awk -v v="${{ steps.versao.outputs.valor }}" '
+            $0 ~ "^## \\[" v "\\]" {on=1; next}
+            on && /^## \[/ {exit}
+            on {print}' CHANGELOG.md > release-notes.md
+          [ -s release-notes.md ] || echo "Soul Cars ${{ steps.versao.outputs.valor }}." > release-notes.md
+
+      - name: Gerar manifest.json
+        shell: bash
+        run: |
+          V="${{ steps.versao.outputs.valor }}"
+          node scripts/release/create-manifest.mjs \
+            --version "$V" \
+            --app-zip "apps/desktop/dist/soul-cars-desktop-$V-win-x64.zip" \
+            --launcher-exe "apps/launcher/dist/soul-cars-launcher-setup-$V.exe" \
+            --base-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v$V/" \
+            --notes release-notes.md \
+            --out manifest.json
+
+      - name: Publicar a Release
+        if: github.ref_type == 'tag'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" dist/SOUL-Cars-Setup-*.exe \
-            --title "SOUL Cars ${GITHUB_REF_NAME}" --generate-notes
+          V="${{ steps.versao.outputs.valor }}"
+          gh release create "v$V" \
+            "apps/desktop/dist/soul-cars-desktop-$V-win-x64.zip" \
+            "apps/launcher/dist/soul-cars-launcher-setup-$V.exe" \
+            manifest.json \
+            --title "Soul Cars v$V" --notes-file release-notes.md
+
       - uses: actions/upload-artifact@v4
         if: github.event_name == 'workflow_dispatch'
         with:
-          name: instalador
-          path: dist/SOUL-Cars-Setup-*.exe
+          name: soul-cars-${{ steps.versao.outputs.valor }}
+          path: |
+            apps/desktop/dist/*.zip
+            apps/launcher/dist/*.exe
+            manifest.json

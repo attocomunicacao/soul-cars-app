@@ -1,107 +1,49 @@
 {
-  "name": "soul-cars-app",
+  "name": "soul-cars",
   "version": "1.0.0",
   "private": true,
-  "description": "SOUL Cars — Estoque e Studio em um app só (Electron + React + TypeScript + Vite)",
+  "description": "Soul Cars — plataforma de gestão para revendas de veículos: Launcher + app desktop + motor de automação",
   "author": "Atto Comunicação",
   "license": "UNLICENSED",
-  "main": "./out/main/index.js",
   "type": "module",
+  "workspaces": [
+    "apps/desktop",
+    "apps/launcher"
+  ],
   "scripts": {
-    "dev": "electron-vite dev",
-    "start": "electron-vite preview",
-    "build": "electron-vite build",
-    "tipos": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "dev": "npm run dev -w apps/desktop",
+    "dev:launcher": "npm run dev -w apps/launcher",
+    "build": "npm run build -w apps/desktop && npm run build -w apps/launcher",
+    "typecheck": "npm run typecheck -w apps/desktop && npm run typecheck -w apps/launcher",
     "lint": "eslint . --max-warnings 0",
-    "test": "vitest run",
-    "empacotar": "electron-vite build && electron-builder --win --publish never",
-    "postinstall": "electron-builder install-app-deps",
-    "test:engine": "cd engine && uv run --all-groups python -m unittest discover -s tests -p \"test_*.py\"",
-    "smoke": "electron scripts/smoke.cjs",
-    "smoke:instagram": "node scripts/preparar-smoke-instagram.cjs && electron scripts/smoke-instagram.cjs",
-    "formatar": "prettier --write \"src/main/**/*.ts\" \"src/preload/**/*.ts\" \"src/compartilhado/**/*.ts\" \"src/renderer/src/**/*.{ts,tsx,css}\" \"*.{ts,js,json}\" \"testes/**/*.{ts,mjs}\" \"scripts/*.cjs\"",
-    "formatar:check": "prettier --check \"src/main/**/*.ts\" \"src/preload/**/*.ts\" \"src/compartilhado/**/*.ts\" \"src/renderer/src/**/*.{ts,tsx,css}\" \"*.{ts,js,json}\" \"testes/**/*.{ts,mjs}\" \"scripts/*.cjs\""
-  },
-  "dependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "test": "npm run test -w apps/desktop && npm run test -w apps/launcher",
+    "test:engine": "cd apps/engine && uv run --all-groups python -m unittest discover -s tests -p \"test_*.py\"",
+    "smoke": "npm run smoke -w apps/desktop",
+    "smoke:instagram": "npm run smoke:instagram -w apps/desktop",
+    "e2e:launcher": "npm run build -w apps/launcher && electron apps/launcher/scripts/e2e-install.cjs",
+    "screenshots": "npm run build -w apps/desktop && npm run screenshots -w apps/desktop",
+    "package:desktop": "npm run package -w apps/desktop",
+    "package:launcher": "npm run package -w apps/launcher",
+    "release:manifest": "node scripts/release/create-manifest.mjs",
+    "format": "prettier --write \"apps/desktop/src/{main,preload,shared}/**/*.ts\" \"apps/desktop/src/renderer/src/**/*.{ts,tsx,css}\" \"apps/desktop/tests/**/*.{ts,mjs}\" \"apps/desktop/scripts/*.cjs\" \"apps/desktop/*.{ts,json}\" \"apps/launcher/src/**/*.{ts,css,html}\" \"apps/launcher/*.{ts,json}\" \"scripts/**/*.mjs\" \"*.{js,json}\"",
+    "format:check": "prettier --check \"apps/desktop/src/{main,preload,shared}/**/*.ts\" \"apps/desktop/src/renderer/src/**/*.{ts,tsx,css}\" \"apps/desktop/tests/**/*.{ts,mjs}\" \"apps/desktop/scripts/*.cjs\" \"apps/desktop/*.{ts,json}\" \"apps/launcher/src/**/*.{ts,css,html}\" \"apps/launcher/*.{ts,json}\" \"scripts/**/*.mjs\" \"*.{js,json}\""
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@tailwindcss/vite": "^4.0.0",
-    "@types/node": "^22.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "electron": "^44.7.0",
-    "electron-builder": "^26.0.0",
-    "electron-vite": "^4.0.0",
     "eslint": "^10.12.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.13.0",
     "prettier": "^3.9.9",
-    "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.71.1",
-    "vite": "^7.0.0",
     "vitest": "^5.0.3"
   },
-  "build": {
-    "appId": "com.soulcars.app",
-    "productName": "SOUL Cars",
-    "directories": {
-      "output": "dist",
-      "buildResources": "resources"
-    },
-    "compression": "maximum",
-    "electronLanguages": [
-      "pt-BR",
-      "en-US"
-    ],
-    "artifactName": "SOUL-Cars-Setup-${version}.exe",
-    "files": [
-      "out/**",
-      "!**/*.map"
-    ],
-    "extraResources": [
-      {
-        "from": "resources",
-        "to": "."
-      },
-      {
-        "to": "engine",
-        "from": "engine",
-        "filter": [
-          "**/*",
-          "!.venv/**",
-          "!tests/**",
-          "!**/__pycache__/**",
-          "!**/*.pyc",
-          "!video/assets/TRILHA.*"
-        ]
-      },
-      {
-        "from": "THIRD_PARTY_NOTICES.md",
-        "to": "THIRD_PARTY_NOTICES.md"
-      }
-    ],
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "icon": "resources/icone.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": false,
-      "shortcutName": "SOUL Cars"
-    }
+  "engines": {
+    "node": ">=22.16"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true,
+    "electron-winstaller@5.4.0": true
   }
 }
