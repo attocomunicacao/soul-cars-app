@@ -6,6 +6,7 @@
  * `window.launcher` (preload); erros aparecem na faixa vermelha do topo.
  */
 import "./styles.css";
+import { linhasDasNotas, trechosDaLinha } from "../../shared/release-notes";
 import type {
   EstadoApp,
   EstadoLauncher,
@@ -155,10 +156,19 @@ function cartao(item: EstadoApp): HTMLElement {
     const notas = el("details", "notes");
     notas.append(el("summary", "mono", `NOTAS DA VERSÃO v${release.version}`));
     const lista = el("ul");
-    for (const linha of release.notes
-      .split("\n")
-      .map((l) => l.replace(/^[-*]\s*/, "").trim()))
-      if (linha) lista.append(el("li", "", linha));
+    for (const linha of linhasDasNotas(release.notes)) {
+      const item = el("li");
+      // Negrito e código viram <b>/<code> criados no DOM (nunca innerHTML).
+      for (const trecho of trechosDaLinha(linha))
+        item.append(
+          trecho.estilo === "negrito"
+            ? el("b", "", trecho.texto)
+            : trecho.estilo === "codigo"
+              ? el("code", "", trecho.texto)
+              : document.createTextNode(trecho.texto),
+        );
+      lista.append(item);
+    }
     notas.append(lista);
     corpo.append(notas);
   }

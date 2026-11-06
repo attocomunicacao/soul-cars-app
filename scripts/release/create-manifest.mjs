@@ -51,10 +51,22 @@ function pacote(arquivo) {
   };
 }
 
-/** Notas da versão: o arquivo indicado ou um texto padrão. */
+/**
+ * Tira a marcação Markdown das notas (negrito, código e links), deixando texto simples.
+ * O Launcher 1.0.0 mostra as notas como texto puro; sem isto, "**" e "`" apareceriam na tela.
+ * Os marcadores de lista ("- ") ficam: todas as versões do Launcher os tratam.
+ */
+function notasSemMarcacao(texto) {
+  return texto
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/\*\*(.+?)\*\*|__(.+?)__/g, (_m, a, b) => a ?? b)
+    .replace(/`([^`]+)`/g, "$1");
+}
+
+/** Notas da versão: o arquivo indicado (sem marcação) ou um texto padrão. */
 const notas =
   a.notes && fs.existsSync(a.notes)
-    ? fs.readFileSync(a.notes, "utf8").trim()
+    ? notasSemMarcacao(fs.readFileSync(a.notes, "utf8").trim())
     : `Soul Cars ${versao}.`;
 
 const manifesto = {
