@@ -10,10 +10,11 @@ import {
 } from "../src/renderer/src/app/navigation";
 
 describe("menu lateral", () => {
-  it("mostra o 01 · Estoque e o 02 · CRM", () => {
+  it("mostra o 01 · Estoque, o 02 · CRM e o 03 · Meta Ads", () => {
     expect(MENU.map((i) => [i.pagina, i.rotulo])).toEqual([
       ["estoque", "01 · Estoque"],
       ["crm", "02 · CRM"],
+      ["meta", "03 · Meta Ads"],
     ]);
     expect(MENU.every((i) => !!i.icone)).toBe(true);
   });
@@ -22,7 +23,6 @@ describe("menu lateral", () => {
     expect(MENU_OCULTO.map((i) => i.pagina)).toEqual([
       "leads",
       "bndv",
-      "meta",
       "financas",
     ]);
     expect(MENU_OCULTO.some((i) => i.pagina === "estoque")).toBe(false);
