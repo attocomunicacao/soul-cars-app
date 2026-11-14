@@ -14,7 +14,9 @@ import * as caminhos from "./core/paths";
 import {
   definirJanela,
   iniciarEntrada,
+  iniciarPreAtendimento,
   pararEntrada,
+  pararPreAtendimento,
   registrarIpc,
 } from "./ipc/commands";
 import { reiniciarMotor } from "./studio/engine-bridge";
@@ -146,6 +148,7 @@ if (!app.requestSingleInstanceLock()) {
       registrarIpc();
       criarJanela(splash);
       iniciarEntrada();
+      iniciarPreAtendimento();
 
       app.on("activate", () => {
         if (!BrowserWindow.getAllWindows().length) criarJanela(null);
@@ -169,6 +172,7 @@ if (!app.requestSingleInstanceLock()) {
     }, 5000).unref();
   });
   app.on("before-quit", pararEntrada);
+  app.on("before-quit", pararPreAtendimento);
   app.on("before-quit", reiniciarMotor);
   app.on("before-quit", encerrarInstagram);
   app.on("before-quit", fecharEmbutidas);

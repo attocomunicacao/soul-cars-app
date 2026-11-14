@@ -8,6 +8,7 @@
  *  - "studio"   → ficha de um veículo (aberta a partir do estoque; não aparece no menu)
  *  - "crm" / "bndv" / "meta" → sites embutidos (WebContentsView no processo principal)
  *  - "leads"    → painel do CRM e memória da Soul IA
+ *  - "preAtendimento" → a IA que atende pelo WhatsApp os leads com a etiqueta de gatilho
  *  - "financas" → planilha financeira do mês
  */
 import type { NomeIcone } from "./icons";
@@ -23,7 +24,8 @@ export type Pagina =
   | "financas"
   | "leadsCrm"
   | "metaPainel"
-  | "funil";
+  | "funil"
+  | "preAtendimento";
 
 /**
  * Item do menu lateral: página de destino, rótulo, ícone (ver app/icons.tsx) e o grupo
@@ -45,6 +47,12 @@ export const MENU: readonly ItemMenu[] = [
   { pagina: "estoque", rotulo: "Estoque", icone: "estoque" },
   { pagina: "leadsCrm", rotulo: "Leads", icone: "leads", grupo: "CRM" },
   { pagina: "crm", rotulo: "Atendimento", icone: "crm", grupo: "CRM" },
+  {
+    pagina: "preAtendimento",
+    rotulo: "Pré-atendimento IA",
+    icone: "ia",
+    grupo: "CRM",
+  },
   {
     pagina: "metaPainel",
     rotulo: "Campanhas",

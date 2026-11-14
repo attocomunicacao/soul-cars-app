@@ -37,6 +37,7 @@ import * as soulApp from "../crm/soul-app-import";
 import * as metaAds from "../meta/meta";
 import * as funil from "../funnel/funnel";
 import * as souliaIa from "../soul-ai/soul-ai";
+import * as preAtendimento from "../pre-service/pre-service";
 import { vitrine } from "../inventory/showcase";
 import { exportarRelatorioPdf } from "../inventory/report-pdf";
 import { gerarHtml } from "../inventory/report";
@@ -90,6 +91,10 @@ const semCopiaEmAndamento = () => {
     );
 };
 export const iniciarEntrada = () => entrada.iniciar();
+/** Pré-atendimento IA: o laço só roda se estiver ligado nas configurações dele. */
+export const iniciarPreAtendimento = () =>
+  preAtendimento.iniciarPreAtendimento(emitir);
+export const pararPreAtendimento = () => preAtendimento.pararLaco();
 export const pararEntrada = () => entrada.parar();
 
 const naoVazio = (v: unknown, mensagem: string) => {
@@ -219,10 +224,11 @@ const COMANDOS: Record<string, Comando> = {
   // ---- caminhos e configuração ----
   app_data: () => caminhos.userData(),
   config_ler: () => {
-    // Os tokens cifrados (uTalk e Meta) nunca vão para a interface.
+    // Os tokens cifrados (uTalk, Meta e Groq) nunca vão para a interface.
     const {
       utalkTokenCifrado: _token,
       metaTokenCifrado: _meta,
+      groqChaveCifrada: _groq,
       ...resto
     } = caminhos.lerConfig();
     return { ...resto, raizDados: caminhos.raizDados() };
@@ -276,6 +282,26 @@ const COMANDOS: Record<string, Comando> = {
   soulia_exportar: () => souliaIa.exportarSouliaIa(emitir),
   soulia_abrir_pasta: () => souliaIa.abrirPastaSouliaIa(),
   soulia_esquecer: () => souliaIa.esquecerSouliaIa(),
+  // ---- Pré-atendimento IA (atende pelo uTalk os leads com a etiqueta de gatilho) ----
+  pre_painel: () => preAtendimento.painel(),
+  pre_config_salvar: (a) => preAtendimento.salvarConfig(a.patch),
+  pre_chave_groq_salvar: (a) => preAtendimento.salvarChaveGroq(String(a.chave)),
+  pre_loja_salvar: (a) => preAtendimento.salvarLoja(a.patch),
+  pre_persona_salvar: (a) => preAtendimento.salvarPersona(String(a.persona)),
+  pre_resposta_salvar: (a) => preAtendimento.salvarResposta(a.item),
+  pre_resposta_remover: (a) => preAtendimento.removerResposta(String(a.id)),
+  pre_respostas_importar: () => preAtendimento.importarRespostas(),
+  pre_exemplo_salvar: (a) => preAtendimento.salvarExemplo(a.item),
+  pre_exemplo_remover: (a) => preAtendimento.removerExemplo(String(a.id)),
+  pre_exemplos_recalcular: () => preAtendimento.recalcularExemplos(),
+  pre_simular: (a) => preAtendimento.simular(a as never),
+  pre_rodar: () => preAtendimento.rodar(),
+  pre_aprovar: (a) => preAtendimento.aprovar(String(a.id), a.texto),
+  pre_descartar: (a) => preAtendimento.descartar(String(a.id)),
+  pre_reativar: (a) => preAtendimento.reativar(String(a.chatId)),
+  pre_esquecer: (a) => preAtendimento.esquecerChat(String(a.chatId)),
+  pre_etiquetas: () => preAtendimento.etiquetasUtalk(),
+  pre_modelos: () => preAtendimento.modelos(),
   estoque_vitrine: () => vitrine(),
   // ---- Finanças (planilha mensal vinculada) ----
   financas_estado: () => financas.estadoFinancas(),

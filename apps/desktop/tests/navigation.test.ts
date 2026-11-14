@@ -15,6 +15,7 @@ describe("menu lateral", () => {
       ["", "estoque", "Estoque"],
       ["CRM", "leadsCrm", "Leads"],
       ["CRM", "crm", "Atendimento"],
+      ["CRM", "preAtendimento", "Pré-atendimento IA"],
       ["Meta Ads", "metaPainel", "Campanhas"],
       ["Meta Ads", "meta", "Gerenciador"],
       ["Funil", "funil", "Meta → CRM"],

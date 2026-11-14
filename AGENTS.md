@@ -22,7 +22,7 @@ Leia DESIGN.md (visual), docs/architecture/technology-stack.md, docs/architectur
 - Preserve os formatos DES.md e DOC.md; confira fixtures quando alterar formatos.
 - Consignados não entram no custo patrimonial; margem é bruta.
 - Interface deve limpar listeners/timers e mostrar erros de operação ao usuário.
-- O app não usa nenhum serviço pago nem exige chave de API. Textos de IA saem pelo prompt pronto, no chat do usuário. Não adicione dependências que cobrem por uso ou peçam chave. Exceções, ambas opcionais, gratuitas e só de leitura, guardadas cifradas no `config.json` e nunca devolvidas à interface: o token pessoal da API do uTalk (CRM) e o token do Meta Ads (Graph API, permissão `ads_read`), usados pelos painéis Leads, Campanhas e Funil.
+- O app não usa nenhum serviço pago nem exige chave de API. Textos de IA saem pelo prompt pronto, no chat do usuário. Não adicione dependências que cobrem por uso ou peçam chave. Exceções, ambas opcionais, gratuitas e só de leitura, guardadas cifradas no `config.json` e nunca devolvidas à interface: o token pessoal da API do uTalk (CRM) e o token do Meta Ads (Graph API, permissão `ads_read`), usados pelos painéis Leads, Campanhas e Funil. O módulo Pré-atendimento IA (desligado por padrão) é a outra exceção: usa o plano grátis do Groq (chave opcional, cifrada no `config.json` como `groqChaveCifrada`) ou o Ollama local, e é o único ponto que escreve no uTalk (mensagens, fotos e etiquetas do contato).
 - O nome do pacote `apps/desktop` (`soul-cars-app`) define a pasta de dados `%APPDATA%\soul-cars-app`: não renomeie.
 - Toda versão publicada ganha uma seção em `CHANGELOG.md` (vira as notas no Launcher).
 

@@ -2443,3 +2443,69 @@ button.kanban-cartao {
 .quem {
   white-space: nowrap;
 }
+
+/* ---- Pré-atendimento IA: conversa do simulador e registro ---- */
+.conversa-ia {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0;
+  max-height: 520px;
+  overflow-y: auto;
+}
+.bolha {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 78%;
+  padding: 10px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--fill);
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+.bolha.lead {
+  align-self: flex-start;
+}
+.bolha.ia {
+  align-self: flex-end;
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+}
+.bolha textarea {
+  min-width: 320px;
+}
+.fotos-ia {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fotos-ia img {
+  width: 96px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+.registro-ia {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 520px;
+  overflow-y: auto;
+}
+.registro-ia li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.registro-ia li.erro span:last-child {
+  color: var(--danger);
+}
+.pre-atendimento textarea {
+  width: 100%;
+}
+.pre-atendimento .kpis {
+  margin-bottom: 24px;
+}

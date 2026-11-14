@@ -72,6 +72,20 @@ const escalar: Regra<string | number> = (v, campo) =>
     ? numero(v, campo)
     : texto({ vazio: true, max: 50_000 })(v, campo);
 
+/** Endereço do Ollama: só http(s) neste computador ou na rede local. */
+const urlLocal: Regra<string> = (v, campo) => {
+  const t = texto({ max: 200 })(v, campo);
+  let u: URL;
+  try {
+    u = new URL(t);
+  } catch {
+    throw new Error(`${campo}: endereço inválido.`);
+  }
+  if (!["http:", "https:"].includes(u.protocol))
+    throw new Error(`${campo}: use http:// ou https://.`);
+  return t;
+};
+
 /** Chaves da tabela config: letras minúsculas, números e "_", com sufixo ":<texto>" opcional. Nunca senhas ou chaves. */
 const chaveConfig: Regra<string> = (v, campo) => {
   const chave = texto({ max: 1100 })(v, campo);
@@ -290,6 +304,96 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
     soulia_exportar: vazio,
     soulia_abrir_pasta: vazio,
     soulia_esquecer: vazio,
+    // ---- Pré-atendimento IA ----
+    pre_painel: vazio,
+    pre_config_salvar: {
+      args: {
+        patch: objeto({
+          ligado: opcional(booleano),
+          provedor: opcional(umDe("groq", "ollama")),
+          modeloGroq: opcional(texto({ max: 200 })),
+          reservaOllama: opcional(booleano),
+          urlOllama: opcional(urlLocal),
+          modeloOllama: opcional(texto({ max: 200 })),
+          temperatura: opcional(numero),
+          etiquetaGatilhoId: opcional(texto({ max: 100, vazio: true })),
+          etiquetaTransferenciaId: opcional(texto({ max: 100, vazio: true })),
+          intervaloSeg: opcional(inteiro),
+          enviarSemAprovacao: opcional(booleano),
+          enviarAbertura: opcional(booleano),
+          nomeAgente: opcional(texto({ max: 60 })),
+          maxFotos: opcional(inteiro),
+          usarHistoricoCrm: opcional(booleano),
+        }),
+      },
+    },
+    pre_chave_groq_salvar: { args: { chave: texto({ max: 400, vazio: true }) } },
+    pre_loja_salvar: {
+      args: {
+        patch: objeto(
+          Object.fromEntries(
+            [
+              "nome",
+              "endereco",
+              "horario",
+              "telefone",
+              "site",
+              "financiamento",
+              "troca",
+              "extra",
+            ].map((k) => [k, opcional(texto({ max: 4000, vazio: true }))]),
+          ),
+        ),
+      },
+    },
+    pre_persona_salvar: { args: { persona: texto({ max: 20_000 }) } },
+    pre_resposta_salvar: {
+      args: {
+        item: objeto({
+          id: texto({ max: 100, vazio: true }),
+          titulo: texto({ max: 200 }),
+          palavras: texto({ max: 1000, vazio: true }),
+          texto: texto({ max: 4000 }),
+        }),
+      },
+    },
+    pre_resposta_remover: { args: { id: texto({ max: 100 }) } },
+    pre_respostas_importar: vazio,
+    pre_exemplo_salvar: {
+      args: {
+        item: objeto({
+          id: opcional(texto({ max: 100, vazio: true })),
+          pergunta: texto({ max: 4000 }),
+          resposta: texto({ max: 4000 }),
+          origem: umDe("correcao", "manual"),
+        }),
+      },
+    },
+    pre_exemplo_remover: { args: { id: texto({ max: 100 }) } },
+    pre_exemplos_recalcular: vazio,
+    pre_simular: {
+      args: {
+        conversa: lista(
+          objeto({
+            role: umDe("user", "assistant"),
+            content: texto({ max: 4000 }),
+          }),
+          200,
+        ),
+        nome: opcional(texto({ max: 200, vazio: true })),
+        etiquetas: opcional(lista(texto({ max: 200 }), 100)),
+        enviadas: opcional(objetoLivre),
+      },
+    },
+    pre_rodar: vazio,
+    pre_aprovar: {
+      args: { id: texto({ max: 100 }), texto: opcional(texto({ max: 4000 })) },
+    },
+    pre_descartar: { args: { id: texto({ max: 100 }) } },
+    pre_reativar: { args: { chatId: texto({ max: 100 }) } },
+    pre_esquecer: { args: { chatId: texto({ max: 100 }) } },
+    pre_etiquetas: vazio,
+    pre_modelos: vazio,
     estoque_vitrine: vazio,
     financas_estado: vazio,
     financas_vincular: { args: { origem: caminhoQualquer } },
