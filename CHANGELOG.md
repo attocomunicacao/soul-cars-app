@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.0.14]
+
+- Venda cancelada no BNDV: o veículo volta ao estoque no app (lista, vitrine, balanço, relatório e ficha da pasta) e a venda sai da receita e da margem. O BNDV continua listando a venda cancelada; o app agora confia no status do veículo ("Disponível estoque")
+- O lembrete de pausar o anúncio não aparece mais para carro com venda cancelada
+
 ## [1.0.13]
 
 - Meta Ads: quando a Meta bloqueia o acesso à API para o token ("API access blocked"), o app explica o que é e onde resolver, em vez de mostrar a mensagem técnica

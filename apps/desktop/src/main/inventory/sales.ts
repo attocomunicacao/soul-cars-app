@@ -6,7 +6,16 @@
  */
 import fs from "node:fs";
 import * as caminhos from "../core/paths";
+import { vendasValidas } from "./canceled-sales";
 import { lerCsv } from "./folder-sync";
+
+const lerCsvSeExistir = (arquivo: string) => {
+  try {
+    return lerCsv(arquivo);
+  } catch {
+    return [];
+  }
+};
 
 export type UltimasVendas = {
   /** id do BNDV → data ISO da última venda. */
@@ -24,7 +33,12 @@ export function ultimasVendas(): UltimasVendas {
     return { vendas: {}, atualizadoEm: null };
   }
   const vendas: Record<string, string> = {};
-  for (const linha of lerCsv(arquivo)) {
+  // Venda cancelada (veículo de volta ao estoque) não pede pausa de anúncio.
+  const validas = vendasValidas(
+    lerCsvSeExistir(caminhos.CSV_VEICULOS()),
+    lerCsv(arquivo),
+  );
+  for (const linha of validas) {
     const id = String(linha.idVehicle ?? "").trim();
     const data = String(linha.date ?? "").trim();
     if (!id || !data) continue;

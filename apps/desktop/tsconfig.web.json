@@ -41,6 +41,7 @@
     "tests/crm-tags.test.ts",
     "tests/soul-ai.test.ts",
     "tests/performance.test.ts",
-    "tests/soul-app-modules.test.ts"
+    "tests/soul-app-modules.test.ts",
+    "tests/canceled-sales.test.ts"
   ]
 }
