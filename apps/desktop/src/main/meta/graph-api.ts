@@ -30,6 +30,27 @@ export const normalizarConta = (v: string) => {
   return !id || id.startsWith("act_") ? id : `act_${id}`;
 };
 
+/**
+ * Erro da Graph API em português. O 200/5258005 ("API access blocked") é um bloqueio da
+ * própria Meta sobre o app ou o token, não do Soul Cars: explica onde resolver.
+ */
+export function mensagemDoMeta(e: {
+  code?: number;
+  error_subcode?: number;
+  message?: string;
+}) {
+  if (e.code === 190)
+    return "Token do Meta inválido ou expirado. Atualize em Configurações › Conexões.";
+  if (
+    e.code === 200 &&
+    (e.error_subcode === 5258005 || /access blocked/i.test(e.message ?? ""))
+  )
+    return "A Meta bloqueou o acesso à API para este token (API access blocked). Confira o app em developers.facebook.com (status e alertas) ou gere um token novo de Usuário do Sistema no Gerenciador de Negócios e cole em Configurações › Conexões.";
+  if (e.code === 4 || e.code === 17 || e.code === 613)
+    return "A Meta limitou as consultas por alguns minutos. Tente de novo daqui a pouco.";
+  return `Meta: ${e.message ?? "erro da API"}`;
+}
+
 /** GET paginado (segue `paging.next`). Token inválido vira mensagem clara. */
 export async function graphGet<T = Record<string, unknown>>(
   buscar: Buscar,
@@ -54,14 +75,10 @@ export async function graphGet<T = Record<string, unknown>>(
     const json = (await res.json().catch(() => ({}))) as {
       data?: T[];
       paging?: { next?: string };
-      error?: { code?: number; message?: string };
+      error?: { code?: number; error_subcode?: number; message?: string };
     };
     if (json.error) {
-      if (json.error.code === 190)
-        throw new Error(
-          "Token do Meta inválido ou expirado. Atualize em Configurações › Conexões.",
-        );
-      throw new Error(`Meta: ${json.error.message ?? "erro da API"}`);
+      throw new Error(mensagemDoMeta(json.error));
     }
     out.push(...(json.data ?? []));
     proxima = json.paging?.next;
@@ -396,11 +413,13 @@ export async function testarConexao(buscar: Buscar, cred: CredMeta) {
     const j = (await res.json().catch(() => ({}))) as {
       name?: string;
       currency?: string;
-      error?: { message?: string };
+      error?: { code?: number; error_subcode?: number; message?: string };
     };
     if (j.error)
       throw new Error(
-        `Token válido, mas sem acesso à conta ${normalizarConta(cred.conta)}: ${j.error.message}`,
+        j.error.code === 200 || j.error.code === 190
+          ? mensagemDoMeta(j.error)
+          : `Token válido, mas sem acesso à conta ${normalizarConta(cred.conta)}: ${j.error.message}`,
       );
     conta = { nome: j.name ?? "", moeda: j.currency ?? "" };
   }

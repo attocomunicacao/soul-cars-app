@@ -36,6 +36,7 @@ import {
   baixarCsv,
   fmt,
   ha,
+  textoDoErro,
 } from "../../app/components";
 import { Icon } from "../../app/icons";
 import { invoke, openUrl } from "../../lib/desktop-bridge";
@@ -113,7 +114,7 @@ export function CrmLeadsPage({
       setDados(await invoke<Dados>("crm_leads_atualizar"));
       setErro("");
     } catch (e) {
-      setErro(String(e).replace(/^Error:\s*/, ""));
+      setErro(textoDoErro(e));
     } finally {
       setAtualizando(false);
     }

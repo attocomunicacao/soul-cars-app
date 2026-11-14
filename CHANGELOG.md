@@ -2,6 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.0.13]
+
+- Meta Ads: quando a Meta bloqueia o acesso à API para o token ("API access blocked"), o app explica o que é e onde resolver, em vez de mostrar a mensagem técnica
+- Mensagens de erro dos painéis sem o prefixo técnico do Electron
+- Configurações › Conexões: a importação do Soul APP volta a mostrar a lista do que foi trazido, e o botão Testar mostra o resultado do teste
+
 ## [1.0.12]
 
 - **Soul APP unificado no Soul Cars**: os painéis do Soul APP agora são páginas do app, no mesmo visual, e o Soul APP não precisa mais ficar aberto

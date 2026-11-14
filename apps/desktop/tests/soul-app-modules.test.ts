@@ -41,6 +41,7 @@ import { montarLeads, resumirChat } from "../src/main/crm/leads-sync";
 import { ClienteUmbler } from "../src/main/crm/umbler-client";
 import {
   buscarMetaDoFunil,
+  mensagemDoMeta,
   graphGet,
   normalizarConta,
 } from "../src/main/meta/graph-api";
@@ -480,6 +481,22 @@ describe("Meta Ads", () => {
       { id: "c1", name: "Onix", objective: undefined },
     ]);
     expect(normalizarConta("act_9")).toBe("act_9");
+  });
+});
+
+describe("erros do Meta", () => {
+  it("explica o bloqueio de API da Meta (200/5258005) e o limite de consultas", () => {
+    expect(
+      mensagemDoMeta({
+        code: 200,
+        error_subcode: 5258005,
+        message: "API access blocked.",
+      }),
+    ).toMatch(/A Meta bloqueou o acesso/);
+    expect(mensagemDoMeta({ code: 17 })).toMatch(/limitou as consultas/);
+    expect(mensagemDoMeta({ code: 100, message: "Campo inválido" })).toBe(
+      "Meta: Campo inválido",
+    );
   });
 });
 

@@ -278,3 +278,9 @@ export function baixarCsv(nome: string, linhas: (string | number)[][]) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
+
+/** Mensagem de erro sem o prefixo técnico do Electron ("Error invoking remote method…"). */
+export const textoDoErro = (e: unknown) =>
+  String(e instanceof Error ? e.message : e)
+    .replace(/^Error invoking remote method '[^']+': /, "")
+    .replace(/^(Error: )+/, "");

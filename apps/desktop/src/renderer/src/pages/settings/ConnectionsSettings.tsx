@@ -26,7 +26,7 @@ type Validade = {
   permissoes: string[];
 } | null;
 
-const msg = (e: unknown) =>
+const msg = (e: unknown): string =>
   String(e)
     .replace(/^Error:\s*/, "")
     .replace(/^Error invoking remote method '[^']+': (Error: )?/, "");
@@ -69,13 +69,18 @@ export function ConnectionsSettings() {
       .catch(() => setCfgMeta(null));
   }, [recarregar]);
 
+  /** Roda uma ação; se ela devolver um aviso próprio (importação, teste), ele vale no lugar de `ok`. */
   async function fazer(fn: () => Promise<unknown>, ok: string) {
     setOcupado(true);
     setAviso(null);
     try {
-      await fn();
+      const r = await fn();
       await recarregar();
-      setAviso({ tom: "ok", texto: ok });
+      const proprio =
+        r && typeof r === "object" && "texto" in r
+          ? (r as { tom: "ok" | "erro"; texto: string })
+          : null;
+      setAviso(proprio ?? { tom: "ok", texto: ok });
     } catch (e) {
       setAviso({ tom: "erro", texto: msg(e) });
     } finally {
@@ -120,10 +125,10 @@ export function ConnectionsSettings() {
               onClick={() =>
                 fazer(async () => {
                   const r = await invoke<string[]>("soulapp_importar");
-                  setAviso({
+                  return {
                     tom: "ok",
                     texto: `Importado: ${r.join(", ") || "nada encontrado"}.`,
-                  });
+                  };
                 }, "Importação do Soul APP concluída.")
               }
             >
@@ -252,12 +257,12 @@ export function ConnectionsSettings() {
                     conta: { nome: string } | null;
                     faltando: string[];
                   }>("meta_testar", { token: tokenMeta, conta });
-                  setAviso({
+                  return {
                     tom: r.faltando.length ? "erro" : "ok",
                     texto: r.faltando.length
                       ? `Token sem a permissão ${r.faltando.join(", ")}.`
                       : `Tudo certo${r.conta ? `: conta ${r.conta.nome}` : ""}.`,
-                  });
+                  };
                 }, "Teste concluído.")
               }
             >

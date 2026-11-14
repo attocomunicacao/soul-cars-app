@@ -31,6 +31,7 @@ import {
   baixarCsv,
   fmt,
   ha,
+  textoDoErro,
 } from "../../app/components";
 import { Icon } from "../../app/icons";
 import { invoke } from "../../lib/desktop-bridge";
@@ -75,7 +76,7 @@ export function MetaAdsPage({
       setPreset(r.config.datePreset);
       setErro("");
     } catch (e) {
-      setErro(String(e).replace(/^Error:\s*/, ""));
+      setErro(textoDoErro(e));
     } finally {
       setCarregando(false);
     }
