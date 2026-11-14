@@ -71,9 +71,9 @@ servidor.listen(0, "127.0.0.1", () => {
           }
           throw new Error(`Botão "${texto}" não apareceu`);
         };
-        await botao("INSTALAR", 30);
-        await js(`[...document.querySelectorAll('.app-card button')].find(b=>b.textContent==='INSTALAR').click()`);
-        await botao("ABRIR", 240);
+        await botao("Instalar", 30);
+        await js(`[...document.querySelectorAll('.app-card button')].find(b=>b.textContent==='Instalar').click()`);
+        await botao("Abrir", 240);
         const exe = path.join(process.env.LOCALAPPDATA, "SoulCars", "apps", "soul-cars", versao, "SoulCars.exe");
         if (!fs.existsSync(exe)) throw new Error("SoulCars.exe não foi instalado em " + exe);
         await js(`document.querySelector('.notes')?.setAttribute('open','')`);

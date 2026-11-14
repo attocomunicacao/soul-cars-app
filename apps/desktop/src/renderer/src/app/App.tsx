@@ -129,6 +129,7 @@ export function App() {
         )}
         {noEstoque && (
           <FolderBar
+            titulo={selecionado && pagina === "studio" ? "Studio" : "Estoque"}
             selecionado={selecionado}
             mostrarAtualizar={pagina === "estoque"}
             ocupado={ocupado}
@@ -157,8 +158,15 @@ export function App() {
           </header>
         )}
         {erro && (
-          <div role="alert" className="notice error">
-            {erro}
+          <div role="alert" className="notice error com-fechar">
+            <span>{erro}</span>
+            <button
+              className="plain small"
+              aria-label="Fechar aviso"
+              onClick={() => setErro("")}
+            >
+              Fechar
+            </button>
           </div>
         )}
         <AdPauseAlerts veiculos={lista} abrir={abrirFicha} />
@@ -194,17 +202,9 @@ export function App() {
         ) : pagina === "leads" ? (
           <LeadsPage aoErro={setErro} />
         ) : aba === "vitrine" && pagina === "estoque" ? (
-          <Showcase
-            lista={lista}
-            voltar={() => setAba("veiculos")}
-            abrir={abrirFicha}
-          />
+          <Showcase lista={lista} abrir={abrirFicha} />
         ) : aba === "completo" && pagina === "estoque" ? (
-          <FullReport
-            html={relatorio}
-            voltar={() => setAba("veiculos")}
-            aoErro={setErro}
-          />
+          <FullReport html={relatorio} aoErro={setErro} />
         ) : selecionado && pagina === "studio" ? (
           <VehiclePage
             key={selecionado.id}

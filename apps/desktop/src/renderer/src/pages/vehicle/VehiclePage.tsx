@@ -3,6 +3,7 @@
  * Publicação → Instagram. Lê CRLV, busca ficha técnica e gera DOC.md/DES.md.
  */
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Icon } from "../../app/icons";
 import {
   atualizarVeiculo,
   obterLoja,
@@ -190,6 +191,15 @@ const CAMPOS_CRLV: Editavel[] = [
   "renavam",
   "chassi",
 ];
+/** Etapas da ficha, na ordem do fluxo de trabalho. */
+const ABAS = [
+  ["ficha", "Ficha"],
+  ["producao", "Produção"],
+  ["criativos", "Criativos"],
+  ["publicacao", "Publicação"],
+] as const;
+
+/** Ficha do veículo (Studio) com as etapas Ficha, Produção, Criativos e Publicação. */
 export function VehiclePage({
   veiculo,
   voltar,
@@ -198,9 +208,14 @@ export function VehiclePage({
   voltar: () => void;
 }) {
   const [v, setV] = useState(veiculo),
-    [aba, setAba] = useState("ficha"),
+    [aba, setAbaAtual] = useState("ficha"),
     [aviso, setAviso] = useState(""),
     [ocupado, setOcupado] = useState(false);
+  /** Troca de etapa e volta ao topo (antes a nova aba abria no meio da página). */
+  const setAba = (a: string) => {
+    setAbaAtual(a);
+    window.scrollTo({ top: 0 });
+  };
   const [versoes, setVersoes] = useState<VersaoCnw[]>([]);
   const [avisoCnw, setAvisoCnw] = useState("");
   /** Equipamentos de uma fonte que não separa série de opcional: só entram se a pessoa confirmar. */
@@ -350,11 +365,30 @@ export function VehiclePage({
   );
   return (
     <section>
-      <div className="actions">
-        <button disabled={ocupado} onClick={voltar}>
-          ← Veículos
+      <div className="vehicle-head">
+        <button
+          className="plain"
+          disabled={ocupado}
+          onClick={voltar}
+          aria-label="Voltar para a lista de veículos"
+        >
+          <Icon nome="voltar" />
+          Veículos
         </button>
         <h2>{v.nome}</h2>
+        <nav className="segmented" aria-label="Etapas da ficha">
+          {ABAS.map(([a, rotulo]) => (
+            <button
+              key={a}
+              disabled={ocupado}
+              className={aba === a ? "selected" : ""}
+              aria-pressed={aba === a}
+              onClick={() => setAba(a)}
+            >
+              {rotulo}
+            </button>
+          ))}
+        </nav>
         <button
           className="primary"
           disabled={ocupado}
@@ -363,24 +397,6 @@ export function VehiclePage({
           Salvar ficha
         </button>
       </div>
-      <nav>
-        {["ficha", "producao", "criativos", "publicacao"].map((a) => (
-          <button
-            key={a}
-            disabled={ocupado}
-            className={aba === a ? "selected" : ""}
-            onClick={() => setAba(a)}
-          >
-            {a === "producao"
-              ? "Produção"
-              : a === "publicacao"
-                ? "Publicação"
-                : a === "ficha"
-                  ? "Ficha"
-                  : "Criativos"}
-          </button>
-        ))}
-      </nav>
       {aviso && (
         <p role="status" className="notice">
           {aviso}
@@ -626,8 +642,20 @@ export function VehiclePage({
               <pre>{b.text}</pre>
             </article>
           ))}
-          {!v.des_md && <p>Gere DES.md na ficha antes de publicar.</p>}
+          {!v.des_md && (
+            <div className="empty">
+              <h3>Ainda não há textos para publicar</h3>
+              <p>
+                Os textos saem do DES.md. Preencha a ficha e clique em “Gerar e
+                salvar DES.md”.
+              </p>
+              <button className="primary" onClick={() => setAba("ficha")}>
+                Ir para a ficha
+              </button>
+            </div>
+          )}
           <button
+            className={v.des_md ? "primary" : ""}
             disabled={ocupado}
             onClick={() =>
               tarefa(async () => {

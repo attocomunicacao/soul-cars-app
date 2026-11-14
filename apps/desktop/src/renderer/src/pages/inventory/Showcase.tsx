@@ -1,7 +1,8 @@
 /**
- * Vitrine do estoque atual: um cartão por veículo em estoque (foto, preço, km), no estilo
- * da lista do BNDV, com atalho para a ficha.
+ * Vitrine do estoque atual: um cartão por veículo em estoque (foto grande, preço em
+ * destaque e ficha técnica resumida), com atalho para a ficha no Studio.
  */
+import { Icon } from "../../app/icons";
 import { useEffect, useMemo, useState } from "react";
 import type { CartaoVitrine } from "../../../../shared/showcase";
 import { invoke } from "../../lib/desktop-bridge";
@@ -11,15 +12,13 @@ import type { Veiculo } from "../../lib/database";
 const km = (v: number | null) =>
   v == null ? "—" : v.toLocaleString("pt-BR") + " km";
 
-/** Estoque atual em cartões, no estilo da lista do BNDV. */
+/** Estoque atual em cartões: foto, preço, dados principais e botão para a ficha. */
 export function Showcase({
   lista,
   abrir,
-  voltar,
 }: {
   lista: Veiculo[];
   abrir: (v: Veiculo) => void;
-  voltar: () => void;
 }) {
   const [cartoes, setCartoes] = useState<CartaoVitrine[] | null>(null);
   const [erro, setErro] = useState("");
@@ -56,14 +55,16 @@ export function Showcase({
             <span className="vitrine-total"> · {cartoes.length}</span>
           )}
         </h2>
-        <button onClick={voltar}>← Voltar ao estoque</button>
+        <label className="search">
+          <Icon nome="busca" />
+          <input
+            aria-label="Buscar na vitrine"
+            placeholder="Buscar marca, modelo, placa ou cor"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </label>
       </div>
-      <input
-        className="vitrine-busca"
-        placeholder="Buscar marca, modelo, placa ou cor"
-        value={busca}
-        onChange={(e) => setBusca(e.target.value)}
-      />
       {erro && (
         <div role="alert" className="notice error">
           {erro}
@@ -90,23 +91,21 @@ export function Showcase({
           ];
           return (
             <article key={c.idBndv} className="vitrine-cartao">
-              <header>
+              <div className="vitrine-foto">
+                {c.foto ? (
+                  <img alt={`${c.marca} ${c.modelo}`} src={c.foto} />
+                ) : (
+                  <span>Sem foto</span>
+                )}
+                <em>{c.consignado ? "Consignado" : "Estoque"}</em>
+              </div>
+              <div className="vitrine-info">
                 <h3>
-                  {c.marca} <span>{c.modelo}</span>
+                  {c.marca} {c.modelo}
                 </h3>
-                <em>{c.consignado ? "CONSIGNADO" : "ESTOQUE"}</em>
-              </header>
-              <small className="vitrine-versao">
-                {c.detalhes.versao ?? " "}
-              </small>
-              <div className="vitrine-corpo">
-                <div className="vitrine-foto">
-                  {c.foto ? (
-                    <img alt={`${c.marca} ${c.modelo}`} src={c.foto} />
-                  ) : (
-                    <span>Sem foto</span>
-                  )}
-                </div>
+                <small className="vitrine-versao">
+                  {c.detalhes.versao ?? " "}
+                </small>
                 <dl>
                   {detalhes.map(([rotulo, valor]) => (
                     <div key={rotulo}>
@@ -117,8 +116,20 @@ export function Showcase({
                 </dl>
               </div>
               <footer>
-                <div className="vitrine-preco" title="Preço de tabela no BNDV">
-                  {moeda(c.tabela)}
+                <div>
+                  <div
+                    className="vitrine-preco"
+                    title="Preço de tabela no BNDV"
+                  >
+                    {moeda(c.tabela)}
+                  </div>
+                  {c.dias != null && (
+                    <small className="vitrine-dias">
+                      {c.dias === 0
+                        ? "Entrou hoje"
+                        : `${c.dias} ${c.dias === 1 ? "dia" : "dias"} em estoque`}
+                    </small>
+                  )}
                 </div>
                 <button
                   className="primary"
@@ -130,16 +141,9 @@ export function Showcase({
                   }
                   onClick={() => ficha && abrir(ficha)}
                 >
-                  Abrir no Studio →
+                  Abrir ficha
                 </button>
               </footer>
-              {c.dias != null && (
-                <small className="vitrine-dias">
-                  {c.dias === 0
-                    ? "Entrou hoje"
-                    : `${c.dias} ${c.dias === 1 ? "dia" : "dias"} em estoque`}
-                </small>
-              )}
             </article>
           );
         })}

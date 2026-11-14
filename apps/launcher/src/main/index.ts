@@ -14,6 +14,7 @@ import {
   BrowserWindow,
   app,
   ipcMain,
+  nativeTheme,
   shell,
   type IpcMainInvokeEvent,
 } from "electron";
@@ -199,7 +200,8 @@ function criarJanela() {
     minWidth: 860,
     minHeight: 560,
     show: false,
-    backgroundColor: "#121110",
+    // Mesmo fundo do tema do Windows (claro ou escuro): evita o clarão ao abrir.
+    backgroundColor: nativeTheme.shouldUseDarkColors ? "#000000" : "#f5f5f7",
     title: "Soul Cars Launcher",
     icon: recurso("icon.ico"),
     autoHideMenuBar: true,

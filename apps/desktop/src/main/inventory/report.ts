@@ -447,13 +447,13 @@ const PAGINA = `<!doctype html><html lang="pt-BR"><meta charset="utf-8">
 <style>
 *{box-sizing:border-box}
 :root{
-  --canvas:#f5f3ef; --surface:#fff; --field:#faf9f6; --ink:#262420;
-  --muted:#706b63; --line:#e3ded5; --accent:#885b33; --accent-soft:#f3e9dc;
+  --canvas:#f5f5f7; --surface:#fff; --field:#fbfbfd; --ink:#1d1d1f;
+  --muted:#6e6e73; --line:#e5e5ea; --accent:#8a5a2c; --accent-soft:#f4ece2;
   --ok:#3c7a3f; --danger:#a33227; --ouro:#a9803c; --ouro-soft:#faf1de;
   --radius:16px;
 }
 body{margin:0;padding:30px 24px 60px;background:var(--canvas);color:var(--ink);
-     font:14px/1.55 "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+     font:14px/1.55 -apple-system,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
      -webkit-font-smoothing:antialiased}
 .w{max-width:1180px;margin:0 auto}
 h1{margin:0;font-size:24px;font-weight:600;letter-spacing:-.2px}
@@ -463,11 +463,12 @@ section{background:var(--surface);border:1px solid var(--line);
 h2{margin:0;padding:14px 18px;font-size:11px;letter-spacing:.07em;
    text-transform:uppercase;color:var(--muted);
    border-bottom:1px solid var(--line);background:var(--field)}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
        gap:14px;margin-bottom:18px}
 .card{background:var(--surface);border:1px solid var(--line);
       border-radius:12px;padding:16px 18px}
-.card b{display:block;font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.card b{display:block;font-size:21px;font-weight:600;font-variant-numeric:tabular-nums;
+        white-space:nowrap;letter-spacing:-.02em}
 .card span{color:var(--muted);font-size:12px}
 .cols,.cols3{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
 @media(max-width:820px){.cols,.cols3{grid-template-columns:1fr}}

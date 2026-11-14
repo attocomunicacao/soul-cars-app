@@ -1,6 +1,6 @@
 /**
  * Testes (Vitest) de src/renderer/src/app/navigation.ts: desde a 1.0.3 o menu lateral
- * mostra só o 01 · Estoque; as demais páginas ficam guardadas em MENU_OCULTO.
+ * mostra Estoque, CRM e Meta Ads (sem numeração desde a 1.0.9); as demais páginas ficam guardadas em MENU_OCULTO.
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -10,11 +10,11 @@ import {
 } from "../src/renderer/src/app/navigation";
 
 describe("menu lateral", () => {
-  it("mostra o 01 · Estoque, o 02 · CRM e o 03 · Meta Ads", () => {
+  it("mostra Estoque, CRM e Meta Ads, cada um com ícone", () => {
     expect(MENU.map((i) => [i.pagina, i.rotulo])).toEqual([
-      ["estoque", "01 · Estoque"],
-      ["crm", "02 · CRM"],
-      ["meta", "03 · Meta Ads"],
+      ["estoque", "Estoque"],
+      ["crm", "CRM"],
+      ["meta", "Meta Ads"],
     ]);
     expect(MENU.every((i) => !!i.icone)).toBe(true);
   });

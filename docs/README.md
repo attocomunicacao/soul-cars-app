@@ -51,7 +51,7 @@ Documentação do Soul Cars, organizada por assunto (pastas e arquivos em inglê
 
 ## `planning/` — produto
 
-[product-roadmap.md](planning/product-roadmap.md) · [decisions-log.md](planning/decisions-log.md) · [assessment-2026-10.md](planning/assessment-2026-10.md) · [claude-code-prompt-guide.md](planning/claude-code-prompt-guide.md)
+[product-roadmap.md](planning/product-roadmap.md) · [decisions-log.md](planning/decisions-log.md) · [assessment-2026-10.md](planning/assessment-2026-10.md) · [usability-audit-2026-11.md](planning/usability-audit-2026-11.md) · [claude-code-prompt-guide.md](planning/claude-code-prompt-guide.md)
 
 > Documentos anteriores à versão 1.0 reestruturada podem citar nomes antigos de arquivos
 > em português; os caminhos foram atualizados automaticamente, mas descrições históricas

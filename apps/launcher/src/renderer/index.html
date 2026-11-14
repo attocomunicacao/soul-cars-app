@@ -14,15 +14,15 @@
     <header class="topbar">
       <div class="brand">
         <img src="./icon.png" alt="" />
-        <span>SOUL CARS</span>
-        <span class="mono muted">LAUNCHER</span>
+        <span>Soul Cars</span>
+        <span class="muted">Launcher</span>
       </div>
-      <nav class="tabs" aria-label="Seções">
+      <nav class="tabs segmented" aria-label="Seções">
         <button data-tab="library" class="active">Biblioteca</button>
         <button data-tab="settings">Configurações</button>
         <button data-tab="about">Sobre</button>
       </nav>
-      <button id="check" class="ghost mono">Verificar atualizações</button>
+      <button id="check" class="ghost">Verificar atualizações</button>
     </header>
 
     <div id="launcher-update" class="banner" hidden></div>
@@ -31,8 +31,8 @@
 
     <main>
       <section id="tab-library" class="tab">
-        <p class="eyebrow mono">01 / BIBLIOTECA</p>
-        <h1>Seus apps.<br /><span class="gold">Sempre atualizados.</span></h1>
+        <p class="eyebrow">Biblioteca</p>
+        <h1>Seus apps. <span class="gold">Sempre atualizados.</span></h1>
         <p class="lead">
           O Launcher instala o Soul Cars, mantém tudo na última versão e abre o
           app com um clique. Seus dados ficam no seu computador.
@@ -41,7 +41,7 @@
       </section>
 
       <section id="tab-settings" class="tab" hidden>
-        <p class="eyebrow mono">02 / CONFIGURAÇÕES</p>
+        <p class="eyebrow">Configurações</p>
         <h1>Preferências</h1>
         <label class="toggle">
           <input type="checkbox" id="pref-close" />
@@ -52,7 +52,7 @@
           <span>Verificar atualizações ao iniciar</span>
         </label>
         <div class="field">
-          <span class="mono muted">PASTA DE INSTALAÇÃO</span>
+          <span class="field-label">Pasta de instalação</span>
           <code id="install-dir"></code>
           <small class="muted"
             >Cada versão fica numa pasta própria. A versão anterior é mantida
@@ -63,7 +63,7 @@
       </section>
 
       <section id="tab-about" class="tab" hidden>
-        <p class="eyebrow mono">03 / SOBRE</p>
+        <p class="eyebrow">Sobre</p>
         <h1>Soul Cars</h1>
         <p class="lead">
           Plataforma desktop para revendas de veículos: do estoque ao anúncio
@@ -80,14 +80,12 @@
           </li>
           <li><b>Lado a lado.</b> A versão em uso nunca é sobrescrita.</li>
         </ul>
-        <p class="muted mono" id="about-version"></p>
-        <button id="open-repo" class="ghost mono">
-          Abrir projeto no GitHub
-        </button>
+        <p class="muted" id="about-version"></p>
+        <button id="open-repo" class="ghost">Abrir projeto no GitHub</button>
       </section>
     </main>
 
-    <footer class="statusbar mono">
+    <footer class="statusbar">
       <span id="status">Carregando…</span>
       <span id="platform" class="muted"></span>
     </footer>

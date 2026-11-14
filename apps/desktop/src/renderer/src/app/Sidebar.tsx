@@ -1,9 +1,10 @@
 /**
- * Menu lateral do app: logo, páginas (lista em `navigation.ts`), botão de
- * Configurações e a versão instalada. Pode ser recolhido: os textos viram ícones
- * (a escolha fica guardada neste computador).
+ * Menu lateral do app (estilo barra lateral do macOS): marca, páginas com ícone
+ * (lista em `navigation.ts`), botão de Configurações e a versão instalada. Pode ser
+ * recolhido: ficam só os ícones (a escolha fica guardada neste computador).
  */
 import { useState } from "react";
+import { Icon } from "./icons";
 import { MENU, itemSelecionado, type Pagina } from "./navigation";
 
 type Props = {
@@ -42,44 +43,43 @@ export function Sidebar({ pagina, aoNavegar, aoAlternarConfiguracoes }: Props) {
 
   return (
     <aside className={recolhido ? "collapsed" : ""}>
-      <img src="./soul-logo.jpg" alt="SOUL Cars" />
-      <div className="aside-head">
-        {!recolhido && <p className="eyebrow">SEU ESPAÇO DE TRABALHO</p>}
+      <div className="aside-brand">
+        <img src="./soul-logo.jpg" alt="" />
+        {!recolhido && <strong>Soul Cars</strong>}
         <button
           className="aside-toggle"
           onClick={alternar}
           aria-label={recolhido ? "Expandir menu" : "Recolher menu"}
           title={recolhido ? "Expandir menu" : "Recolher menu"}
         >
-          {recolhido ? "»" : "«"}
+          <Icon nome="menu" />
         </button>
       </div>
       {MENU.map((item) => (
         <button
           key={item.pagina}
           className={itemSelecionado(pagina, item.pagina) ? "selected" : ""}
+          aria-current={
+            itemSelecionado(pagina, item.pagina) ? "page" : undefined
+          }
           onClick={() => aoNavegar(item.pagina)}
-          title={item.rotulo}
+          title={recolhido ? item.rotulo : undefined}
           aria-label={item.rotulo}
         >
-          {recolhido ? item.icone : item.rotulo}
+          <Icon nome={item.icone} />
+          {!recolhido && item.rotulo}
         </button>
       ))}
       <div className="aside-bottom">
         <button
           onClick={aoAlternarConfiguracoes}
-          title="Configurações"
+          title={recolhido ? "Configurações" : undefined}
           aria-label="Configurações"
         >
-          {recolhido ? "⚙" : "Configurações"}
+          <Icon nome="ajustes" />
+          {!recolhido && "Configurações"}
         </button>
-        {!recolhido && (
-          <small>
-            SOUL Cars · {window.soul.versoes.app}
-            <br />
-            Electron + React
-          </small>
-        )}
+        {!recolhido && <small>Versão {window.soul.versoes.app}</small>}
       </div>
     </aside>
   );

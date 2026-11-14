@@ -1,20 +1,59 @@
+/*
+ * Tokens de design do Soul Cars (app e chrome do editor de criativos).
+ *
+ * Linguagem visual inspirada nas Human Interface Guidelines da Apple: cinzas neutros,
+ * tipografia do sistema, muito espaço em branco, cantos suaves e uma única cor de
+ * destaque (o bronze da marca) reservada para o que é clicável. Veja DESIGN.md.
+ * A arte dos criativos não usa estes tokens: trocar tema nunca altera a arte.
+ */
 :root,
 :root[data-theme] {
   color-scheme: light;
+  /* Superfícies */
+  --canvas: #f5f5f7;
   --surface: #ffffff;
-  --canvas: #f5f3ef;
-  --field: #faf9f6;
-  --ink: #262420;
-  --muted: #706b63;
-  --line: #e3ded5;
-  --accent: #885b33;
-  --accent-hover: #714921;
-  --accent-soft: #f3e9dc;
+  --surface-2: #fbfbfd;
+  --field: #ffffff;
+  --fill: #e8e8ed;
+  --fill-hover: #dcdce1;
+  /* Texto */
+  --ink: #1d1d1f;
+  --muted: #6e6e73;
+  --faint: #86868b;
+  /* Linhas */
+  --line: #d2d2d7;
+  --hairline: #e5e5ea;
+  /* Destaque (bronze da marca) */
+  --accent: #8a5a2c;
+  --accent-hover: #73481f;
+  --accent-soft: #f4ece2;
   --on-accent: #ffffff;
-  --danger: #a33227;
-  --danger-soft: #fff0ec;
-  --shadow: 0 8px 32px #30261506;
-  --radius: 16px;
+  --gold: #c9a160;
+  /* Estados */
+  --success: #1d7d3a;
+  --success-soft: #e8f5ec;
+  --warning: #8a5a00;
+  --warning-soft: #fff6e0;
+  --danger: #c4281c;
+  --danger-soft: #fdeeed;
+  /* Forma e profundidade */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --pill: 980px;
+  --shadow: 0 1px 2px rgb(0 0 0 / 4%), 0 4px 16px rgb(0 0 0 / 4%);
+  --shadow-lg: 0 12px 40px rgb(0 0 0 / 12%);
+  --focus: 0 0 0 4px rgb(138 90 44 / 22%);
+  /* Tipografia */
+  --font:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text",
+    "Segoe UI", system-ui, sans-serif;
+  --font-display:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --mono: "SF Mono", "Cascadia Mono", Consolas, ui-monospace, monospace;
+  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+  /* Aliases usados pelo chrome do editor de criativos */
   --ui-bg: var(--canvas);
   --ui-panel: var(--surface);
   --ui-field: var(--field);
@@ -26,17 +65,28 @@
 }
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --surface: #20201e;
-  --canvas: #171716;
-  --field: #282825;
-  --ink: #f0ece5;
-  --muted: #b8b1a6;
-  --line: #3c3a35;
-  --accent: #dcba8d;
-  --accent-hover: #edcc9f;
-  --accent-soft: #352d23;
-  --on-accent: #241c13;
-  --danger: #ffa493;
-  --danger-soft: #392420;
-  --shadow: 0 8px 32px #00000012;
+  --canvas: #000000;
+  --surface: #1c1c1e;
+  --surface-2: #232325;
+  --field: #2c2c2e;
+  --fill: #3a3a3c;
+  --fill-hover: #48484a;
+  --ink: #f5f5f7;
+  --muted: #a1a1a6;
+  --faint: #8e8e93;
+  --line: #424245;
+  --hairline: #333336;
+  --accent: #dcb27c;
+  --accent-hover: #ecc794;
+  --accent-soft: #33291d;
+  --on-accent: #1d1d1f;
+  --success: #6fd38b;
+  --success-soft: #16301f;
+  --warning: #f2c25b;
+  --warning-soft: #33290f;
+  --danger: #ff8a80;
+  --danger-soft: #3a1d1b;
+  --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 16px rgb(0 0 0 / 30%);
+  --shadow-lg: 0 12px 40px rgb(0 0 0 / 50%);
+  --focus: 0 0 0 4px rgb(220 178 124 / 30%);
 }

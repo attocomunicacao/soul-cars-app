@@ -418,11 +418,10 @@ async function capturar(w) {
   await clicar(w, "Estoque", ".metric-link");
   await esperar(1500);
   await salvar(w, "02-showcase.png");
-  await clicar(w, "Voltar ao estoque");
-  await clicar(w, "Abrir relatório completo");
+  await clicar(w, "Relatório completo", "nav button");
   await esperar(2500);
   await salvar(w, "03-full-report.png");
-  await clicar(w, "Voltar ao estoque");
+  await clicar(w, "Lista", "nav button");
   await clicar(w, "Abrir ficha");
   await esperar(1500);
   await salvar(w, "04-vehicle-sheet.png");

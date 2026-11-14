@@ -1,6 +1,6 @@
 # Instruções para alterações
 
-Leia docs/architecture/technology-stack.md, docs/architecture/architecture-and-migration.md, docs/development/vibe-coding-guide.md e docs/guides/data-and-backup.md antes de alterar regras de negócio.
+Leia DESIGN.md (visual), docs/architecture/technology-stack.md, docs/architecture/architecture-and-migration.md, docs/development/vibe-coding-guide.md e docs/guides/data-and-backup.md antes de alterar regras de negócio.
 
 ## Estrutura (monorepo, npm workspaces)
 

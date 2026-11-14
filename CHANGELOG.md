@@ -2,6 +2,19 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.0.9]
+
+- **Visual novo**, inspirado no design da Apple: fundo cinza-claro, cartões brancos, tipografia do sistema, botões em pílula e o bronze da marca só nas ações
+- Menu lateral mais limpo, com ícones próprios (sem emojis) e sem a numeração "01 ·"
+- Estoque: abas Lista · Vitrine · Relatório completo; a linha inteira abre a ficha; selos de fotos, vídeo e documento mais discretos; filtro "Só em estoque"
+- Vitrine com foto grande, preço em destaque e ficha técnica resumida
+- Ficha: cabeçalho fixo com voltar, etapas e Salvar ficha; trocar de etapa volta ao topo
+- Configurações abrem numa janela própria (fecha no X, Esc ou clicando fora), com nomes de campos legíveis
+- Publicação sem textos agora explica o que fazer e leva à ficha
+- Avisos de erro podem ser fechados; CRM e Meta Ads mostram "Abrindo…" enquanto carregam
+- Contraste dos textos secundários dentro do padrão de acessibilidade (WCAG AA)
+- Launcher com o mesmo visual, seguindo o tema claro ou escuro do Windows
+
 ## [1.0.8]
 
 - Nova aba 03 · Meta Ads no menu lateral: abre o Gerenciador de Anúncios dentro do app, com o login salvo

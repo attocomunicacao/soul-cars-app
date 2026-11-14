@@ -5,8 +5,9 @@
  *  - Chave "BNDV": mostra só os veículos em estoque no BNDV (mesma lista da vitrine,
  *    comando `estoque_vitrine`), casando por pasta, id do Studio ou placa.
  *  - Selos de produção (fotos, vídeo, documento) de cada pasta, relidos a cada 15 s.
- *  - Ações por linha: abrir a ficha (Studio) ou a pasta no Explorador.
+ *  - A linha inteira abre a ficha (Studio); o botão de pasta abre o Explorador.
  */
+import { Icon } from "../../app/icons";
 import { useEffect, useState } from "react";
 import type { CartaoVitrine } from "../../../../shared/showcase";
 import type { Veiculo } from "../../lib/database";
@@ -46,8 +47,13 @@ function ProductionBadges({ status }: { status?: StatusProducao }) {
   return (
     <span className="selos-anexos">
       {itens.map(([nome, ok, dica]) => (
-        <span key={nome} className={ok ? "selo ok" : "selo falta"} title={dica}>
-          {ok ? "✓" : "✗"} {nome}
+        <span
+          key={nome}
+          className={ok ? "selo ok" : "selo falta"}
+          title={dica}
+          aria-label={`${nome}: ${ok ? "sim" : "não"}`}
+        >
+          {nome}
         </span>
       ))}
     </span>
@@ -137,7 +143,19 @@ export function VehicleTable({ lista, abrirFicha, aoErro }: Props) {
   return (
     <section className="panel">
       <div className="actions">
-        <h2>Veículos nas pastas</h2>
+        <h2>
+          Veículos nas pastas
+          <span className="vitrine-total"> · {filtrados.length}</span>
+        </h2>
+        <label className="search">
+          <Icon nome="busca" />
+          <input
+            aria-label="Buscar veículo"
+            placeholder="Buscar nome, placa ou versão"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </label>
         <button
           role="switch"
           aria-checked={soEstoque}
@@ -146,16 +164,10 @@ export function VehicleTable({ lista, abrirFicha, aoErro }: Props) {
           onClick={() => setSoEstoque(!soEstoque)}
         >
           <span className="chave-trilho" aria-hidden="true" />
-          BNDV
+          Só em estoque
         </button>
-        <input
-          aria-label="Buscar veículo"
-          placeholder="Buscar nome, placa ou versão"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
       </div>
-      <table>
+      <table className="tabela-veiculos">
         <thead>
           <tr>
             <th>Veículo</th>
@@ -163,41 +175,69 @@ export function VehicleTable({ lista, abrirFicha, aoErro }: Props) {
             <th>Ano</th>
             <th>Preço</th>
             <th>Produção</th>
-            <th>Ações</th>
+            <th>
+              <span className="sr-only">Ações</span>
+            </th>
           </tr>
         </thead>
         <tbody>
           {filtrados.map((v) => (
-            <tr key={v.id}>
+            <tr
+              key={v.id}
+              className="clicavel"
+              tabIndex={0}
+              title="Abrir a ficha deste veículo"
+              onClick={() => abrirFicha(v)}
+              onKeyDown={(e) => {
+                if (e.target === e.currentTarget && e.key === "Enter")
+                  abrirFicha(v);
+              }}
+            >
               <td>
                 <strong>{v.nome}</strong>
-                <small>{v.versao}</small>
+                {v.versao && <small>{v.versao}</small>}
               </td>
-              <td>{v.placa || "—"}</td>
-              <td>{v.ano || "—"}</td>
-              <td>{v.preco == null ? "—" : moedaCentavos(v.preco)}</td>
+              <td className="num">{v.placa || "—"}</td>
+              <td className="num">{v.ano || "—"}</td>
+              <td className="num">
+                {v.preco == null ? "—" : moedaCentavos(v.preco)}
+              </td>
               <td>
-                <span className="badge">{v.status}</span>
-                <ProductionBadges
-                  status={v.pasta ? anexos[v.pasta] : undefined}
-                />
+                <div className="producao-linha">
+                  <span className="badge">{v.status}</span>
+                  <ProductionBadges
+                    status={v.pasta ? anexos[v.pasta] : undefined}
+                  />
+                </div>
               </td>
               <td>
                 <div className="acoes-linha">
-                  <button onClick={() => abrirFicha(v)}>Abrir ficha →</button>
                   <button
+                    className="plain small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      abrirFicha(v);
+                    }}
+                  >
+                    Abrir ficha
+                    <Icon nome="seta" />
+                  </button>
+                  <button
+                    className="plain small icon-only"
                     disabled={!v.pasta}
+                    aria-label="Abrir pasta"
                     title={
                       v.pasta
                         ? "Abre a pasta do veículo no Explorador de Arquivos"
                         : "Veículo sem pasta vinculada"
                     }
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       aoErro("");
-                      openPath(v.pasta!).catch((e) => aoErro(String(e)));
+                      openPath(v.pasta!).catch((err) => aoErro(String(err)));
                     }}
                   >
-                    Abrir pasta
+                    <Icon nome="pasta" />
                   </button>
                 </div>
               </td>
@@ -206,10 +246,14 @@ export function VehicleTable({ lista, abrirFicha, aoErro }: Props) {
         </tbody>
       </table>
       {!filtrados.length && (
-        <p className="empty">
-          Nenhum veículo encontrado. Atualize o BNDV ou escolha a raiz que
-          contém ESTOQUE nas configurações.
-        </p>
+        <div className="empty">
+          <h3>Nenhum veículo encontrado</h3>
+          <p>
+            {busca
+              ? "Nenhum veículo combina com essa busca."
+              : "Atualize o BNDV ou escolha, nas Configurações, a pasta que contém ESTOQUE."}
+          </p>
+        </div>
       )}
     </section>
   );

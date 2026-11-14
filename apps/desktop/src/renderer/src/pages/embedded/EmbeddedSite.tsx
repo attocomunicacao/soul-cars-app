@@ -48,11 +48,11 @@ export function EmbeddedSite({
     };
   }, [id, aoErro]);
 
+  const nome = { crm: "CRM", bndv: "BNDV", meta: "Meta Ads" }[id];
+  // O texto fica por baixo da vista nativa: aparece só enquanto o site ainda não abriu.
   return (
-    <div
-      ref={area}
-      className="crm-area"
-      aria-label={{ crm: "CRM", bndv: "BNDV", meta: "Meta Ads" }[id]}
-    />
+    <div ref={area} className="crm-area" aria-label={nome}>
+      <span role="status">Abrindo {nome}…</span>
+    </div>
   );
 }

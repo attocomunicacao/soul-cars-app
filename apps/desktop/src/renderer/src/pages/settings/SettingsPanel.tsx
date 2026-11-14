@@ -1,11 +1,14 @@
 /**
- * Painel de Configurações (botão no rodapé do menu lateral).
+ * Painel de Configurações (botão no rodapé do menu lateral), aberto como folha modal
+ * sobre a tela: fecha no X, no Esc ou clicando fora.
  *
  *  - Raiz dos dados: pasta com ESTOQUE/ e dados/ (comando `config_gravar`).
  *  - Motor Python: pasta do `engine`, diagnóstico (`motor_estado`) e instalação/reparo
  *    (`motor_instalar`, que baixa o uv e cria o ambiente sozinho).
  *  - Dados da loja e integrações (componente `StoreSettings`).
  */
+import { useEffect } from "react";
+import { Icon } from "../../app/icons";
 import { invoke, open } from "../../lib/desktop-bridge";
 import { StoreSettings } from "./StoreSettings";
 
@@ -45,45 +48,98 @@ export function SettingsPanel({
       }
     });
 
+  // Esc fecha a folha (o listener sai junto com o painel).
+  useEffect(() => {
+    const aoTeclar = (e: KeyboardEvent) => e.key === "Escape" && fechar();
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+  }, [fechar]);
+
   return (
-    <section className="panel">
-      <h2>Dados e motor</h2>
-      <p>
-        Escolha uma pasta própria para ESTOQUE e dados. As origens antigas
-        continuam preservadas.
-      </p>
-      <label>
-        Raiz dos dados
-        <input value={raiz} readOnly />
-      </label>
-      <button disabled={ocupado} onClick={() => escolherPasta("raizDados")}>
-        Escolher pasta de dados
-      </button>
-      <label>
-        Motor Python
-        <input value={motor} readOnly />
-      </label>
-      <button onClick={() => escolherPasta("pastaMotor", "Selecione engine")}>
-        Escolher engine
-      </button>
-      <button
-        onClick={() =>
-          tarefa(async () => {
-            const r = await invoke("motor_estado");
-            mostrarAtividade([JSON.stringify(r, null, 2)]);
-          })
-        }
+    <div
+      className="sheet-backdrop"
+      onMouseDown={(e) => e.target === e.currentTarget && fechar()}
+    >
+      <div
+        className="sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="titulo-configuracoes"
       >
-        Diagnóstico do motor
-      </button>
-      <button
-        disabled={ocupado}
-        onClick={() => tarefa(() => invoke("motor_instalar"))}
-      >
-        Instalar / reparar motor Python
-      </button>
-      <button onClick={fechar}>Fechar</button>
-      <StoreSettings />
-    </section>
+        <div className="sheet-head">
+          <h2 id="titulo-configuracoes">Configurações</h2>
+          <button
+            className="icon-only"
+            aria-label="Fechar configurações"
+            title="Fechar (Esc)"
+            autoFocus
+            onClick={fechar}
+          >
+            <Icon nome="fechar" />
+          </button>
+        </div>
+        <div className="sheet-body">
+          <section>
+            <h3>Pasta de dados</h3>
+            <p>
+              Pasta com ESTOQUE e dados da loja. Trocar de pasta não apaga nada:
+              as origens antigas continuam preservadas.
+            </p>
+            <div className="campo-com-botao">
+              <label>
+                Local atual
+                <input value={raiz} readOnly />
+              </label>
+              <button
+                disabled={ocupado}
+                onClick={() => escolherPasta("raizDados")}
+              >
+                Escolher…
+              </button>
+            </div>
+          </section>
+          <section>
+            <h3>Motor de automação</h3>
+            <p>
+              Lê documentos, recorta fotos e monta vídeos. Vazio = pasta
+              automática.
+            </p>
+            <div className="campo-com-botao">
+              <label>
+                Pasta do motor (Python)
+                <input value={motor} readOnly placeholder="Automática" />
+              </label>
+              <button
+                onClick={() =>
+                  escolherPasta("pastaMotor", "Selecione a pasta do motor")
+                }
+              >
+                Escolher…
+              </button>
+            </div>
+            <div className="actions" style={{ marginTop: 14 }}>
+              <button
+                disabled={ocupado}
+                onClick={() => tarefa(() => invoke("motor_instalar"))}
+              >
+                Instalar ou reparar motor
+              </button>
+              <button
+                className="plain"
+                onClick={() =>
+                  tarefa(async () => {
+                    const r = await invoke("motor_estado");
+                    mostrarAtividade([JSON.stringify(r, null, 2)]);
+                  })
+                }
+              >
+                Ver diagnóstico
+              </button>
+            </div>
+          </section>
+          <StoreSettings />
+        </div>
+      </div>
+    </div>
   );
 }

@@ -3,7 +3,7 @@
 | Quero alterar | Arquivo |
 |---|---|
 | Duas interfaces, lista, balanço | apps/desktop/src/renderer/src/app/App.tsx |
-| Visual, medidas e cores | apps/desktop/src/renderer/src/styles/global.css |
+| Visual, medidas e cores | DESIGN.md, public/shared/tokens.css e apps/desktop/src/renderer/src/styles/global.css |
 | Ficha, documento, produção e publicação | apps/desktop/src/renderer/src/pages/vehicle/VehiclePage.tsx |
 | Dados da loja e campanha modelo | apps/desktop/src/renderer/src/pages/settings/StoreSettings.tsx |
 | DES.md | renderer/src/lib/des.ts |

@@ -10,34 +10,36 @@
  *  - "leads"    → painel do CRM e memória da Soul IA
  *  - "financas" → planilha financeira do mês
  */
+import type { NomeIcone } from "./icons";
 
 /** Identificador de cada página do app. */
 export type Pagina =
   "estoque" | "studio" | "crm" | "leads" | "bndv" | "meta" | "financas";
 
-/** Item do menu lateral: página de destino e rótulo exibido. */
-export type ItemMenu = { pagina: Pagina; rotulo: string; icone?: string };
+/** Item do menu lateral: página de destino, rótulo exibido e ícone (ver app/icons.tsx). */
+export type ItemMenu = { pagina: Pagina; rotulo: string; icone: NomeIcone };
 
 /**
- * Itens do menu lateral, na ordem em que aparecem. `icone` é o que sobra no menu
- * recolhido (o rótulo some e fica só o ícone).
+ * Itens do menu lateral, na ordem em que aparecem. O ícone acompanha o rótulo e é o
+ * que sobra no menu recolhido. Desde a 1.0.9 os rótulos não têm numeração ("01 ·"):
+ * a ordem já diz a sequência e o número só competia com o nome.
  */
 export const MENU: readonly ItemMenu[] = [
-  { pagina: "estoque", rotulo: "01 · Estoque", icone: "🚗" },
-  { pagina: "crm", rotulo: "02 · CRM", icone: "💬" },
-  { pagina: "meta", rotulo: "03 · Meta Ads", icone: "📣" },
+  { pagina: "estoque", rotulo: "Estoque", icone: "estoque" },
+  { pagina: "crm", rotulo: "CRM", icone: "crm" },
+  { pagina: "meta", rotulo: "Meta Ads", icone: "meta" },
 ];
 
 /**
  * Páginas fora do menu desde a versão 1.0.3 (o CRM e o Meta Ads voltaram depois). O código delas continua no app
  * (pages/leads, pages/finance, pages/embedded); para trazer uma de volta, mova o
- * item para `MENU`. O login do BNDV não depende do item "04 · BNDV": o botão
+ * item para `MENU`. O login do BNDV não depende do item "BNDV": o botão
  * "Atualizar BNDV" abre a janela de login sozinho quando a sessão expira.
  */
 export const MENU_OCULTO: readonly ItemMenu[] = [
-  { pagina: "leads", rotulo: "03 · Leads e Soul IA" },
-  { pagina: "bndv", rotulo: "04 · BNDV" },
-  { pagina: "financas", rotulo: "06 · Finanças" },
+  { pagina: "leads", rotulo: "Leads e Soul IA", icone: "leads" },
+  { pagina: "bndv", rotulo: "BNDV", icone: "bndv" },
+  { pagina: "financas", rotulo: "Finanças", icone: "financas" },
 ];
 
 /** Páginas que mostram um site externo embutido (ocupam a área inteira). */
