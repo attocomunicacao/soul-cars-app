@@ -39,6 +39,11 @@ da Apple: usamos a fonte do sistema e o bronze da Soul Cars.
 | `--pill` | 980 px | | Botões |
 | `--shadow`, `--shadow-lg`, `--focus` | | | Elevação e anel de foco |
 
+Cores de dados (só em gráficos): `--dado-1` (bronze, série principal), `--dado-meta` (azul,
+o que vem do Meta Ads), `--dado-crm` (violeta, o que vem do CRM), `--dado-quente` e
+`--dado-frio`. Verde, vermelho e âmbar continuam reservados para situação e sempre vêm com
+símbolo (✓, !, ✕), não só cor.
+
 Regra: **nenhuma cor fixa** em `global.css` ou nos componentes; use os tokens (o tema
 escuro depende disso). O relatório HTML (`main/inventory/report.ts`) repete os valores
 claros porque roda isolado num iframe.
@@ -61,6 +66,11 @@ claros porque roda isolado num iframe.
 | Selos de produção | `.selo.ok` / `.selo.falta` | Ponto cheio verde / círculo vazio cinza |
 | Estado vazio | `.empty` com `h3`, `p` e ação | Diz o que fazer em seguida |
 | Ícones | `app/icons.tsx` (`<Icon nome=… />`) | SVG de linha 1,6 px, `currentColor`; nada de emoji |
+| Cartão de número | `<Kpi>` (`app/components.tsx`) | Rótulo, valor grande, apoio (variação ▲▼ com cor de bom/ruim) |
+| Pílula de situação | `.pilula.ok/.sync/.erro` | "Atualizado há 2 min", conexões |
+| Selo e destaques | `<Selo tom>`, `<Destaques>` | Situação de campanha e diagnóstico, com símbolo |
+| Gaveta | `<Gaveta>` | Detalhe à direita (lead); fecha no X, Esc ou clique fora |
+| Gráficos | `app/charts.tsx` (`Barras`, `Colunas`, `Linha`, `Mini`) | SVG próprio; `largura={1280}` em painel de largura total |
 
 ## Layout
 

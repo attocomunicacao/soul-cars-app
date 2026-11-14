@@ -25,6 +25,9 @@ import { FinancePage } from "../pages/finance/FinancePage";
 import { LeadsPage } from "../pages/leads/LeadsPage";
 import { SettingsPanel } from "../pages/settings/SettingsPanel";
 import { VehiclePage } from "../pages/vehicle/VehiclePage";
+import { CrmLeadsPage } from "../pages/crm-leads/CrmLeadsPage";
+import { MetaAdsPage } from "../pages/meta-ads/MetaAdsPage";
+import { FunnelPage } from "../pages/funnel/FunnelPage";
 import type { Balanco } from "../types";
 import { Sidebar } from "./Sidebar";
 import { ehEmbutida, type Pagina } from "./navigation";
@@ -197,7 +200,22 @@ export function App() {
             }
           />
         )}
-        {pagina === "financas" ? (
+        {pagina === "leadsCrm" ? (
+          <CrmLeadsPage
+            aoErro={setErro}
+            abrirConfiguracoes={() => setConfig(true)}
+          />
+        ) : pagina === "metaPainel" ? (
+          <MetaAdsPage
+            aoErro={setErro}
+            abrirConfiguracoes={() => setConfig(true)}
+          />
+        ) : pagina === "funil" ? (
+          <FunnelPage
+            aoErro={setErro}
+            abrirConfiguracoes={() => setConfig(true)}
+          />
+        ) : pagina === "financas" ? (
           <FinancePage aoErro={setErro} />
         ) : pagina === "leads" ? (
           <LeadsPage aoErro={setErro} />

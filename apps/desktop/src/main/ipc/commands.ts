@@ -32,6 +32,10 @@ import {
 } from "../window/embedded-sites";
 import * as financas from "../finance/finance";
 import * as utalk from "../crm/utalk";
+import * as leadsCrm from "../crm/leads";
+import * as soulApp from "../crm/soul-app-import";
+import * as metaAds from "../meta/meta";
+import * as funil from "../funnel/funnel";
 import * as souliaIa from "../soul-ai/soul-ai";
 import { vitrine } from "../inventory/showcase";
 import { exportarRelatorioPdf } from "../inventory/report-pdf";
@@ -215,8 +219,12 @@ const COMANDOS: Record<string, Comando> = {
   // ---- caminhos e configuração ----
   app_data: () => caminhos.userData(),
   config_ler: () => {
-    // O token cifrado do uTalk nunca vai para a interface.
-    const { utalkTokenCifrado: _token, ...resto } = caminhos.lerConfig();
+    // Os tokens cifrados (uTalk e Meta) nunca vão para a interface.
+    const {
+      utalkTokenCifrado: _token,
+      metaTokenCifrado: _meta,
+      ...resto
+    } = caminhos.lerConfig();
     return { ...resto, raizDados: caminhos.raizDados() };
   },
   config_gravar: (a) => caminhos.gravarConfig(a.patch ?? {}),
@@ -242,6 +250,23 @@ const COMANDOS: Record<string, Comando> = {
   utalk_token_salvar: (a) => utalk.salvarTokenUtalk(String(a.token)),
   utalk_token_remover: () => utalk.removerTokenUtalk(),
   utalk_visao: () => utalk.visaoUtalk(),
+  // ---- CRM · Leads, Meta Ads e Funil (vindos do Soul APP) ----
+  crm_leads_dados: () => leadsCrm.dadosLeads(),
+  crm_leads_atualizar: () => leadsCrm.atualizarLeads(),
+  crm_leads_config_salvar: (a) => leadsCrm.salvarConfigLeads(a.patch),
+  meta_estado: () => metaAds.estadoMeta(),
+  meta_salvar: (a) =>
+    metaAds.salvarMeta({ token: a.token, conta: a.conta, versao: a.versao }),
+  meta_token_remover: () => metaAds.removerTokenMeta(),
+  meta_testar: (a) => metaAds.testarMeta({ token: a.token, conta: a.conta }),
+  meta_token_validade: () => metaAds.validadeTokenMeta(),
+  meta_config_ler: () => metaAds.configMeta(),
+  meta_painel: (a) => metaAds.painelMeta(a.preset),
+  meta_config_salvar: (a) => metaAds.salvarConfigMeta(a.patch),
+  funil_dados: (a) => funil.dadosFunil(!!a.forcar),
+  funil_config_salvar: (a) => funil.salvarConfigFunil(a.patch),
+  soulapp_estado: () => ({ encontrado: soulApp.soulAppEncontrado() }),
+  soulapp_importar: () => soulApp.importarSoulApp(),
   // ---- Soul IA (memória das conversas do uTalk) ----
   soulia_estado: () => souliaIa.estadoSouliaIa(),
   soulia_sincronizar: (a) =>

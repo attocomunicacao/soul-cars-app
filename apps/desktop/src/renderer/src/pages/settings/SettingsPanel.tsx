@@ -5,11 +5,14 @@
  *  - Raiz dos dados: pasta com ESTOQUE/ e dados/ (comando `config_gravar`).
  *  - Motor Python: pasta do `engine`, diagnóstico (`motor_estado`) e instalação/reparo
  *    (`motor_instalar`, que baixa o uv e cria o ambiente sozinho).
+ *  - Conexões (uTalk, Meta Ads, importação do Soul APP) e preferências dos painéis
+ *    (componente `ConnectionsSettings`).
  *  - Dados da loja e integrações (componente `StoreSettings`).
  */
 import { useEffect } from "react";
 import { Icon } from "../../app/icons";
 import { invoke, open } from "../../lib/desktop-bridge";
+import { ConnectionsSettings } from "./ConnectionsSettings";
 import { StoreSettings } from "./StoreSettings";
 
 type Props = {
@@ -79,6 +82,7 @@ export function SettingsPanel({
           </button>
         </div>
         <div className="sheet-body">
+          <ConnectionsSettings />
           <section>
             <h3>Pasta de dados</h3>
             <p>

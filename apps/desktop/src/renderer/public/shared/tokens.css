@@ -36,6 +36,13 @@
   --warning-soft: #fff6e0;
   --danger: #c4281c;
   --danger-soft: #fdeeed;
+  /* Cores de dados (gráficos): bronze = série principal; azul = Meta; violeta = CRM.
+     Verde, vermelho e âmbar ficam só para situação (bom, ruim, atenção). */
+  --dado-1: #a8743f;
+  --dado-meta: #2b6fd6;
+  --dado-crm: #7e4fd0;
+  --dado-quente: #d0573a;
+  --dado-frio: #3f7fb0;
   /* Forma e profundidade */
   --radius-sm: 8px;
   --radius: 12px;
@@ -63,7 +70,7 @@
   --ui-accent: var(--accent);
   --ui-focus: var(--accent);
 }
-:root[data-theme='dark'] {
+:root[data-theme="dark"] {
   color-scheme: dark;
   --canvas: #000000;
   --surface: #1c1c1e;
@@ -89,4 +96,9 @@
   --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 16px rgb(0 0 0 / 30%);
   --shadow-lg: 0 12px 40px rgb(0 0 0 / 50%);
   --focus: 0 0 0 4px rgb(220 178 124 / 30%);
+  --dado-1: #dcb27c;
+  --dado-meta: #5a9cf5;
+  --dado-crm: #a685f0;
+  --dado-quente: #f08a6c;
+  --dado-frio: #78b6e3;
 }

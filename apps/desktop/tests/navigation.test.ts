@@ -1,6 +1,6 @@
 /**
  * Testes (Vitest) de src/renderer/src/app/navigation.ts: desde a 1.0.3 o menu lateral
- * mostra Estoque, CRM e Meta Ads (sem numeração desde a 1.0.9); as demais páginas ficam guardadas em MENU_OCULTO.
+ * mostra o Estoque, os painéis CRM · Leads, Meta Ads e Funil (1.0.12) e os sites embutidos; as demais páginas ficam guardadas em MENU_OCULTO.
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -10,11 +10,14 @@ import {
 } from "../src/renderer/src/app/navigation";
 
 describe("menu lateral", () => {
-  it("mostra Estoque, CRM e Meta Ads, cada um com ícone", () => {
-    expect(MENU.map((i) => [i.pagina, i.rotulo])).toEqual([
-      ["estoque", "Estoque"],
-      ["crm", "CRM"],
-      ["meta", "Meta Ads"],
+  it("mostra o Estoque no topo e os painéis do Soul APP junto dos sites", () => {
+    expect(MENU.map((i) => [i.grupo ?? "", i.pagina, i.rotulo])).toEqual([
+      ["", "estoque", "Estoque"],
+      ["CRM", "leadsCrm", "Leads"],
+      ["CRM", "crm", "Atendimento"],
+      ["Meta Ads", "metaPainel", "Campanhas"],
+      ["Meta Ads", "meta", "Gerenciador"],
+      ["Funil", "funil", "Meta → CRM"],
     ]);
     expect(MENU.every((i) => !!i.icone)).toBe(true);
   });

@@ -24,7 +24,14 @@ export type NomeIcone =
   | "nuvem"
   | "fechar"
   | "voltar"
-  | "seta";
+  | "seta"
+  | "estrela"
+  | "relogio"
+  | "calendario"
+  | "chama"
+  | "funil"
+  | "campanhas"
+  | "conexoes";
 
 const TRACOS: Record<NomeIcone, ReactElement> = {
   estoque: (
@@ -103,6 +110,36 @@ const TRACOS: Record<NomeIcone, ReactElement> = {
   fechar: <path d="m6 6 12 12M18 6 6 18" />,
   voltar: <path d="M15 5.5 8.5 12l6.5 6.5" />,
   seta: <path d="M9 5.5 15.5 12 9 18.5" />,
+  estrela: (
+    <path d="m12 4 2.3 4.9 5.2.6-3.9 3.6 1.1 5.2L12 15.6l-4.7 2.7 1.1-5.2-3.9-3.6 5.2-.6z" />
+  ),
+  relogio: (
+    <>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 7.5V12l3 2" />
+    </>
+  ),
+  calendario: (
+    <>
+      <rect x="4" y="5.5" width="16" height="14" rx="2.5" />
+      <path d="M4 10h16M8.5 3.5v4M15.5 3.5v4M9 14.5l2 2 4-4" />
+    </>
+  ),
+  chama: (
+    <path d="M12 20.5c3.6 0 6-2.4 6-5.8 0-3.2-2.3-5.2-3.4-8.2-.4 2-1.4 3.2-2.6 3.8.2-2.6-.8-4.8-2.8-6.3.2 3-2.2 4.9-3.4 7A6.4 6.4 0 0 0 6 14.7c0 3.4 2.4 5.8 6 5.8Z" />
+  ),
+  funil: <path d="M4 5h16l-6 7.5V18l-4 2v-7.5z" />,
+  campanhas: (
+    <>
+      <path d="M4 19V9M10 19V5M16 19v-7M21 19H3" />
+    </>
+  ),
+  conexoes: (
+    <>
+      <path d="M9.5 14.5 14.5 9.5" />
+      <path d="M11 6.5 12.5 5a3.5 3.5 0 0 1 5 5L16 11.5M13 17.5 11.5 19a3.5 3.5 0 0 1-5-5L8 12.5" />
+    </>
+  ),
 };
 
 /** Desenha um ícone pelo nome (18 px, cor do texto). */

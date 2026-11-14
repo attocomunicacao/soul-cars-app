@@ -14,20 +14,45 @@ import type { NomeIcone } from "./icons";
 
 /** Identificador de cada página do app. */
 export type Pagina =
-  "estoque" | "studio" | "crm" | "leads" | "bndv" | "meta" | "financas";
-
-/** Item do menu lateral: página de destino, rótulo exibido e ícone (ver app/icons.tsx). */
-export type ItemMenu = { pagina: Pagina; rotulo: string; icone: NomeIcone };
+  | "estoque"
+  | "studio"
+  | "crm"
+  | "leads"
+  | "bndv"
+  | "meta"
+  | "financas"
+  | "leadsCrm"
+  | "metaPainel"
+  | "funil";
 
 /**
- * Itens do menu lateral, na ordem em que aparecem. O ícone acompanha o rótulo e é o
- * que sobra no menu recolhido. Desde a 1.0.9 os rótulos não têm numeração ("01 ·"):
- * a ordem já diz a sequência e o número só competia com o nome.
+ * Item do menu lateral: página de destino, rótulo, ícone (ver app/icons.tsx) e o grupo
+ * (título acima dos itens; sem grupo = topo do menu).
+ */
+export type ItemMenu = {
+  pagina: Pagina;
+  rotulo: string;
+  icone: NomeIcone;
+  grupo?: string;
+};
+
+/**
+ * Itens do menu lateral, na ordem em que aparecem. Desde a 1.0.9 os rótulos não têm
+ * numeração. Na 1.0.12 entraram os painéis do Soul APP: cada área tem o painel de dados
+ * (Leads, Campanhas, Funil) e, ao lado, o site embutido para operar (uTalk, Gerenciador).
  */
 export const MENU: readonly ItemMenu[] = [
   { pagina: "estoque", rotulo: "Estoque", icone: "estoque" },
-  { pagina: "crm", rotulo: "CRM", icone: "crm" },
-  { pagina: "meta", rotulo: "Meta Ads", icone: "meta" },
+  { pagina: "leadsCrm", rotulo: "Leads", icone: "leads", grupo: "CRM" },
+  { pagina: "crm", rotulo: "Atendimento", icone: "crm", grupo: "CRM" },
+  {
+    pagina: "metaPainel",
+    rotulo: "Campanhas",
+    icone: "campanhas",
+    grupo: "Meta Ads",
+  },
+  { pagina: "meta", rotulo: "Gerenciador", icone: "meta", grupo: "Meta Ads" },
+  { pagina: "funil", rotulo: "Meta → CRM", icone: "funil", grupo: "Funil" },
 ];
 
 /**
@@ -37,7 +62,7 @@ export const MENU: readonly ItemMenu[] = [
  * "Atualizar BNDV" abre a janela de login sozinho quando a sessão expira.
  */
 export const MENU_OCULTO: readonly ItemMenu[] = [
-  { pagina: "leads", rotulo: "Leads e Soul IA", icone: "leads" },
+  { pagina: "leads", rotulo: "Painel antigo e Soul IA", icone: "leads" },
   { pagina: "bndv", rotulo: "BNDV", icone: "bndv" },
   { pagina: "financas", rotulo: "Finanças", icone: "financas" },
 ];

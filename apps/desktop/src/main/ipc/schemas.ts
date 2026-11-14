@@ -6,6 +6,8 @@
  * autorizadas (pasta de dados da loja e dados internos do app).
  */
 import { EDITAVEIS, STATUS_VEICULO } from "../../shared/vehicle";
+import { PERIODOS_FUNIL } from "../../shared/funnel";
+import { PERIODOS_META } from "../../shared/meta-ads";
 import {
   booleano,
   caminhoEmRaizes,
@@ -40,6 +42,9 @@ export const METODOS_DO_MOTOR = [
   "planilha_aplicar",
   "soulia_planilha",
 ] as const;
+
+const PRESETS_META = PERIODOS_META.map(([v]) => v);
+const PRESETS_FUNIL = PERIODOS_FUNIL.map(([v]) => v);
 
 /** Extensões que o Windows executaria ao "abrir" o arquivo. */
 export const EXTENSOES_EXECUTAVEIS =
@@ -215,6 +220,69 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
     utalk_token_salvar: { args: { token: texto({ max: 4000 }) } },
     utalk_token_remover: vazio,
     utalk_visao: vazio,
+    // ---- CRM · Leads, Meta Ads e Funil (vindos do Soul APP) ----
+    crm_leads_dados: vazio,
+    crm_leads_atualizar: vazio,
+    crm_leads_config_salvar: {
+      args: {
+        patch: objeto({
+          windowDays: opcional(inteiro),
+          intervalSec: opcional(inteiro),
+          notifyNewLeads: opcional(booleano),
+          tagCategories: opcional(objetoLivre),
+          statusOrder: opcional(lista(texto({ max: 200 }), 2000)),
+        }),
+      },
+    },
+    meta_estado: vazio,
+    meta_salvar: {
+      args: {
+        token: opcional(texto({ max: 4000, vazio: true })),
+        conta: opcional(texto({ max: 60, vazio: true })),
+        versao: opcional(texto({ max: 20, vazio: true })),
+      },
+    },
+    meta_token_remover: vazio,
+    meta_testar: {
+      args: {
+        token: opcional(texto({ max: 4000, vazio: true })),
+        conta: opcional(texto({ max: 60, vazio: true })),
+      },
+    },
+    meta_token_validade: vazio,
+    meta_config_ler: vazio,
+    meta_painel: { args: { preset: opcional(umDe(...PRESETS_META)) } },
+    meta_config_salvar: {
+      args: {
+        patch: objeto({
+          datePreset: opcional(umDe(...PRESETS_META)),
+          alertCpr: opcional(numero),
+          alertSpend: opcional(numero),
+          roasTarget: opcional(numero),
+          chartDays: opcional(inteiro),
+        }),
+      },
+    },
+    funil_dados: { args: { forcar: opcional(booleano) } },
+    funil_config_salvar: {
+      args: {
+        patch: objeto({
+          period: opcional(
+            objeto({
+              preset: umDe(...PRESETS_FUNIL),
+              since: texto({ max: 10, vazio: true }),
+              until: texto({ max: 10, vazio: true }),
+            }),
+          ),
+          clickMetric: opcional(umDe("linkClicks", "clicks")),
+          cumulative: opcional(booleano),
+          tagRoles: opcional(objetoLivre),
+          campaignProducts: opcional(objetoLivre),
+        }),
+      },
+    },
+    soulapp_estado: vazio,
+    soulapp_importar: vazio,
     soulia_estado: vazio,
     soulia_sincronizar: { args: { limite: opcional(inteiro) } },
     soulia_desempenho: vazio,

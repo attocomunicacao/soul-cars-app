@@ -55,20 +55,34 @@ export function Sidebar({ pagina, aoNavegar, aoAlternarConfiguracoes }: Props) {
           <Icon nome="menu" />
         </button>
       </div>
-      {MENU.map((item) => (
-        <button
-          key={item.pagina}
-          className={itemSelecionado(pagina, item.pagina) ? "selected" : ""}
-          aria-current={
-            itemSelecionado(pagina, item.pagina) ? "page" : undefined
-          }
-          onClick={() => aoNavegar(item.pagina)}
-          title={recolhido ? item.rotulo : undefined}
-          aria-label={item.rotulo}
-        >
-          <Icon nome={item.icone} />
-          {!recolhido && item.rotulo}
-        </button>
+      {MENU.map((item, i) => (
+        <div key={item.pagina} className="aside-item">
+          {item.grupo &&
+            item.grupo !== MENU[i - 1]?.grupo &&
+            (recolhido ? (
+              <hr className="aside-separador" />
+            ) : (
+              <p className="aside-section eyebrow">{item.grupo}</p>
+            ))}
+          <button
+            className={itemSelecionado(pagina, item.pagina) ? "selected" : ""}
+            aria-current={
+              itemSelecionado(pagina, item.pagina) ? "page" : undefined
+            }
+            onClick={() => aoNavegar(item.pagina)}
+            title={
+              recolhido
+                ? `${item.grupo ? `${item.grupo} · ` : ""}${item.rotulo}`
+                : undefined
+            }
+            aria-label={
+              item.grupo ? `${item.grupo}: ${item.rotulo}` : item.rotulo
+            }
+          >
+            <Icon nome={item.icone} />
+            {!recolhido && item.rotulo}
+          </button>
+        </div>
       ))}
       <div className="aside-bottom">
         <button

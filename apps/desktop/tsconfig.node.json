@@ -35,6 +35,7 @@
     "tests/utalk-api.test.ts",
     "tests/crm-tags.test.ts",
     "tests/soul-ai.test.ts",
-    "tests/performance.test.ts"
+    "tests/performance.test.ts",
+    "tests/soul-app-modules.test.ts"
   ]
 }

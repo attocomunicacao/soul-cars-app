@@ -2,6 +2,15 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.0.12]
+
+- **Soul APP unificado no Soul Cars**: os painéis do Soul APP agora são páginas do app, no mesmo visual, e o Soul APP não precisa mais ficar aberto
+- Menu em grupos: **CRM** (Leads e Atendimento), **Meta Ads** (Campanhas e Gerenciador) e **Funil** (Meta → CRM); os sites do uTalk e do Gerenciador continuam ao lado dos painéis
+- **Leads**: Painel (totais, novos hoje, aguardando resposta, taxa de agendamento, leads por carro, funil por status, entrada por dia, desempenho por SDR e carro × status), Kanban por status, lista com CSV, Atividade (novos leads, etiquetas e troca de SDR) e detalhe do lead com WhatsApp; aviso no Windows quando chega lead novo
+- **Campanhas (Meta Ads)**: saúde da conta, números comparados com o período anterior, gasto e custo por dia, funil do anúncio, posicionamentos, público por idade e gênero, campanhas com situação (Eficiente, Caro…) e alertas de custo e gasto
+- **Funil Meta → CRM**: do anúncio ao agendamento com custo por etapa, diagnóstico, funil por produto e por campanha, leads de cada etapa e regras (papel das etiquetas, produto de cada campanha)
+- **Configurações › Conexões**: token do uTalk e do Meta Ads (cifrados, só leitura), teste da conexão e **Importar do Soul APP** (tokens, organização, etiquetas, regras e a última leitura de leads, tudo no computador)
+
 ## [1.0.11]
 
 - Launcher 1.0.8: corrige o erro "EPERM: operation not permitted, rename … .extraindo" ao atualizar. O próprio Launcher prendia o arquivo `app.asar` da versão nova e o Windows não deixava terminar a instalação

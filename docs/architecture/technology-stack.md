@@ -29,7 +29,8 @@
 | Linguagem | **TypeScript 5** (strict) | Todo o código do main, preload, shared e renderer |
 | Estilo | CSS próprio + design tokens (`public/shared/tokens.css`) | Tema claro, componentes e editor de criativos |
 | Banco | **SQLite** via `node:sqlite` (embutido no Electron) | `soul.db` (Studio) e banco separado da Soul IA; migrações versionadas |
-| Segurança | `contextIsolation`, `sandbox`, IPC com tabela fechada e validação por esquema, `safeStorage` | Token do uTalk cifrado; janelas remotas sem preload |
+| Segurança | `contextIsolation`, `sandbox`, IPC com tabela fechada e validação por esquema, `safeStorage` | Tokens do uTalk e do Meta cifrados; janelas remotas sem preload |
+| Gráficos | SVG próprio (`renderer/src/app/charts.tsx`) | Barras, colunas, linhas e minigráficos dos painéis, sem biblioteca externa |
 | Sites embutidos | `WebContentsView` | uTalk (CRM), BNDV e Meta Ads dentro da janela |
 | Empacotamento | **electron-builder 26** (alvo `dir`/zip para o Launcher, NSIS para o Launcher) | Distribuição via GitHub Releases |
 
@@ -63,7 +64,8 @@
 | Serviço | Como | Custo |
 |---|---|---|
 | BNDV | Janela própria + API GraphQL (token capturado da sessão do usuário) | Gratuito (conta da loja) |
-| uTalk (Umbler) | API somente leitura com token pessoal cifrado | Gratuito (conta da loja) |
+| uTalk (Umbler) | API somente leitura com token pessoal cifrado (painel Leads, Funil, Soul IA) | Gratuito (conta da loja) |
+| Meta Ads (Graph API) | Somente leitura (`ads_read`), token cifrado; painel Campanhas e Funil Meta → CRM | Gratuito (conta de anúncios da loja) |
 | Instagram | Navegador embutido com retomada e prevenção de duplicatas | Gratuito |
 | Meta Ads | Site embutido; o app só prepara textos e arquivos | Gratuito |
 | IA de texto | “Prompt pronto” colado no chat do usuário | Nenhuma chave, nenhuma API paga |
