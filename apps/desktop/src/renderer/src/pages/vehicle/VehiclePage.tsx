@@ -17,6 +17,7 @@ import {
   type TextosIA,
 } from "../../lib/description-generator";
 import { invoke, open } from "../../lib/desktop-bridge";
+import { cartaoDaFicha, type CartaoVitrine } from "../../../../shared/showcase";
 import { type VersaoCnw } from "../../lib/engine-client";
 import {
   gerarDocMd,
@@ -105,7 +106,7 @@ function CampoNumerico({
         ref={entrada}
         type="text"
         inputMode={moeda ? "decimal" : "numeric"}
-        placeholder={moeda ? "0,00" : "0"}
+        placeholder={moeda ? "0,00" : "Não informada"}
         value={edicao ?? formatar(valor)}
         onFocus={() =>
           setEdicao(
@@ -228,6 +229,26 @@ export function VehiclePage({
   const [andamento, setAndamento] = useState<Andamento | null>(null);
   const [copiaNumero, setCopiaNumero] = useState<Record<string, number>>({});
   const [copiados, setCopiados] = useState<Record<string, string>>({});
+  /** Quilometragem preenchida a partir do BNDV (ainda não salva na ficha). */
+  const [kmDoBndv, setKmDoBndv] = useState(false);
+  // Ficha sem quilometragem: usa a do BNDV (mesma da vitrine) até o usuário salvar.
+  useEffect(() => {
+    if (veiculo.km != null) return;
+    let ativo = true;
+    invoke<CartaoVitrine[]>("estoque_vitrine")
+      .then((cartoes) => {
+        const km = cartaoDaFicha(cartoes, veiculo)?.detalhes.km;
+        if (!ativo || km == null) return;
+        setV((atual) => (atual.km == null ? { ...atual, km } : atual));
+        setKmDoBndv(true);
+      })
+      .catch(() => {
+        /* sem BNDV: o campo fica vazio e o usuário digita */
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [veiculo]);
   function ficha(): FichaDes {
     return Object.fromEntries(
       Object.entries(v).map(([k, value]) => [
@@ -243,7 +264,10 @@ export function VehiclePage({
       !window.confirm("Substituir o DES.md atual pelos textos gerados?")
     )
       return;
-    const vazios = camposVazios(ficha());
+    const vazios = [
+      ...(v.km == null ? ["Quilometragem"] : []),
+      ...camposVazios(ficha()),
+    ];
     if (
       vazios.length &&
       !window.confirm(
@@ -311,6 +335,7 @@ export function VehiclePage({
       des_md: v.des_md,
       status: v.status,
     });
+    setKmDoBndv(false);
   }
   async function documento(origem: string, senha: string) {
     if (!v.pasta) throw new Error("Vincule a pasta do veículo.");
@@ -344,11 +369,21 @@ export function VehiclePage({
           onChange={(valor) => setV({ ...v, [k]: valor })}
         />
       ) : k === "preco" || k === "km" ? (
-        <CampoNumerico
-          valor={v[k] ?? null}
-          moeda={k === "preco"}
-          alterar={(valor) => setV({ ...v, [k]: valor })}
-        />
+        <>
+          <CampoNumerico
+            valor={v[k] ?? null}
+            moeda={k === "preco"}
+            alterar={(valor) => {
+              if (k === "km") setKmDoBndv(false);
+              setV({ ...v, [k]: valor });
+            }}
+          />
+          {k === "km" && kmDoBndv && (
+            <small className="dica-campo">
+              Trazida do BNDV. Confira e clique em Salvar ficha.
+            </small>
+          )}
+        </>
       ) : (
         <input
           value={String(v[k] ?? "")}

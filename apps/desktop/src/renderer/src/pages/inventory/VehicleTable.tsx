@@ -9,7 +9,7 @@
  */
 import { Icon } from "../../app/icons";
 import { useEffect, useState } from "react";
-import type { CartaoVitrine } from "../../../../shared/showcase";
+import { cartaoDaFicha, type CartaoVitrine } from "../../../../shared/showcase";
 import type { Veiculo } from "../../lib/database";
 import { invoke, openPath } from "../../lib/desktop-bridge";
 import { moedaCentavos } from "../../lib/format";
@@ -124,13 +124,7 @@ export function VehicleTable({ lista, abrirFicha, aoErro }: Props) {
   }, [soEstoque, lista, aoErro]);
 
   const emEstoque = (v: Veiculo) =>
-    !!noEstoque?.some(
-      (c) =>
-        (v.pasta && c.pasta === v.pasta) ||
-        (c.estudio && c.estudio.id === v.id) ||
-        (!!c.placa &&
-          (v.placa ?? "").trim().toUpperCase() === c.placa.toUpperCase()),
-    );
+    !!noEstoque && !!cartaoDaFicha(noEstoque, v);
   const filtrados = lista
     .filter((v) => !soEstoque || !noEstoque || emEstoque(v))
     .filter((v) =>

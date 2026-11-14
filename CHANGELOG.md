@@ -2,6 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.0.10]
+
+- Quilometragem: quando a ficha não tem km, o app traz a do BNDV (com o aviso "Trazida do BNDV") em vez de mostrar 0; campo vazio aparece como "Não informada"
+- Gerar o DES.md sem quilometragem agora avisa antes, em vez de publicar "0 km rodados"
+- "Ler documento e preencher ficha" funciona mesmo sem PDF na pasta: pede o arquivo do CRLV, anexa e já preenche a ficha; os botões explicam quando falta vincular a pasta
+
 ## [1.0.9]
 
 - **Visual novo**, inspirado no design da Apple: fundo cinza-claro, cartões brancos, tipografia do sistema, botões em pílula e o bronze da marca só nas ações

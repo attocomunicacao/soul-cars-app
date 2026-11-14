@@ -28,10 +28,13 @@
 | 17 | Tema escuro | `global.css` ignorava os tokens (cores fixas), então o tema escuro nunca funcionaria no app | Média | CSS 100% em tokens |
 | 18 | Launcher | Rótulos em CAIXA ALTA monoespaçada ("ABRIR PASTA", "01 / BIBLIOTECA") cansam a leitura; só tema escuro | Média | Frases normais, controle segmentado, segue o tema do Windows |
 
-## Pendências observadas (fora do escopo visual)
+## Corrigido na 1.0.10
 
-- A quilometragem aparece como `0` quando o BNDV não informa (deveria ficar vazia).
-- "Ler documento e preencher ficha" fica desativado sem explicar que falta o PDF.
+- Ficha sem quilometragem mostrava `0` (placeholder com cara de valor) e o DES.md saía com "0 km rodados": agora usa a km do BNDV com aviso, o vazio aparece como "Não informada" e gerar o DES.md sem km avisa antes.
+- "Ler documento e preencher ficha" ficava desativado sem motivo aparente: agora pede o PDF, anexa e lê; sem pasta vinculada, os botões dizem o que fazer.
+
+## Pendências observadas
+
 - Ano vazio na lista de veículos quando a ficha ainda não leu o CRLV.
 
 ## Como repetir
