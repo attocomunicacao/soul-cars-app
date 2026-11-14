@@ -11,11 +11,13 @@
  *   4. marca a versão como ativa e apaga as antigas (mantém a anterior para voltar atrás).
  *
  * A versão em uso nunca é sobrescrita: uma atualização interrompida não estraga o app.
+ * Todo acesso a disco usa `fsSemAsar` (disk.ts): o `fs` do Electron prenderia o app.asar
+ * da versão nova e impediria renomear a pasta.
  * Os dados do usuário (banco, configurações, pastas do estoque) ficam fora daqui,
  * na pasta de dados do próprio app, e não são tocados pelo Launcher.
  */
 import { spawn } from "node:child_process";
-import fs from "node:fs";
+import { fsSemAsar as fs, renomearComPaciencia } from "./disk";
 import path from "node:path";
 import type { AppRelease } from "../shared/manifest";
 import type { ResultadoAbertura } from "../shared/api";
@@ -68,6 +70,14 @@ function extrairZip(zip: string, destino: string): Promise<void> {
     );
   });
 }
+
+/** Opções de apagar pasta: o Windows pode segurar arquivos recém-escritos por instantes. */
+const APAGAR = {
+  recursive: true,
+  force: true,
+  maxRetries: 10,
+  retryDelay: 300,
+} as const;
 
 /** Procura o executável na pasta extraída (na raiz ou uma pasta abaixo). */
 export function acharExecutavel(pasta: string, nome: string): string | null {
@@ -171,7 +181,7 @@ export async function instalarApp(
     const executavel = nomeExecutavel(release);
     const final = pastaDaVersao(release.id, release.version);
     const temporaria = `${final}.extraindo`;
-    fs.rmSync(temporaria, { recursive: true, force: true });
+    fs.rmSync(temporaria, APAGAR);
 
     // Preferência: pacote só de código sobre um executável já liberado pelo Windows.
     let pronta = false;
@@ -186,7 +196,7 @@ export async function instalarApp(
       registrar(
         `Pacote de código de ${release.version} falhou (${String(erro)}); usando o pacote completo.`,
       );
-      fs.rmSync(temporaria, { recursive: true, force: true });
+      fs.rmSync(temporaria, APAGAR);
     }
     if (!pronta) {
       const zip = path.join(
@@ -202,8 +212,8 @@ export async function instalarApp(
     }
     if (!acharExecutavel(temporaria, executavel))
       throw new Error(`O pacote baixado não contém ${executavel}.`);
-    fs.rmSync(final, { recursive: true, force: true });
-    fs.renameSync(temporaria, final);
+    fs.rmSync(final, APAGAR);
+    await renomearComPaciencia(temporaria, final);
 
     // Marca como ativa e limpa versões antigas (se alguma estiver aberta, fica para depois).
     const estado = gravarEstado((e) => {

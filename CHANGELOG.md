@@ -2,6 +2,13 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.0.11]
+
+- Launcher 1.0.8: corrige o erro "EPERM: operation not permitted, rename … .extraindo" ao atualizar. O próprio Launcher prendia o arquivo `app.asar` da versão nova e o Windows não deixava terminar a instalação
+- Se o antivírus segurar a pasta por alguns segundos, o Launcher espera e tenta de novo em vez de falhar na hora
+
+**Para receber:** no Launcher, clique primeiro em Atualizar Launcher e depois em Atualizar para v1.0.11.
+
 ## [1.0.10]
 
 - Quilometragem: quando a ficha não tem km, o app traz a do BNDV (com o aviso "Trazida do BNDV") em vez de mostrar 0; campo vazio aparece como "Não informada"
