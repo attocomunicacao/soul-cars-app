@@ -16,7 +16,7 @@
     "package": "electron-vite build && electron-builder --win --publish never"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^26.6.6",
     "electron": "44.10.2",
     "electron-builder": "^26.0.0",
     "electron-vite": "^4.0.0",
