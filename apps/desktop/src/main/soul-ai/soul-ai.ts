@@ -46,6 +46,9 @@ function banco(): DatabaseSync {
   return db;
 }
 
+/** Conversas guardadas na memória (para os exemplos reais do Pré-atendimento IA). */
+export const conversasDaMemoria = () => lerConversas(banco());
+
 export function fecharMemoria() {
   conexao?.close();
   conexao = null;

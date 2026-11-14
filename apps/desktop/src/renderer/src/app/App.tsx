@@ -28,6 +28,7 @@ import { VehiclePage } from "../pages/vehicle/VehiclePage";
 import { CrmLeadsPage } from "../pages/crm-leads/CrmLeadsPage";
 import { MetaAdsPage } from "../pages/meta-ads/MetaAdsPage";
 import { FunnelPage } from "../pages/funnel/FunnelPage";
+import { PreServicePage } from "../pages/pre-service/PreServicePage";
 import type { Balanco } from "../types";
 import { Sidebar } from "./Sidebar";
 import { ehEmbutida, type Pagina } from "./navigation";
@@ -212,6 +213,11 @@ export function App() {
           />
         ) : pagina === "funil" ? (
           <FunnelPage
+            aoErro={setErro}
+            abrirConfiguracoes={() => setConfig(true)}
+          />
+        ) : pagina === "preAtendimento" ? (
+          <PreServicePage
             aoErro={setErro}
             abrirConfiguracoes={() => setConfig(true)}
           />

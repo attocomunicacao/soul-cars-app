@@ -31,9 +31,16 @@ export type NomeIcone =
   | "chama"
   | "funil"
   | "campanhas"
-  | "conexoes";
+  | "conexoes"
+  | "ia";
 
 const TRACOS: Record<NomeIcone, ReactElement> = {
+  ia: (
+    <>
+      <path d="M20 12a7.5 7.5 0 0 1-11 6.6L4 20l1.4-4.5A7.5 7.5 0 1 1 20 12Z" />
+      <path d="M12 8.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" />
+    </>
+  ),
   estoque: (
     <>
       <path d="M4 15.5V12l1.8-4.6A2 2 0 0 1 7.7 6h8.6a2 2 0 0 1 1.9 1.4L20 12v3.5" />
