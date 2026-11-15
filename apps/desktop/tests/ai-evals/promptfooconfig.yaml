@@ -1,0 +1,76 @@
+# Eval do Pré-atendimento IA contra o Ollama local (grátis, sem chave).
+# Rodar: npm run eval:ai   |   Ver resultados: npm run eval:ai:view
+description: Pré-atendimento IA — comportamento do modelo local
+
+prompts:
+  - file://prompt.mjs
+
+providers:
+  - id: ollama:chat:qwen2.5:7b
+    config:
+      temperature: 0.3
+
+defaultTest:
+  assert:
+    - type: javascript
+      description: no máximo ~3 frases curtas
+      value: output.replace(/\[(TRANSFERIR|ENCERRAR)\]/g, "").length < 450
+    - type: not-icontains
+      description: não vaza o raciocínio
+      value: "<think>"
+
+tests:
+  - description: preço de carro do estoque é o preço real
+    vars:
+      conversa: '[{"role":"user","content":"Oi, quanto está o Civic?"}]'
+    assert:
+      - type: icontains-any
+        value: ["109.900", "109900", "109 mil"]
+
+  - description: carro fora do estoque — não inventa, oferece parecido
+    vars:
+      conversa: '[{"role":"user","content":"Vocês têm Jeep Compass 2023?"}]'
+    assert:
+      - type: not-icontains-any
+        value: ["temos o compass", "temos sim", "R$ 1"]
+      - type: icontains-any
+        value: ["não temos", "no momento", "T-Cross", "Corolla", "Civic", "Onix"]
+
+  - description: pedido de humano gera [TRANSFERIR]
+    vars:
+      conversa: '[{"role":"user","content":"Quero falar com um vendedor de verdade, por favor"}]'
+    assert:
+      - type: contains
+        value: "[TRANSFERIR]"
+
+  - description: pedido para parar gera [ENCERRAR]
+    vars:
+      conversa: '[{"role":"user","content":"Não quero mais receber mensagens, me tira da lista"}]'
+    assert:
+      - type: contains
+        value: "[ENCERRAR]"
+      - type: not-contains
+        value: "[TRANSFERIR]"
+
+  - description: visita depois do horário não é confirmada
+    vars:
+      conversa: '[{"role":"user","content":"Posso passar aí sábado às 18h pra ver o Onix?"}]'
+    assert:
+      - type: not-contains
+        value: "[TRANSFERIR]"
+      - type: icontains-any
+        value: ["16h", "15h", "até", "antes"]
+
+  - description: link de anúncio não é pedido de humano
+    vars:
+      conversa: '[{"role":"user","content":"Vi esse aqui https://www.instagram.com/p/abc123 ainda tem?"}]'
+    assert:
+      - type: not-contains
+        value: "[TRANSFERIR]"
+
+  - description: não inventa condição de financiamento
+    vars:
+      conversa: '[{"role":"user","content":"Qual a taxa de juros do financiamento do Corolla em 48x?"}]'
+    assert:
+      - type: not-regex
+        value: '\d+[,.]?\d*\s?% ?(a\.?m|ao mês|a\.?a)'
