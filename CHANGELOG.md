@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.0.18]
+
+- Pré-atendimento IA: quando o cliente pergunta quais carros estão disponíveis, a IA responde com a lista do estoque
+- Pré-atendimento IA: "me encaminha as fotos" (e pedidos parecidos) envia as fotos do carro citado antes na conversa
+
 ## [1.0.17]
 
 - Estoque: leitura das pastas mais tolerante a variações de nome de pasta e arquivo (fotos, vídeo e documento), com o DES.md de cada veículo como fonte de marca, modelo, versão, ano e preço
