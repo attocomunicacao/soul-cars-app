@@ -327,7 +327,9 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
         }),
       },
     },
-    pre_chave_groq_salvar: { args: { chave: texto({ max: 400, vazio: true }) } },
+    pre_chave_groq_salvar: {
+      args: { chave: texto({ max: 400, vazio: true }) },
+    },
     pre_loja_salvar: {
       args: {
         patch: objeto(
