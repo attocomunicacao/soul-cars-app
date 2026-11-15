@@ -70,10 +70,7 @@ async function executarImportacao() {
       (await criarVeiculo({ nome: patch.nome || modelo, placa }));
     // Preserva progresso e ajustes do Studio ao reler a ficha do BNDV.
     await atualizarVeiculo(id, patch);
-    await salvarConfig(
-      `${LEITURA}${pasta.caminho}`,
-      String(pasta.modificado),
-    );
+    await salvarConfig(`${LEITURA}${pasta.caminho}`, String(pasta.modificado));
   }
   const presentes = new Set(pastas.map((p) => p.caminho));
   return (await listarVeiculos()).filter(
