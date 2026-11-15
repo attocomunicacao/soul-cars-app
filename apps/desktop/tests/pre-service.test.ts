@@ -21,6 +21,7 @@ import {
   type ConversaCrm,
   type MensagemIa,
   type VeiculoIa,
+  avisoDeEstoque,
 } from "../src/shared/pre-service";
 
 const lead = (content: string): MensagemIa => ({ role: "user", content });
@@ -277,5 +278,50 @@ describe("exemplos reais do CRM", () => {
     expect(
       extrairPares([conv(base)], new Set(["R$ 59.900, aceita proposta."])),
     ).toEqual([]);
+  });
+});
+
+describe("guardas do eval (carro fora do estoque e link de anúncio)", () => {
+  const estoque = [
+    {
+      id: "1",
+      marca: "Honda",
+      modelo: "Civic EXL 2019",
+      placa: "AAA1A11",
+      preco: "R$ 109.900",
+    },
+    {
+      id: "2",
+      marca: "Chevrolet",
+      modelo: "Onix LT 2022",
+      placa: "BBB2B22",
+      preco: "R$ 79.900",
+    },
+  ];
+  const lead = (content: string) => [{ role: "user" as const, content }];
+
+  it("avisa quando a marca pedida não está no estoque", () => {
+    expect(
+      avisoDeEstoque(estoque, lead("Vocês têm Jeep Compass 2023?")),
+    ).toMatch(/NÃO está no ESTOQUE/);
+  });
+  it("não avisa quando o carro pedido está no estoque", () => {
+    expect(avisoDeEstoque(estoque, lead("Quanto está o Honda Civic?"))).toBe(
+      "",
+    );
+  });
+  it("link de anúncio sozinho não transfere", () => {
+    const conversa = lead("Vi esse https://instagram.com/p/abc ainda tem?");
+    expect(
+      interpretarResposta("Tem sim! [TRANSFERIR]", conversa).transferir,
+    ).toBe(false);
+  });
+  it("link com pedido de vendedor ainda transfere", () => {
+    const conversa = lead(
+      "https://instagram.com/p/abc quero falar com um vendedor",
+    );
+    expect(
+      interpretarResposta("Claro! [TRANSFERIR]", conversa).transferir,
+    ).toBe(true);
   });
 });
