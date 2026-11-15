@@ -6,6 +6,10 @@
  *  - Studio (banco): versão, ano, quilometragem, cor, câmbio e combustível, quando a ficha foi preenchida;
  *  - pasta do veículo: a imagem 2 do painel de fotos do Studio (a mesma que vai para os criativos), reduzida para a tela.
  * O que nenhuma fonte tem aparece como "—" na interface (nunca inventado).
+ *
+ * Regra da loja: só fica disponível na vitrine o veículo **em estoque no BNDV e com fotos na pasta**
+ * (recortes `_sem_fundo` não contam). Sem foto, o cartão vem com `disponivel: false`:
+ * continua na lista "Só em estoque", mas a vitrine não o mostra.
  */
 import type { CartaoVitrine } from "../../shared/showcase";
 import type { LinhaVeiculo } from "./balance";
@@ -95,6 +99,7 @@ export function montarVitrine(
         entrada: l.entrada,
         pasta: pasta?.caminho ?? null,
         foto,
+        disponivel: ordemDeFotos(pasta?.fotos ?? []).length > 0,
         detalhes: {
           km: numero(ficha?.km) ?? numero(l.km),
           cor: texto(ficha?.cor) ?? texto(l.cor),
