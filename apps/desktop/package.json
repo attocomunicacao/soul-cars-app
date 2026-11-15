@@ -18,7 +18,8 @@
     "screenshots": "electron scripts/capture-screenshots.cjs",
     "package": "electron-vite build && electron-builder --win --publish never",
     "eval:ai": "npx -y promptfoo@0.125.1 eval -c tests/ai-evals/promptfooconfig.yaml",
-    "eval:ai:view": "npx -y promptfoo@0.125.1 view"
+    "eval:ai:view": "npx -y promptfoo@0.125.1 view",
+    "eval:ai:groq": "npx -y promptfoo@0.125.1 eval -c tests/ai-evals/promptfooconfig.groq.yaml"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

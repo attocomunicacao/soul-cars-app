@@ -1,0 +1,25 @@
+# Eval do Pré-atendimento IA contra o Groq (plano grátis), o mesmo modelo padrão do app.
+# Precisa da variável GROQ_API_KEY. Rodar: npm run eval:ai:groq (ou o botão "Eval IA (Groq)" no GitHub Actions).
+description: Pré-atendimento IA — Groq
+
+prompts:
+  - file://prompt.mjs
+
+providers:
+  - id: groq:qwen/qwen3.8-27b
+    config:
+      temperature: 0.3
+
+defaultTest:
+  options:
+    # Igual ao app: tira o raciocínio <think> antes de avaliar.
+    transform: output.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+  assert:
+    - type: javascript
+      description: no máximo ~3 frases curtas
+      value: output.replace(/\[(TRANSFERIR|ENCERRAR)\]/g, "").length < 450
+    - type: not-icontains
+      description: não vaza o raciocínio
+      value: "<think>"
+
+tests: file://tests.yaml

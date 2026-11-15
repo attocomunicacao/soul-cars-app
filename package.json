@@ -27,7 +27,8 @@
     "release:manifest": "node scripts/release/create-manifest.mjs",
     "format": "prettier --write \"apps/desktop/src/{main,preload,shared}/**/*.ts\" \"apps/desktop/src/renderer/src/**/*.{ts,tsx,css}\" \"apps/desktop/tests/**/*.{ts,mjs}\" \"apps/desktop/scripts/*.cjs\" \"apps/desktop/*.{ts,json}\" \"apps/launcher/src/**/*.{ts,css,html}\" \"apps/launcher/*.{ts,json}\" \"scripts/**/*.mjs\" \"*.{js,json}\"",
     "format:check": "prettier --check \"apps/desktop/src/{main,preload,shared}/**/*.ts\" \"apps/desktop/src/renderer/src/**/*.{ts,tsx,css}\" \"apps/desktop/tests/**/*.{ts,mjs}\" \"apps/desktop/scripts/*.cjs\" \"apps/desktop/*.{ts,json}\" \"apps/launcher/src/**/*.{ts,css,html}\" \"apps/launcher/*.{ts,json}\" \"scripts/**/*.mjs\" \"*.{js,json}\"",
-    "eval:ai": "npm run eval:ai -w apps/desktop"
+    "eval:ai": "npm run eval:ai -w apps/desktop",
+    "eval:ai:groq": "npm run eval:ai:groq -w apps/desktop"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
