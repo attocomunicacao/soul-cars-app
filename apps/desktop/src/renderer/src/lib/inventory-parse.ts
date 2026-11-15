@@ -45,7 +45,21 @@ export function lerDesExistente(md: string) {
     texto.match(new RegExp(`\\*\\*${titulo}\\*\\*\\n(.+)`))?.[1].trim() ?? "";
 
   const ficha = importarFicha(texto);
-  const ano = ficha.ano?.trim() || negrito("ANO");
+  // Campos de uma linha só: se o título se repetir (ex.: "**ANO**" do carrossel sem "# ANUNCIO"
+  // antes), vale a primeira ocorrência.
+  const primeira = (s: string | undefined) =>
+    s?.split("\n")[0]?.trim() || undefined;
+  for (const campo of [
+    "ano",
+    "versao",
+    "cambio",
+    "configuracao",
+    "lugares",
+    "portas",
+    "direcao",
+  ] as const)
+    ficha[campo] = primeira(ficha[campo]);
+  const ano = ficha.ano || negrito("ANO");
   const tituloCarrossel = negrito("TITULO"); // "FORD FIESTA 2016"
   const nome = ano
     ? tituloCarrossel.replace(new RegExp(`\\s+${ano}$`), "").trim()

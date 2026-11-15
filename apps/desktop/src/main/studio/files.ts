@@ -53,20 +53,69 @@ export function natural(a: string, b: string) {
   );
 }
 
-/** A pasta de fotos do veículo: aceita FOTO ou FOTOS, como está no estoque. */
-export function pastaFotos(pasta: string) {
+/** Nome de pasta/arquivo comparável: sem acento, maiúsculo, sem espaço/hífen/sublinhado. */
+export const normalizarNome = (nome: string) =>
+  nome
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .toUpperCase()
+    .replace(/[\s_-]+/g, "");
+
+/** Variações de nome encontradas (ou esperadas) nas pastas do estoque. */
+export const NOMES_FOTOS = [
+  "FOTOS",
+  "FOTO",
+  "FOTOGRAFIAS",
+  "FOTOGRAFIA",
+  "IMAGENS",
+];
+export const NOMES_VIDEO = ["VIDEO", "VIDEOS"];
+export const NOMES_DOC = ["DOC", "DOCS", "DOCUMENTO", "DOCUMENTOS", "CRLV"];
+
+/** Subpastas de `pasta` cujo nome normalizado está em `nomes` (ex.: "Vídeos" casa com VIDEOS). */
+export function subpastas(pasta: string, nomes: string[]): string[] {
   try {
-    const achada = fs
+    return fs
       .readdirSync(pasta, { withFileTypes: true })
-      .find(
-        (d) =>
-          d.isDirectory() && ["FOTO", "FOTOS"].includes(d.name.toUpperCase()),
-      );
-    if (achada) return path.join(pasta, achada.name);
+      .filter((d) => d.isDirectory() && nomes.includes(normalizarNome(d.name)))
+      .sort(
+        (a, b) =>
+          nomes.indexOf(normalizarNome(a.name)) -
+          nomes.indexOf(normalizarNome(b.name)),
+      )
+      .map((d) => path.join(pasta, d.name));
   } catch {
-    /* pasta inexistente: devolve o padrão */
+    return [];
   }
-  return path.join(pasta, "FOTOS");
+}
+
+/** Arquivo da raiz da pasta com esse nome, sem diferenciar maiúsculas (DES.md, des.MD…). */
+export function arquivoNaRaiz(pasta: string, nome: string): string | null {
+  const alvo = nome.toLowerCase();
+  return (
+    arquivos(pasta).find((p) => path.basename(p).toLowerCase() === alvo) ?? null
+  );
+}
+
+/** A pasta de fotos do veículo: aceita FOTOS, FOTO, Fotografias, Imagens… como está no estoque. */
+export function pastaFotos(pasta: string) {
+  return subpastas(pasta, NOMES_FOTOS)[0] ?? path.join(pasta, "FOTOS");
+}
+
+/** Fotos reais do veículo (imagens da pasta de fotos), em ordem natural. */
+export function fotosDaPasta(pasta: string) {
+  return arquivos(pastaFotos(pasta))
+    .filter(
+      (p) => IMAGENS.includes(ext(p)) && !path.basename(p).startsWith("."),
+    )
+    .sort(natural);
+}
+
+/** PDFs do documento: na raiz da pasta ou numa subpasta DOC/DOCUMENTO/CRLV. */
+export function pdfsDoDocumento(pasta: string) {
+  return [pasta, ...subpastas(pasta, NOMES_DOC)].flatMap((d) =>
+    arquivos(d).filter((p) => ext(p) === ".pdf"),
+  );
 }
 
 export function nomeSeguro(nome: string) {
@@ -118,10 +167,12 @@ export function listarEstoque(raiz: string): PastaVeiculo[] {
     const achar = (teste: (p: string) => boolean) => lista.find(teste) ?? null;
     const info = achar((p) => path.basename(p).toLowerCase() === "info.md");
     const des = achar((p) => path.basename(p).toLowerCase() === "des.md");
-    const pdf = achar((p) => ext(p) === ".pdf");
-    const fotos = arquivos(pastaFotos(pasta))
-      .filter((p) => IMAGENS.includes(ext(p)))
-      .sort(natural);
+    const pdfs = pdfsDoDocumento(pasta);
+    const pdf =
+      pdfs.find((p) => path.basename(p).toLowerCase() === "doc.pdf") ??
+      pdfs[0] ??
+      null;
+    const fotos = fotosDaPasta(pasta);
     if (!info && !des && !pdf && !fotos.length) continue;
 
     const tempos = [pasta, ...lista, ...fotos].map((p) => {
@@ -304,12 +355,10 @@ export type StatusProducao = {
 };
 
 export function statusProducao(pasta: string): StatusProducao {
-  const lista = arquivos(pastaFotos(pasta))
-    .filter((p) => IMAGENS.includes(ext(p)))
-    .sort(natural);
+  const lista = fotosDaPasta(pasta);
   const escolher = (teste: (p: string) => boolean) => lista.find(teste) ?? null;
   const videos = [
-    ...arquivos(path.join(pasta, "VIDEO")),
+    ...subpastas(pasta, NOMES_VIDEO).flatMap(arquivos),
     ...arquivos(path.join(pasta, "PROJETO")),
     ...arquivos(pasta).filter(
       (p) => !path.basename(p).toUpperCase().startsWith("VIDEO_"),
@@ -338,9 +387,9 @@ export function statusProducao(pasta: string): StatusProducao {
     }
   };
   return {
-    doc_pdf: naPasta.some((p) => ext(p) === ".pdf"),
-    doc_md: fs.existsSync(path.join(pasta, "DOC.md")),
-    des_md: fs.existsSync(path.join(pasta, "DES.md")),
+    doc_pdf: pdfsDoDocumento(pasta).length > 0,
+    doc_md: arquivoNaRaiz(pasta, "DOC.md") !== null,
+    des_md: arquivoNaRaiz(pasta, "DES.md") !== null,
     fotos: lista.map((p) => path.basename(p)),
     principal: escolher((p) => stem(p) === "1"),
     sem_fundo: escolher(
@@ -360,7 +409,7 @@ export function statusProducao(pasta: string): StatusProducao {
 
 /** Acha o PDF do documento dentro da pasta do veículo. */
 export function documentoNaPasta(pasta: string) {
-  const pdfs = arquivos(pasta).filter((p) => ext(p) === ".pdf");
+  const pdfs = pdfsDoDocumento(pasta);
   const pdf =
     pdfs.find((p) => path.basename(p).toLowerCase() === "doc.pdf") ?? pdfs[0];
   if (!pdf)
@@ -376,9 +425,8 @@ export function documentoNaPasta(pasta: string) {
 
 /** Prévias locais, sem expor caminhos de arquivo ao navegador. */
 export function previaFotos(pasta: string) {
-  return arquivos(pastaFotos(pasta))
-    .filter((p) => IMAGENS.includes(ext(p)) && !stem(p).endsWith("_sem_fundo"))
-    .sort(natural)
+  return fotosDaPasta(pasta)
+    .filter((p) => !stem(p).endsWith("_sem_fundo"))
     .map((p) => ({
       nome: path.basename(p),
       miniatura: `data:${mime(p)};base64,${fs.readFileSync(p).toString("base64")}`,

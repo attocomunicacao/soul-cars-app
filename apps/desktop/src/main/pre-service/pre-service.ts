@@ -17,6 +17,7 @@ import { tokenUtalk } from "../crm/utalk";
 import { descobrirOrganizacao, type Buscar } from "../crm/utalk-api";
 import { ehAtivo, lerCsv } from "../inventory/folder-sync";
 import { conversasDaMemoria } from "../soul-ai/soul-ai";
+import { pastaFotos } from "../studio/files";
 import {
   CONFIG_PADRAO,
   LOJA_PADRAO,
@@ -193,10 +194,10 @@ function pastaDoVeiculo(id: string): string | null {
   const nome = fs.readdirSync(raiz).find((d) => d.split("_")[0] === id);
   return nome ? path.join(raiz, nome) : null;
 }
-/** Fotos numeradas de `ESTOQUE/<id>_…/FOTOS`, em ordem (caminhos completos). */
+/** Fotos numeradas de `ESTOQUE/<id>_…/FOTOS` (ou FOTO, Imagens…), em ordem (caminhos completos). */
 export function fotosDo(id: string): string[] {
   const p = pastaDoVeiculo(id);
-  const dir = p && path.join(p, "FOTOS");
+  const dir = p && pastaFotos(p);
   if (!dir || !fs.existsSync(dir)) return [];
   return fotosNumeradas(fs.readdirSync(dir)).map((f) => path.join(dir, f));
 }
