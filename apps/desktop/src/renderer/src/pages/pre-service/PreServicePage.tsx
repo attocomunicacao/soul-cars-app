@@ -137,7 +137,7 @@ export function PreServicePage({
     <section className="pre-atendimento">
       <div className="page-head">
         <div>
-          <p className="eyebrow">CRM</p>
+          <p className="eyebrow">CRM · uTalk</p>
           <h1>Pré-atendimento IA</h1>
           <p>
             {p.config.ligado ? "Atendimento ligado" : "Atendimento desligado"} ·{" "}
@@ -497,6 +497,11 @@ function Ensinar({
           </button>
         </div>
         <div className="conversa-ia">
+          {conversa.length === 0 && !pensando && (
+            <p className="empty">
+              Escreva a mensagem do lead abaixo ou peça a Abertura.
+            </p>
+          )}
           {conversa.map((m, i) => (
             <div
               key={i}
@@ -718,21 +723,26 @@ function Loja({ p, agir }: { p: Painel; agir: Agir }) {
         último horário de visita (16h em dia útil, 15h no sábado) é conferido à
         parte.
       </p>
-      {CAMPOS_LOJA.map(([k, rotulo, longo]) => (
-        <label key={k}>
-          {rotulo}
-          {longo ? (
-            <textarea
-              rows={2}
-              value={loja[k]}
-              onChange={(e) => setLoja({ ...loja, [k]: e.target.value })}
-            />
-          ) : (
+      {/* Campos curtos em duas colunas; textos longos na largura toda. */}
+      <div className="grid grid-2">
+        {CAMPOS_LOJA.filter(([, , longo]) => !longo).map(([k, rotulo]) => (
+          <label key={k}>
+            {rotulo}
             <input
               value={loja[k]}
               onChange={(e) => setLoja({ ...loja, [k]: e.target.value })}
             />
-          )}
+          </label>
+        ))}
+      </div>
+      {CAMPOS_LOJA.filter(([, , longo]) => longo).map(([k, rotulo]) => (
+        <label key={k}>
+          {rotulo}
+          <textarea
+            rows={2}
+            value={loja[k]}
+            onChange={(e) => setLoja({ ...loja, [k]: e.target.value })}
+          />
         </label>
       ))}
       <div className="actions">
@@ -781,15 +791,19 @@ function Configuracoes({
       .catch((e) => aoErro(textoDoErro(e)));
 
   const mudou = JSON.stringify(c) !== JSON.stringify(p.config);
+  // Interruptor no padrão do app (button.chave, como o "Só em estoque").
   const marcar = (k: keyof ConfigIa, rotulo: string, dica?: string) => (
-    <label className="linha-opcao" title={dica}>
-      <input
-        type="checkbox"
-        checked={!!c[k]}
-        onChange={(e) => setC({ ...c, [k]: e.target.checked })}
-      />
+    <button
+      type="button"
+      role="switch"
+      aria-checked={!!c[k]}
+      className={c[k] ? "chave ligada" : "chave"}
+      title={dica}
+      onClick={() => setC({ ...c, [k]: !c[k] })}
+    >
+      <span className="chave-trilho" aria-hidden="true" />
       {rotulo}
-    </label>
+    </button>
   );
   const etiqueta = (
     k: "etiquetaGatilhoId" | "etiquetaTransferenciaId",
