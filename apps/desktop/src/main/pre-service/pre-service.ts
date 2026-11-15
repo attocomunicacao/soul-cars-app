@@ -158,7 +158,7 @@ export function salvarChaveGroq(chave: string) {
 }
 
 // ------------------------------------------------------------ estoque e fotos
-/** Veículos disponíveis: status "DISPONÍVEL ESTOQUE" e ativos no último download do BNDV. */
+/** Veículos disponíveis: status "DISPONÍVEL ESTOQUE", ativos no último download do BNDV e com fotos na pasta. */
 export function veiculosDisponiveis(): VeiculoIa[] {
   let linhas: Record<string, string>[];
   try {
@@ -166,26 +166,31 @@ export function veiculosDisponiveis(): VeiculoIa[] {
   } catch {
     return [];
   }
-  return linhas
-    .filter(
-      (v) =>
-        ehAtivo(v) &&
-        normalizar(v.status).trim().startsWith("disponivel estoque"),
-    )
-    .map((v) => {
-      const n = Number(String(v.price ?? "").replace(",", "."));
-      return {
-        id: String(v.idVehicle ?? ""),
-        marca: String(v.brand ?? "").trim(),
-        modelo: String(v.model ?? "").trim(),
-        placa: String(v.plate ?? "").toUpperCase(),
-        preco:
-          Number.isFinite(n) && n > 0
-            ? Math.round(n).toLocaleString("pt-BR")
-            : "",
-      };
-    })
-    .filter((v) => v.id);
+  return (
+    linhas
+      .filter(
+        (v) =>
+          ehAtivo(v) &&
+          normalizar(v.status).trim().startsWith("disponivel estoque"),
+      )
+      .map((v) => {
+        const n = Number(
+          String(v.salePrice ?? v.price ?? "").replace(",", "."),
+        );
+        return {
+          id: String(v.idVehicle ?? ""),
+          marca: String(v.brand ?? "").trim(),
+          modelo: String(v.model ?? "").trim(),
+          placa: String(v.plate ?? "").toUpperCase(),
+          preco:
+            Number.isFinite(n) && n > 0
+              ? Math.round(n).toLocaleString("pt-BR")
+              : "",
+        };
+      })
+      // Regra da loja: só fica disponível (catálogo e IA) quem está em estoque no BNDV E tem fotos na pasta.
+      .filter((v) => v.id && fotosDo(v.id).length > 0)
+  );
 }
 
 function pastaDoVeiculo(id: string): string | null {
