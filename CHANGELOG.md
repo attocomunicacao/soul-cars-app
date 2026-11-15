@@ -2,6 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.0.15]
+
+- **Pré-atendimento IA** (menu CRM): a IA atende pelo WhatsApp (uTalk) os leads com a etiqueta de gatilho, envia fotos do veículo das pastas do estoque (até 6 por pedido) e passa para a equipe quando o lead quer visitar ou falar com alguém
+- Abas Visão geral, Aprovação (rascunhos antes de enviar), Ensinar (simulador; correções viram exemplos), Respostas-rápidas e persona, Loja e Configurações
+- Usa o Groq (plano grátis, chave guardada cifrada) com o Ollama local como reserva. Vem **desligado**: ligue e escolha as etiquetas em Configurações do Pré-atendimento
+
 ## [1.0.14]
 
 - Venda cancelada no BNDV: o veículo volta ao estoque no app (lista, vitrine, balanço, relatório e ficha da pasta) e a venda sai da receita e da margem. O BNDV continua listando a venda cancelada; o app agora confia no status do veículo ("Disponível estoque")
