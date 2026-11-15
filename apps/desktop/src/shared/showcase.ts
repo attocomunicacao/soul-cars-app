@@ -17,6 +17,8 @@ export type CartaoVitrine = {
   pasta: string | null;
   /** Foto reduzida (data URL) ou null. */
   foto: string | null;
+  /** Em estoque no BNDV **e** com fotos na pasta: só esses aparecem na vitrine/catálogo. */
+  disponivel: boolean;
   /** Detalhes mostrados: da ficha do Studio quando preenchida, senão do BNDV; null se nenhum tem. */
   detalhes: {
     km: number | null;

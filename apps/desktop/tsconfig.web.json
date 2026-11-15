@@ -27,6 +27,7 @@
   ],
   "exclude": [
     "tests/intake.test.ts",
+    "tests/estoque-midia.test.ts",
     "tests/legacy-ai-cleanup.test.ts",
     "tests/validation.test.ts",
     "tests/bndv-graphql.test.ts",

@@ -16,6 +16,7 @@ const cartao = (extra: Partial<CartaoVitrine>): CartaoVitrine => ({
   entrada: "",
   pasta: null,
   foto: null,
+  disponivel: false,
   detalhes: {
     km: 84000,
     cor: null,

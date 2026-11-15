@@ -134,6 +134,23 @@ describe("vitrine do estoque atual", () => {
     expect(r[1].foto).toBeNull();
   });
 
+  it("disponível na vitrine = em estoque no BNDV e com fotos (recorte sozinho não conta)", () => {
+    const r = montarVitrine(
+      linhas,
+      [pastas[0], { ...pastas[1], fotos: ["C:/e/20/FOTOS/1_sem_fundo.png"] }],
+      [],
+      () => "data:x",
+      hoje,
+    );
+    expect(r.map((c) => [c.placa, c.disponivel])).toEqual([
+      ["KHR2I22", true],
+      ["AXI5J53", false],
+    ]);
+    expect(montarVitrine(linhas, [], [], () => null, hoje)[0].disponivel).toBe(
+      false,
+    );
+  });
+
   it("com uma foto só, usa ela", () => {
     expect(ordemDeFotos(["C:/f/1.jpg"])).toEqual(["C:/f/1.jpg"]);
     expect(ordemDeFotos([])).toEqual([]);

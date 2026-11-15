@@ -27,7 +27,8 @@ export function Showcase({
   useEffect(() => {
     let ativo = true;
     invoke<CartaoVitrine[]>("estoque_vitrine")
-      .then((c) => ativo && setCartoes(c))
+      // Regra da loja: na vitrine só entra o que está em estoque e tem fotos.
+      .then((c) => ativo && setCartoes(c.filter((x) => x.disponivel)))
       .catch((e) => ativo && setErro(String(e)));
     return () => {
       ativo = false;
