@@ -2,6 +2,10 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.0.16]
+
+- Pré-atendimento IA no visual do app: interruptores nas Configurações, aviso no simulador vazio e dados da loja em duas colunas
+
 ## [1.0.15]
 
 - **Pré-atendimento IA** (menu CRM): a IA atende pelo WhatsApp (uTalk) os leads com a etiqueta de gatilho, envia fotos do veículo das pastas do estoque (até 6 por pedido) e passa para a equipe quando o lead quer visitar ou falar com alguém
