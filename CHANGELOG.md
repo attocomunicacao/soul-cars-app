@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.0.19]
+
+- Pré-atendimento IA: só oferece os veículos em estoque no BNDV que têm fotos na pasta (a mesma regra da vitrine), e o envio de fotos volta a funcionar quando há dois carros do mesmo modelo em estoque
+- Pré-atendimento IA: o preço de venda do BNDV volta a aparecer nas respostas
+
 ## [1.0.18]
 
 - Pré-atendimento IA: quando o cliente pergunta quais carros estão disponíveis, a IA responde com a lista do estoque
