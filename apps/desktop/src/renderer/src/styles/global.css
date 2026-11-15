@@ -2509,3 +2509,12 @@ button.kanban-cartao {
 .pre-atendimento .kpis {
   margin-bottom: 24px;
 }
+.pre-atendimento .chave {
+  display: flex;
+  margin: 4px 0 10px;
+  white-space: normal;
+  text-align: left;
+}
+.pre-atendimento .campo-com-botao {
+  margin-bottom: 14px;
+}
