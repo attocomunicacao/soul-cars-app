@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 import {
   CONFIG_LEADS_PADRAO,
   NENHUM,
+  diaLocal,
   classificarEtiquetas,
   compararLeituras,
   filtrarLeads,
@@ -261,7 +262,8 @@ describe("Funil Meta → CRM", () => {
   });
 
   it("conta as etapas acumuladas e o custo vem do Meta", () => {
-    const dia = new Date().toISOString().slice(0, 10);
+    // Mesmo relógio do funil: o dia é local (UTC quebraria após 21h em São Paulo).
+    const dia = diaLocal(new Date().toISOString());
     const cfg = {
       ...CONFIG_FUNIL_PADRAO,
       tagRoles: {
