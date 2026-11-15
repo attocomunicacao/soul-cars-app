@@ -249,7 +249,8 @@ const COMUNS = new Set(
     "tem manda mandar envia enviar fotos foto imagem imagens mais dele dela carro ver por dentro interior " +
     "que voce voces pode poderia quero queria gostaria favor tambem esse essa desse dessa outro outra outras outros uns umas " +
     "algumas alguns qual dos das pra para com sem tudo bem ola bom dia boa tarde noite sim nao ainda mesmo como esta veiculo " +
-    "moto modelo aquele aquela daquele daquela consegue vcs vc ele ela isso"
+    "moto modelo aquele aquela daquele daquela consegue vcs vc ele ela isso " +
+    "me mim pro encaminha encaminhar encaminhe envie mande manda passa passar mostra mostrar todas todos"
   ).split(" "),
 );
 
@@ -318,6 +319,7 @@ export function citaDesconhecido(veiculos: VeiculoIa[], texto: string) {
   const conhecidos = veiculos.flatMap(palavrasDoVeiculo).map((x) => x.t);
   return [...new Set(palavras(texto))].some(
     (w) =>
+      w.length > 2 &&
       !COMUNS.has(w) &&
       !/^\d+$/.test(w) &&
       !conhecidos.some((t) => parecido(w, t)),
@@ -519,10 +521,10 @@ export function montarMensagens(e: EntradaContexto) {
     `FINANCIAMENTO: ${l.financiamento}`,
     `TROCA: ${l.troca}`,
     l.extra && `OUTRAS INFORMAÇÕES: ${l.extra}`,
-    `ESTOQUE (${e.veiculos.length} veículos disponíveis; mais relevantes):\n` +
-      (veiculos.length
-        ? veiculos.map((v) => "- " + descreverVeiculo(v)).join("\n")
-        : "- (nenhum veículo relacionado encontrado; pergunte o que o cliente procura)"),
+    `ESTOQUE (${e.veiculos.length} veículos disponíveis; use esta lista quando o cliente perguntar o que temos):\n` +
+      ((veiculos.length ? veiculos : e.veiculos.slice(0, 12))
+        .map((v) => "- " + descreverVeiculo(v))
+        .join("\n") || "- (sem veículos disponíveis no momento)"),
     reais.length &&
       "COMO NOSSA EQUIPE JÁ RESPONDEU CASOS PARECIDOS (imite o tom e a abordagem; NÃO copie preços, datas ou nomes daqui — use só os do contexto acima):\n" +
         reais

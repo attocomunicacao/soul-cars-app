@@ -325,3 +325,33 @@ describe("guardas do eval (carro fora do estoque e link de anúncio)", () => {
     ).toBe(true);
   });
 });
+
+describe("conversa real: 'Jeep Renegade' e depois 'Me encaminha as fotos'", () => {
+  it("usa o carro citado antes e envia as fotos", () => {
+    const conversa = [
+      lead("Quais carros estão disponíveis?"),
+      ia("Qual modelo você tem em mente?"),
+      lead("Jeep Renegade"),
+      ia("Temos o Jeep Renegade disponível."),
+      lead("Me encaminha as fotos"),
+    ];
+    const p = planoDeFotos({ conversa, veiculos: ESTOQUE, fotosDe })!;
+    expect(p.veiculo?.id).toBe("10");
+    expect(p.fotos).toHaveLength(6);
+  });
+  it("pergunta genérica recebe a lista do estoque", () => {
+    const { mensagens } = montarMensagens({
+      persona: PERSONA_PADRAO,
+      loja: LOJA_PADRAO,
+      config: CONFIG_PADRAO,
+      veiculos: ESTOQUE,
+      respostas: [],
+      exemplos: [],
+      reais: [],
+      conversa: [lead("Quais carros estão disponíveis?")],
+      nomeLead: "Fulano",
+    });
+    expect(mensagens[0].content).toMatch(/RENEGADE/);
+    expect(mensagens[0].content).toMatch(/CRUZE/);
+  });
+});
