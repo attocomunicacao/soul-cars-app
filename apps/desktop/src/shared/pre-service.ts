@@ -201,7 +201,10 @@ export function avisoDeHorario(conversa: MensagemIa[]): string {
 export function interpretarResposta(bruto: string, conversa: MensagemIa[]) {
   const texto = bruto.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
   // Horário fora do expediente não é visita confirmada: não transfere.
-  const transferir = /\[TRANSFERIR\]/i.test(texto) && !avisoDeHorario(conversa);
+  const transferir =
+    /\[TRANSFERIR\]/i.test(texto) &&
+    !avisoDeHorario(conversa) &&
+    !soLinkDeAnuncio(conversa);
   const encerrar = /\[ENCERRAR\]/i.test(texto);
   return {
     texto: texto.replace(/\[(TRANSFERIR|ENCERRAR)\]/gi, "").trim(),
@@ -209,6 +212,26 @@ export function interpretarResposta(bruto: string, conversa: MensagemIa[]) {
     encerrar,
   };
 }
+
+const LINK = /https?:\/\/\S+/i;
+const PEDIDO_DE_HUMANO =
+  /\b(humano|atendente|vendedor|consultor|pessoa|gerente|ligar|ligue|liga|fechar|comprar|visita|agendar)\b/;
+
+/** A última mensagem do lead é um link de anúncio sem pedido de humano? (o link só indica o carro) */
+export function soLinkDeAnuncio(conversa: MensagemIa[]) {
+  const ultima =
+    conversa.filter((m) => m.role === "user").at(-1)?.content ?? "";
+  return (
+    LINK.test(ultima) &&
+    !PEDIDO_DE_HUMANO.test(normalizar(ultima.replace(LINK, " ")))
+  );
+}
+
+/** Instrução extra quando a última mensagem do lead é só um link de anúncio, ou "". */
+export const avisoDeLink = (conversa: MensagemIa[]) =>
+  soLinkDeAnuncio(conversa)
+    ? "\n\nATENÇÃO: o lead mandou um link de anúncio. Isso só indica o carro de interesse: responda sobre o carro e NÃO inclua [TRANSFERIR]."
+    : "";
 
 // ------------------------------------------------------------------ fotos
 const PEDIDO =
@@ -299,6 +322,25 @@ export function citaDesconhecido(veiculos: VeiculoIa[], texto: string) {
       !/^\d+$/.test(w) &&
       !conhecidos.some((t) => parecido(w, t)),
   );
+}
+
+/**
+ * O lead citou uma marca que não bate com nenhum veículo do estoque ("tem Jeep Compass?")?
+ * Devolve uma instrução para o modelo não inventar o carro, ou "".
+ */
+export function avisoDeEstoque(veiculos: VeiculoIa[], conversa: MensagemIa[]) {
+  const ultima =
+    conversa.filter((m) => m.role === "user").at(-1)?.content ?? "";
+  const marca = palavras(ultima.replace(LINK, " ")).find((w) => MARCAS.test(w));
+  if (!marca) return "";
+  const temDaMarca = veiculos.some((v) =>
+    palavras(`${v.marca} ${v.modelo}`).some(
+      (t) => parecido(t, marca) || t === marca,
+    ),
+  );
+  if (temDaMarca && veiculoCitado(veiculos, ultima).tipo !== "nenhum")
+    return "";
+  return `\n\nATENÇÃO: o veículo que o lead pediu (${marca}) NÃO está no ESTOQUE. Diga que no momento não temos esse modelo e ofereça 1 ou 2 opções parecidas da lista. NUNCA diga que temos esse carro.`;
 }
 
 /** Pedido genérico ("manda foto"): procura o carro nas últimas mensagens e nas etiquetas do contato. */
@@ -501,6 +543,8 @@ export function montarMensagens(e: EntradaContexto) {
     preencher(e.persona, vars) +
     `\n\nNome do lead: ${e.nomeLead || "desconhecido"}.\n\nCONTEXTO:\n${contexto}` +
     avisoDeHorario(e.conversa) +
+    avisoDeLink(e.conversa) +
+    avisoDeEstoque(e.veiculos, e.conversa) +
     (e.notaFotos ? "\n\n" + e.notaFotos : "");
   const mensagens: { role: "system" | Papel; content: string }[] = [
     { role: "system", content: sistema },
