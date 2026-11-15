@@ -32,3 +32,4 @@ apps/engine/video/assets/TRILHA.*
 # Restos locais da reestruturação
 .restructure/
 .ruff_cache/
+.promptfoo/
