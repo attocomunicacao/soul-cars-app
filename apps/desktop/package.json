@@ -17,8 +17,8 @@
     "smoke:instagram": "node scripts/prepare-instagram-smoke.cjs && electron scripts/instagram-smoke.cjs",
     "screenshots": "electron scripts/capture-screenshots.cjs",
     "package": "electron-vite build && electron-builder --win --publish never",
-    "eval:ai": "promptfoo eval -c tests/ai-evals/promptfooconfig.yaml",
-    "eval:ai:view": "promptfoo view"
+    "eval:ai": "npx -y promptfoo@0.125.1 eval -c tests/ai-evals/promptfooconfig.yaml",
+    "eval:ai:view": "npx -y promptfoo@0.125.1 view"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -28,7 +28,6 @@
     "electron": "44.10.2",
     "electron-builder": "^26.0.0",
     "electron-vite": "^4.0.0",
-    "promptfoo": "^0.125.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "vite": "^7.0.0"
