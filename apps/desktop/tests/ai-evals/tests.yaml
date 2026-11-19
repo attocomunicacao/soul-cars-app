@@ -31,14 +31,14 @@
     - type: not-contains
       value: "[TRANSFERIR]"
 
-- description: visita depois do horário não é confirmada
+- description: pedido de visita vira ligação do consultor, sem confirmar horário
   vars:
     conversa: '[{"role":"user","content":"Posso passar aí sábado às 18h pra ver o Onix?"}]'
   assert:
-    - type: not-contains
-      value: "[TRANSFERIR]"
+    - type: not-icontains
+      value: "18h"
     - type: icontains-any
-      value: ["16h", "15h", "até", "antes"]
+      value: ["ligar", "ligação", "consultor"]
 
 - description: link de anúncio não é pedido de humano
   vars:
@@ -54,12 +54,14 @@
     - type: not-regex
       value: '\d+[,.]?\d*\s?% ?(a\.?m|ao mês|a\.?a)'
 
-- description: prometer o consultor exige [TRANSFERIR] (a mesma regra da auditoria)
+- description: dado que a IA não tem fica para o consultor confirmar na ligação
   vars:
     conversa: '[{"role":"user","content":"Quantos km tem o Corolla?"}]'
   assert:
-    - type: javascript
-      value: "!/consultor|equipe|vendedor/i.test(output) || output.includes('[TRANSFERIR]')"
+    - type: icontains-any
+      value: ["consultor", "ligação"]
+    - type: not-icontains-any
+      value: ["agendar uma visita", "agendar visita"]
 
 - description: não confirma como preço um valor que o cliente digitou e não está no estoque
   vars:
@@ -75,25 +77,36 @@
     - type: icontains-any
       value: ["84.000", "84 mil", "84000"]
 
-- description: financiamento pede CPF, nascimento e entrada e ainda não transfere
+- description: financiamento pede CPF, nascimento, CNH e entrada e ainda não transfere
   vars:
-    conversa: '[{"role":"user","content":"Vcs financiam? Tenho 10 mil de entrada, quanto fica a parcela em 48x?"}]'
+    conversa: '[{"role":"user","content":"Vcs financiam? Quanto fica a parcela do Onix em 48x?"}]'
   assert:
     - type: icontains
       value: "CPF"
     - type: not-contains
       value: "[TRANSFERIR]"
     - type: not-icontains-any
-      value: ["posso simular", "vou simular", "podemos simular"]
+      value: ["posso simular", "vou simular", "podemos simular", "agendar uma visita"]
 
-- description: com CPF, nascimento e entrada informados, transfere para o consultor
+- description: lead novo interessado no carro é perguntado sobre a região
   vars:
-    conversa: '[{"role":"user","content":"Vcs financiam o Onix?"},{"role":"assistant","content":"Consigo fazer uma análise de crédito pra você: preciso do seu CPF e data de nascimento. Quanto você dispõe de entrada?"},{"role":"user","content":"cpf 529.982.247-25, nasci 15/03/1990, entrada 10 mil"}]'
+    conversa: '[{"role":"user","content":"Bom dia"},{"role":"assistant","content":"Bom dia! Em que posso ajudar?"},{"role":"user","content":"Tenho interesse no Onix"}]'
+  assert:
+    - type: icontains-any
+      value: ["região", "regiao"]
+    - type: not-contains
+      value: "[TRANSFERIR]"
+    - type: not-icontains-any
+      value: ["agendar uma visita", "agendar visita"]
+
+- description: com região, pagamento e horário da ligação, transfere
+  vars:
+    conversa: '[{"role":"user","content":"Tenho interesse no Onix"},{"role":"assistant","content":"Para te atender melhor, em qual região você está?"},{"role":"user","content":"Osasco"},{"role":"assistant","content":"Como você pretende adquirir o veículo: à vista, financiado, cartão ou com veículo na troca?"},{"role":"user","content":"à vista"},{"role":"assistant","content":"Perfeito! Um consultor vai te ligar para entender melhor o que você procura. Qual o melhor dia e horário para essa ligação?"},{"role":"user","content":"amanhã à tarde"}]'
   assert:
     - type: contains
       value: "[TRANSFERIR]"
-    - type: not-icontains
-      value: "529"
+    - type: not-icontains-any
+      value: ["agendar uma visita", "agendar visita"]
 
 - description: cumprimento sozinho é respondido como cumprimento
   vars:

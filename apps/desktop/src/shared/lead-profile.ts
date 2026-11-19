@@ -1,25 +1,45 @@
 /**
  * Ficha do lead no Pré-atendimento IA: a memória estruturada do que o cliente já contou (carro,
- * forma de pagamento, entrada, CPF, data de nascimento, troca) para a IA não repetir perguntas, para
- * conduzir a coleta de dados do financiamento antes de passar ao SDR e para montar o resumo que o SDR
+ * região, forma de aquisição, entrada, CPF, nascimento, CNH, troca, melhor horário para a ligação).
+ * Serve para a IA não repetir perguntas, para conduzir a qualificação (uma pergunta por mensagem)
+ * antes de passar ao SDR, que liga para o cliente e marca a visita, e para montar a nota que o SDR
  * recebe. Também mascara CPF e data de nascimento antes de qualquer texto sair do computador (Groq,
- * auditoria, histórico). Regras puras, sem Electron nem disco: o CPF só é cifrado em `main/`.
+ * auditoria, histórico). Regras puras, sem Electron nem disco: CPF e nascimento só são cifrados em `main/`.
  */
 import type { MensagemIa } from "./pre-service";
 
-/** O que já sabemos de um lead. `cpf` é opaco aqui (no main guarda texto cifrado ou "informado"). */
+export type Pagamento = "a vista" | "financiado" | "cartao" | "troca";
+
+/** Itens que a IA tenta descobrir, na ordem em que pergunta. */
+export type Campo =
+  | "regiao"
+  | "pagamento"
+  | "troca"
+  | "cpf"
+  | "nascimento"
+  | "cnh"
+  | "entrada"
+  | "horario";
+
+/** O que já sabemos de um lead. `cpf` e `nascimento` guardam texto cifrado no main (aqui são opacos). */
 export type FichaLead = {
   veiculo: string;
+  regiao: string;
+  pagamento: Pagamento[];
+  /** Modelo e ano do veículo dado na troca. */
+  troca: string;
+  /** "R$ 10.000" ou "sem entrada" */
+  entrada: string;
   cpf: string;
   /** dd/mm/aaaa */
   nascimento: string;
-  /** "R$ 10.000" ou "sem entrada" */
-  entrada: string;
-  formaPagamento: "" | "financiamento" | "a vista";
-  troca: string;
-  pediuFinanciamento: boolean;
-  /** Quantas vezes a IA já pediu CPF e nascimento sem receber. */
-  tentativasDados: number;
+  cnh: "" | "sim" | "nao";
+  /** Melhor dia e horário para a ligação do consultor. */
+  horarioLigacao: string;
+  /** Quantas vezes a IA já perguntou cada item sem receber (2 = dispensado). */
+  pedidos: Partial<Record<Campo, number>>;
+  /** Mensagens do cliente vistas (a coleta só começa depois de algum interesse). */
+  mensagensCliente: number;
   /** O cliente se recusou a passar os dados. */
   recusou: boolean;
   /** A ficha já foi entregue ao SDR (nota privada), para não repetir a transferência. */
@@ -28,19 +48,42 @@ export type FichaLead = {
 
 export const FICHA_VAZIA: FichaLead = {
   veiculo: "",
+  regiao: "",
+  pagamento: [],
+  troca: "",
+  entrada: "",
   cpf: "",
   nascimento: "",
-  entrada: "",
-  formaPagamento: "",
-  troca: "",
-  pediuFinanciamento: false,
-  tentativasDados: 0,
+  cnh: "",
+  horarioLigacao: "",
+  pedidos: {},
+  mensagensCliente: 0,
   recusou: false,
   entregue: false,
 };
 
+/** Aceita fichas salvas por versões anteriores (`formaPagamento`, `tentativasDados`…) e completa o que falta. */
+export function fichaCompativel(bruto: unknown): FichaLead {
+  const r = (bruto ?? {}) as Record<string, unknown>;
+  const f: FichaLead = {
+    ...FICHA_VAZIA,
+    ...(r as Partial<FichaLead>),
+    pagamento: Array.isArray(r.pagamento) ? (r.pagamento as Pagamento[]) : [],
+    pedidos: (r.pedidos as FichaLead["pedidos"]) ?? {},
+  };
+  if (!f.pagamento.length) {
+    if (r.formaPagamento === "financiamento") f.pagamento = ["financiado"];
+    else if (r.formaPagamento === "a vista") f.pagamento = ["a vista"];
+  }
+  return f;
+}
+
 /** Minúsculas e sem acento. */
-const sem = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const sem = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
 
 // ------------------------------------------------------------------ CPF e data
 const CPF_RE = /(?<!\d)(\d{3})[.\s]?(\d{3})[.\s]?(\d{3})[-.\s]?(\d{2})(?!\d)/g;
@@ -132,10 +175,98 @@ function acharEntrada(texto: string, perguntouEntrada: boolean): string {
   return n !== null && n >= 100 ? brl(n) : "";
 }
 
+// ------------------------------------------------------------------ perguntas da IA
+/** Como reconhecer, numa mensagem da IA, que ela perguntou cada item. */
+const PERGUNTA: Record<Campo, RegExp> = {
+  regiao: /regiao|bairro|cidade|onde voce (mora|esta|fica)/,
+  pagamento:
+    /(a vista|financ)[^.?!]*(cartao|troca)|como voce pretende|forma de pagamento/,
+  troca: /(modelo|ano)[^.?!]*troca|troca[^.?!]*(modelo|ano)/,
+  cpf: /\bcpf\b/,
+  nascimento: /nascimento/,
+  cnh: /\bcnh\b|habilitacao/,
+  entrada: /entrada/,
+  horario: /(melhor|qual)[^.?!]*(dia|horario)|horario[^.?!]*ligac/,
+};
+
+const CAMPOS = Object.keys(PERGUNTA) as Campo[];
+const perguntou = (anterior: string, campo: Campo) =>
+  PERGUNTA[campo].test(sem(anterior));
+
 // ------------------------------------------------------------------ extração
 const RECUSA =
   /nao (quero|vou|posso|prefiro) (passar|informar|dar|mandar|enviar)|prefiro nao (passar|informar|dar)|so (com|por) (o )?(consultor|vendedor|ligacao)/;
-const PEDE_DADOS = /\bcpf\b|data de nascimento/;
+const HUMANO =
+  /(falar|conversar|atendimento) com (um |uma |o |a )?(humano|atendente|vendedor|consultor|pessoa|gerente)|\bme (liga|ligue)\b|pode (me )?ligar|quero (que )?(voces |vcs )?(me )?(ligu?e|ligar)|prefiro (falar|ligacao)/;
+
+/** O cliente pediu para falar com alguém ou receber uma ligação? */
+export const pediuHumano = (texto: string) => HUMANO.test(sem(texto));
+
+const palavrasDe = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
+
+/** Região dita pelo cliente ("moro em Osasco") ou resposta curta à pergunta da IA. */
+function acharRegiao(texto: string, anterior: string): string {
+  const t = texto.replace(CPF_RE, " ").replace(DATA_RE, " ").trim();
+  const dito =
+    /\b(?:(?:moro|resido|moramos|fico)\s+(?:em|na|no|de|da|do|perto de)|sou\s+(?:de|da|do))\s+([^,.!?\n]{2,40})/i.exec(
+      t,
+    );
+  if (dito) return dito[1].trim();
+  if (
+    perguntou(anterior, "regiao") &&
+    t &&
+    !/[?\d]/.test(t) &&
+    palavrasDe(t) <= 8 &&
+    t.length <= 80
+  )
+    return t.replace(/^(aqui|sou|estou) (em|na|no|de)\s+/i, "").trim();
+  return "";
+}
+
+/** Melhor dia/horário para a ligação, dito junto de "ligar" ou como resposta à pergunta da IA. */
+function acharHorario(texto: string, anterior: string): string {
+  const t = texto.trim();
+  const n = sem(t);
+  const tempo =
+    /\b(amanha|hoje|segunda|terca|quarta|quinta|sexta|sabado|domingo|manha|tarde|noite|depois do almoco)\b|\d{1,2}\s*(h|:|horas?)/;
+  if (perguntou(anterior, "horario") && !/\?/.test(t) && palavrasDe(t) <= 12)
+    return t;
+  if (/\bliga|ligac|ligar|ligue/.test(n) && tempo.test(n) && !/\?/.test(t))
+    return t.slice(0, 80);
+  return "";
+}
+
+function acharCnh(texto: string, anterior: string): "" | "sim" | "nao" {
+  const t = sem(texto);
+  if (
+    /(sem|nao tenho|nao possuo|nao tenho a) (cnh|habilitacao|carteira)/.test(t)
+  )
+    return "nao";
+  if (
+    /(tenho|possuo|com|tenho a) (a )?(cnh|habilitacao|carteira)|cnh (a|b|ab|ok|valida)\b/.test(
+      t,
+    )
+  )
+    return "sim";
+  if (perguntou(anterior, "cnh")) {
+    if (/^\W*(sim|s|tenho|possuo|tenho sim|possuo sim)\W*$/.test(t))
+      return "sim";
+    if (/^\W*(nao|n|nao tenho|nao possuo)\W*$/.test(t)) return "nao";
+  }
+  return "";
+}
+
+/** Formas de pagamento citadas. */
+function acharPagamento(texto: string): Pagamento[] {
+  const t = sem(texto);
+  const achados: Pagamento[] = [];
+  if (/a vista|avista|\bpix\b|dinheiro|em especie/.test(t))
+    achados.push("a vista");
+  if (/financ|parcel|credito|prestac/.test(t)) achados.push("financiado");
+  if (/cartao/.test(t)) achados.push("cartao");
+  if (/troc/.test(t)) achados.push("troca");
+  return achados;
+}
 
 /** Dados que uma mensagem do cliente traz. `perguntaAnterior` = última mensagem da IA/equipe. */
 export function extrairDados(
@@ -144,17 +275,21 @@ export function extrairDados(
   agora = new Date(),
 ) {
   const t = sem(texto);
-  const antes = sem(perguntaAnterior);
+  const troca =
+    perguntou(perguntaAnterior, "troca") && !/\?/.test(texto)
+      ? texto.trim().slice(0, 100)
+      : /troc/.test(t)
+        ? texto.trim().slice(0, 100)
+        : "";
   return {
     cpf: acharCpf(texto),
     nascimento: acharNascimento(texto, agora),
-    entrada: acharEntrada(texto, /entrada/.test(antes)),
-    formaPagamento: (/financ|parcel|credito|simula/.test(t)
-      ? "financiamento"
-      : /a vista|avista/.test(t)
-        ? "a vista"
-        : "") as FichaLead["formaPagamento"],
-    troca: /troc/.test(t) ? texto.trim().slice(0, 100) : "",
+    entrada: acharEntrada(texto, perguntou(perguntaAnterior, "entrada")),
+    pagamento: acharPagamento(texto),
+    troca,
+    cnh: acharCnh(texto, perguntaAnterior),
+    regiao: acharRegiao(texto, perguntaAnterior),
+    horario: acharHorario(texto, perguntaAnterior),
     recusou: RECUSA.test(t),
   };
 }
@@ -168,115 +303,235 @@ export function fichaDaConversa(
   base: FichaLead = FICHA_VAZIA,
   agora = new Date(),
 ): FichaLead {
-  const f = { ...base };
-  let pedidos = 0;
+  const f: FichaLead = {
+    ...base,
+    pagamento: [...base.pagamento],
+    pedidos: { ...base.pedidos },
+  };
+  const pedidosNaJanela: Partial<Record<Campo, number>> = {};
+  let doCliente = 0;
   let anterior = "";
   for (const m of conversa) {
     if (m.role === "assistant") {
-      if (PEDE_DADOS.test(sem(m.content))) pedidos++;
+      for (const c of CAMPOS)
+        if (perguntou(m.content, c))
+          pedidosNaJanela[c] = (pedidosNaJanela[c] ?? 0) + 1;
       anterior = m.content;
       continue;
     }
+    doCliente++;
     const x = extrairDados(m.content, anterior, agora);
     f.cpf = x.cpf || f.cpf;
     f.nascimento = x.nascimento || f.nascimento;
     f.entrada = x.entrada || f.entrada;
-    f.formaPagamento = x.formaPagamento || f.formaPagamento;
     f.troca = x.troca || f.troca;
-    if (x.formaPagamento === "financiamento") f.pediuFinanciamento = true;
+    f.cnh = x.cnh || f.cnh;
+    f.regiao = x.regiao || f.regiao;
+    f.horarioLigacao = x.horario || f.horarioLigacao;
+    for (const p of x.pagamento)
+      if (!f.pagamento.includes(p)) f.pagamento.push(p);
     if (x.recusou) f.recusou = true;
   }
-  if (faltando(f).length)
-    f.tentativasDados = Math.max(f.tentativasDados, pedidos);
+  f.mensagensCliente = Math.max(f.mensagensCliente, doCliente);
+  for (const c of CAMPOS)
+    f.pedidos[c] = Math.max(f.pedidos[c] ?? 0, pedidosNaJanela[c] ?? 0);
   return f;
 }
 
-// ------------------------------------------------------------------ regras
-/** O que ainda falta para a análise de crédito (vazio se o cliente não pediu financiamento). */
-export function faltando(f: FichaLead): string[] {
-  if (!f.pediuFinanciamento) return [];
-  return [
-    !f.cpf && "CPF",
-    !f.nascimento && "data de nascimento",
-    !f.entrada && "entrada",
-  ].filter(Boolean) as string[];
+// ------------------------------------------------------------------ regras da coleta
+export const financiado = (f: FichaLead) => f.pagamento.includes("financiado");
+
+/** Troca "informada" quando há modelo/ano (ex.: "Gol 2015"), não só a palavra "troca". */
+const temDetalheDeTroca = (s: string) =>
+  /\b(19|20)\d{2}\b/.test(s) || palavrasDe(s) >= 5;
+
+/** A coleta começa quando o cliente demonstrou interesse (carro, forma de pagamento ou 2+ mensagens). */
+export const coletaAtiva = (f: FichaLead) =>
+  !!f.veiculo || f.pagamento.length > 0 || f.mensagensCliente >= 2;
+
+/** Itens que o consultor precisa e ainda não temos, na ordem de pergunta (inclui os já dispensados). */
+export function ausentes(f: FichaLead): Campo[] {
+  const falta: Campo[] = [];
+  // Se o cliente já falou em financiar, os dados do financiamento são o assunto: vêm primeiro.
+  if (financiado(f)) {
+    if (!f.cpf) falta.push("cpf");
+    if (!f.nascimento) falta.push("nascimento");
+    if (!f.cnh) falta.push("cnh");
+    if (!f.entrada) falta.push("entrada");
+  }
+  if (!f.regiao) falta.push("regiao");
+  if (!f.pagamento.length) falta.push("pagamento");
+  if (f.pagamento.includes("troca") && !temDetalheDeTroca(f.troca))
+    falta.push("troca");
+  if (!f.horarioLigacao) falta.push("horario");
+  return falta;
 }
 
-/** Já pode passar ao SDR? Sim sem financiamento, com os dados completos, se recusou ou se já pediu 2 vezes. */
-export const podeTransferir = (f: FichaLead) =>
-  !f.pediuFinanciamento ||
+/** Itens ainda a perguntar: os ausentes que a IA perguntou menos de 2 vezes. */
+export const pendentes = (f: FichaLead): Campo[] =>
+  coletaAtiva(f) ? ausentes(f).filter((c) => (f.pedidos[c] ?? 0) < 2) : [];
+
+const ROTULO: Record<Campo, string> = {
+  regiao: "região",
+  pagamento: "forma de pagamento",
+  troca: "modelo e ano do veículo na troca",
+  cpf: "CPF",
+  nascimento: "data de nascimento",
+  cnh: "CNH",
+  entrada: "entrada",
+  horario: "melhor horário para a ligação",
+};
+export const rotulos = (campos: Campo[]) => campos.map((c) => ROTULO[c]);
+
+/** Já deu para entender a situação do cliente (nada mais a perguntar)? */
+export const coletaCompleta = (f: FichaLead) =>
+  coletaAtiva(f) && pendentes(f).length === 0;
+
+/** Pode passar ao SDR? Sem coleta ativa, completa, recusa, pedido do cliente ou já entregue. */
+export const podeTransferir = (
+  f: FichaLead,
+  opcoes: { pediuHumano?: boolean } = {},
+) =>
+  !coletaAtiva(f) ||
   f.entregue ||
   f.recusou ||
-  f.tentativasDados >= 2 ||
-  faltando(f).length === 0;
+  !!opcoes.pediuHumano ||
+  pendentes(f).length === 0;
 
-/** A frase de pedido de dados, só com o que falta. */
-export function frasePedido(f: FichaLead): string {
-  const semCpf = !f.cpf;
-  const semNasc = !f.nascimento;
-  const doc =
-    semCpf && semNasc
-      ? "preciso do seu CPF e data de nascimento"
-      : semCpf
-        ? "preciso do seu CPF"
-        : semNasc
-          ? "preciso da sua data de nascimento"
-          : "";
-  if (!doc) return "Para a análise de crédito, quanto você dispõe de entrada?";
-  return (
-    "Consigo fazer uma análise de crédito pra você: " +
-    doc +
-    "." +
-    (f.entrada ? "" : " Quanto você dispõe de entrada?")
-  );
+/** Por que a ficha está sendo entregue ao SDR (para a nota). */
+export function motivoDaTransferencia(
+  f: FichaLead,
+  opcoes: { pediuHumano?: boolean } = {},
+): string {
+  if (opcoes.pediuHumano) return "o cliente pediu para falar com a equipe";
+  if (f.recusou) return "o cliente preferiu não passar os dados por mensagem";
+  if (coletaAtiva(f) && ausentes(f).length === 0) return "dados completos";
+  if (coletaAtiva(f) && pendentes(f).length === 0)
+    return "o cliente não respondeu a alguns itens (perguntados 2 vezes)";
+  return "a IA encaminhou o atendimento";
 }
 
-/** Instrução para o modelo sobre o financiamento ("" se não for o caso ou se já pode transferir sem coletar). */
-export function avisoDeFinanciamento(f: FichaLead): string {
-  if (!f.pediuFinanciamento || f.entregue) return "";
-  if (faltando(f).length === 0)
-    return `\n\nATENÇÃO (financiamento): todos os dados da análise de crédito já foram informados. Agradeça em 1 frase, diga que um consultor continua a análise por aqui e inclua [TRANSFERIR]. Não peça os dados de novo.`;
-  if (podeTransferir(f)) return "";
-  return `\n\nATENÇÃO (financiamento): o cliente quer financiar. Responda a dúvida dele em 1 frase e peça SOMENTE o que falta (${faltando(f).join(", ")}) com esta frase: "${frasePedido(f)}". NÃO inclua [TRANSFERIR] agora.`;
+// ------------------------------------------------------------------ frases e avisos
+/** Os itens do financiamento viram uma só pergunta (a frase do usuário, mais CNH e entrada). */
+function fraseDoFinanciamento(f: FichaLead, campos: Campo[]): string {
+  const docs = [
+    campos.includes("cpf") && "CPF",
+    campos.includes("nascimento") && "data de nascimento",
+  ].filter(Boolean);
+  const partes: string[] = [];
+  if (docs.length)
+    partes.push(
+      "Consigo fazer uma análise de crédito pra você: preciso do seu " +
+        docs.join(" e ") +
+        ".",
+    );
+  else partes.push("Para a análise de crédito:");
+  if (campos.includes("cnh")) partes.push("Você possui CNH?");
+  if (campos.includes("entrada")) partes.push("Quanto você dispõe de entrada?");
+  return partes.join(" ");
 }
+
+/** A próxima pergunta (uma por mensagem; os itens do financiamento vão juntos) e os itens que ela cobre. */
+export function proximaPergunta(
+  f: FichaLead,
+): { campos: Campo[]; frase: string } | null {
+  const pend = pendentes(f);
+  if (!pend.length) return null;
+  const primeiro = pend[0];
+  if (["cpf", "nascimento", "cnh", "entrada"].includes(primeiro)) {
+    const grupo = pend.filter((c) =>
+      ["cpf", "nascimento", "cnh", "entrada"].includes(c),
+    );
+    return { campos: grupo, frase: fraseDoFinanciamento(f, grupo) };
+  }
+  const frases: Partial<Record<Campo, string>> = {
+    regiao: "Para te atender melhor, em qual região você está?",
+    pagamento:
+      "Como você pretende adquirir o veículo: à vista, financiado, cartão ou com veículo na troca?",
+    troca: "Qual o modelo e ano do veículo que você daria na troca?",
+    horario:
+      "Perfeito! Um consultor vai te ligar para entender melhor o que você procura. Qual o melhor dia e horário para essa ligação?",
+  };
+  return { campos: [primeiro], frase: frases[primeiro] ?? "" };
+}
+
+/** Instrução para o modelo sobre a coleta de dados ("" se a coleta não começou ou a ficha já foi entregue). */
+export function avisoDeColeta(
+  f: FichaLead,
+  opcoes: { pediuHumano?: boolean } = {},
+): string {
+  if (!coletaAtiva(f) || f.entregue) return "";
+  if (opcoes.pediuHumano || f.recusou)
+    return `\n\nATENÇÃO (qualificação): o cliente quer falar com a equipe${f.recusou ? " e prefere não passar os dados por mensagem" : ""}. Confirme em 1 frase que um consultor vai ligar e inclua [TRANSFERIR]. Não faça mais perguntas e não ofereça visita.`;
+  const prox = proximaPergunta(f);
+  if (!prox)
+    return `\n\nATENÇÃO (qualificação): já temos todos os dados do cliente. Agradeça em 1 frase, diga que um consultor vai ligar${f.horarioLigacao ? ` (${f.horarioLigacao})` : ""} e inclua [TRANSFERIR]. Não faça mais perguntas e não ofereça visita.`;
+  return `\n\nATENÇÃO (qualificação): antes de passar ao consultor, entenda a situação do cliente. Responda a dúvida dele em no máximo 1 frase e faça UMA pergunta, com estas palavras: "${prox.frase}" NÃO inclua [TRANSFERIR] agora. NÃO ofereça nem agende visita: o consultor liga primeiro e combina a visita depois.`;
+}
+
+const PAGAMENTO_ROTULO: Record<Pagamento, string> = {
+  "a vista": "à vista",
+  financiado: "financiado",
+  cartao: "cartão",
+  troca: "veículo na troca",
+};
 
 /** Bloco "o que já sabemos" para o prompt (CPF e nascimento só como "informado"). */
 export function blocoFicha(f: FichaLead): string {
+  const dispensados = ausentes(f).filter((c) => (f.pedidos[c] ?? 0) >= 2);
   const linhas = [
     f.veiculo && `- Carro de interesse: ${f.veiculo}`,
-    f.formaPagamento && `- Forma de pagamento: ${f.formaPagamento}`,
+    f.regiao && `- Região: ${f.regiao}`,
+    f.pagamento.length &&
+      `- Forma de aquisição: ${f.pagamento.map((p) => PAGAMENTO_ROTULO[p]).join(", ")}`,
+    f.troca && `- Veículo na troca: ${f.troca}`,
     f.entrada && `- Entrada: ${f.entrada}`,
     f.cpf && "- CPF: informado (não peça de novo)",
     f.nascimento && "- Data de nascimento: informada (não peça de novo)",
-    f.troca && `- Troca: ${f.troca}`,
+    f.cnh && `- CNH: ${f.cnh === "sim" ? "possui" : "não possui"}`,
+    f.horarioLigacao && `- Melhor horário para a ligação: ${f.horarioLigacao}`,
+    dispensados.length &&
+      `- Não responderam (não pergunte de novo): ${rotulos(dispensados).join(", ")}`,
   ].filter(Boolean);
   return linhas.length
     ? `O QUE JÁ SABEMOS DO LEAD (não pergunte de novo):\n${linhas.join("\n")}`
     : "";
 }
 
-/** Resumo para o SDR. `cpfPlano` (só dígitos) entra na nota privada; sem ele, o CPF aparece só como informado. */
+/** Nota para o SDR. Os valores em claro (`cpfPlano`, `nascimentoPlano`) só entram na nota privada, nunca no painel. */
 export function resumoParaSdr(
   f: FichaLead,
-  dados: { nome: string; cpfPlano?: string },
+  dados: {
+    nome: string;
+    motivo?: string;
+    cpfPlano?: string;
+    nascimentoPlano?: string;
+  },
 ): string {
   const cpf = dados.cpfPlano
     ? formatarCpf(dados.cpfPlano)
     : f.cpf
       ? "informado no chat"
       : "";
-  const falta = faltando(f);
+  const nascimento =
+    dados.nascimentoPlano ?? (f.nascimento ? "informado no chat" : "");
+  const faltou = ausentes(f);
   return [
-    "RESUMO DA IA (pré-atendimento)",
+    "NOTA DO CLIENTE (pré-atendimento da IA)",
     `Lead: ${dados.nome}`,
-    f.veiculo && `Carro: ${f.veiculo}`,
-    f.formaPagamento && `Pagamento: ${f.formaPagamento}`,
+    f.veiculo && `Carro de interesse: ${f.veiculo}`,
+    f.regiao && `Região: ${f.regiao}`,
+    f.pagamento.length &&
+      `Forma de aquisição: ${f.pagamento.map((p) => PAGAMENTO_ROTULO[p]).join(", ")}`,
+    f.troca && `Veículo na troca: ${f.troca}`,
     f.entrada && `Entrada: ${f.entrada}`,
     cpf && `CPF: ${cpf}`,
-    f.nascimento && `Nascimento: ${f.nascimento}`,
-    f.troca && `Troca: ${f.troca}`,
-    falta.length && `Ainda falta: ${falta.join(", ")}`,
-    f.recusou && "O cliente preferiu não passar os dados por mensagem.",
+    nascimento && `Nascimento: ${nascimento}`,
+    f.cnh && `CNH: ${f.cnh === "sim" ? "possui" : "não possui"}`,
+    f.horarioLigacao && `Melhor horário para a ligação: ${f.horarioLigacao}`,
+    faltou.length && `Não informado: ${rotulos(faltou).join(", ")}`,
+    dados.motivo && `Motivo da transferência: ${dados.motivo}`,
+    "Próximo passo: ligar para o cliente e, depois da ligação, agendar a visita.",
   ]
     .filter(Boolean)
     .join("\n");

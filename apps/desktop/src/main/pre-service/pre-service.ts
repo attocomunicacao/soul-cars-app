@@ -21,7 +21,7 @@ import { arquivoNaRaiz, pastaFotos } from "../studio/files";
 import {
   CONFIG_PADRAO,
   LOJA_PADRAO,
-  PERSONA_ANTERIOR,
+  PERSONAS_ANTERIORES,
   PERSONA_PADRAO,
   RESPOSTAS_PADRAO,
   doContato,
@@ -47,12 +47,17 @@ import {
 import { lerKmEValor } from "../../shared/des-md";
 import {
   FICHA_VAZIA,
+  coletaCompleta,
+  fichaCompativel,
   fichaDaConversa,
-  faltando,
   mascarar,
   mascararConversa,
+  motivoDaTransferencia,
+  pediuHumano,
+  pendentes,
   podeTransferir,
   resumoParaSdr,
+  rotulos,
   type FichaLead,
 } from "../../shared/lead-profile";
 import {
@@ -131,12 +136,17 @@ function carregar(): Estado {
     config: { ...CONFIG_PADRAO, ...lido.config },
     loja: { ...LOJA_PADRAO, ...lido.loja },
     persona:
-      !lido.persona || lido.persona === PERSONA_ANTERIOR
+      !lido.persona || PERSONAS_ANTERIORES.includes(lido.persona)
         ? PERSONA_PADRAO
         : lido.persona,
     respostas: lido.respostas ?? structuredClone(RESPOSTAS_PADRAO),
     exemplos: lido.exemplos ?? [],
-    chats: lido.chats ?? {},
+    chats: Object.fromEntries(
+      Object.entries(lido.chats ?? {}).map(([id, c]) => [
+        id,
+        c.ficha ? { ...c, ficha: fichaCompativel(c.ficha) } : c,
+      ]),
+    ),
     rascunhos: lido.rascunhos ?? [],
     registros: lido.registros ?? [],
   };
@@ -157,14 +167,14 @@ const novoId = () =>
   Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 // ------------------------------------------------------------ ficha do lead
-/** Guarda o CPF cifrado (safeStorage); sem criptografia no sistema, só marca como informado. */
-function cifrarCpf(digitos: string): string {
+/** Guarda CPF e nascimento cifrados (safeStorage); sem criptografia no sistema, só marca como informado. */
+function cifrar(valor: string): string {
   return safeStorage.isEncryptionAvailable()
-    ? "enc:" + safeStorage.encryptString(digitos).toString("base64")
+    ? "enc:" + safeStorage.encryptString(valor).toString("base64")
     : "informado";
 }
-/** CPF em claro a partir do que está guardado ("" se não der para decifrar). */
-function lerCpf(guardado: string): string {
+/** Valor em claro a partir do que está guardado ("" se não der para decifrar). */
+function lerSegredo(guardado: string): string {
   if (!guardado.startsWith("enc:")) return "";
   try {
     return safeStorage.decryptString(Buffer.from(guardado.slice(4), "base64"));
@@ -172,10 +182,12 @@ function lerCpf(guardado: string): string {
     return "";
   }
 }
-/** Atualiza a ficha com a conversa e cifra o CPF recém-lido (o CPF em claro nunca é gravado). */
+/** Atualiza a ficha com a conversa e cifra o CPF e o nascimento recém-lidos (nunca são gravados em claro). */
 function atualizarFicha(base: FichaLead | undefined, conversa: MensagemIa[]) {
   const f = fichaDaConversa(conversa, base ?? FICHA_VAZIA);
-  if (/^[0-9]{11}$/.test(f.cpf)) f.cpf = cifrarCpf(f.cpf);
+  if (/^[0-9]{11}$/.test(f.cpf)) f.cpf = cifrar(f.cpf);
+  if (/^[0-9]{2}[/][0-9]{2}[/][0-9]{4}$/.test(f.nascimento))
+    f.nascimento = cifrar(f.nascimento);
   return f;
 }
 
@@ -211,9 +223,9 @@ function auditarTurno(a: {
             veiculos: r.auditoria.veiculos,
             anteriores: a.anteriores,
             fotosPlanejadas: r.plano?.fotos.length ?? 0,
-            financiamento: a.ficha && {
-              pediu: a.ficha.pediuFinanciamento,
-              faltando: faltando(a.ficha),
+            coleta: a.ficha && {
+              financiado: a.ficha.pagamento.includes("financiado"),
+              pendentes: pendentes(a.ficha),
               podeTransferir: podeTransferir(a.ficha),
             },
           })
@@ -250,7 +262,7 @@ function auditarTurno(a: {
       },
       estoque: r?.auditoria.veiculos.length ?? 0,
       desfecho: a.desfecho,
-      ...(a.ficha ? { faltando: faltando(a.ficha) } : {}),
+      ...(a.ficha ? { faltando: rotulos(pendentes(a.ficha)) } : {}),
       ...(a.erro ? { erro: a.erro } : {}),
       sinais,
     });
@@ -475,12 +487,14 @@ async function responder(conversa: MensagemIa[], lead: Lead) {
     uso,
   );
   const f = lead.ficha;
+  const humano = pediuHumano(
+    conversa.filter((m) => m.role === "user").at(-1)?.content ?? "",
+  );
   const lido = interpretarResposta(bruto, conversa, {
-    bloquearTransferencia: !!f && !podeTransferir(f),
+    bloquearTransferencia: !!f && !podeTransferir(f, { pediuHumano: humano }),
   });
-  // Dados do financiamento completos: a transferência não depende de o modelo lembrar da tag.
-  const completo =
-    !!f && f.pediuFinanciamento && !f.entregue && faltando(f).length === 0;
+  // Qualificação completa: a transferência não depende de o modelo lembrar da tag.
+  const completo = !!f && !f.entregue && coletaCompleta(f);
   return {
     ...lido,
     transferir: lido.transferir || (completo && !lido.encerrar),
@@ -569,15 +583,24 @@ async function tirarEtiqueta(
   if (erros.length === 2) throw erros[0];
 }
 
-/** Resumo do que a IA coletou: fica no painel (CPF mascarado) e vai ao SDR em nota privada no chat. */
+/** Nota do cliente: sempre que a IA transfere, vai ao SDR em nota privada no chat (e fica no painel, sem CPF). */
 async function entregarResumo(c: ClienteEscrita, st: EstadoChat) {
-  const f = st.ficha;
-  if (!f || (!f.veiculo && !f.entrada && !f.cpf && !f.nascimento && !f.troca))
-    return;
-  const nota = resumoParaSdr(f, { nome: st.nome, cpfPlano: lerCpf(f.cpf) });
+  const f = (st.ficha ??= FICHA_VAZIA);
+  const ultimo = st.historico.filter((m) => m.role === "user").at(-1)?.content;
+  const nota = resumoParaSdr(f, {
+    nome: st.nome,
+    motivo: motivoDaTransferencia(f, {
+      pediuHumano: pediuHumano(ultimo ?? ""),
+    }),
+    cpfPlano: lerSegredo(f.cpf) || undefined,
+    nascimentoPlano: lerSegredo(f.nascimento) || undefined,
+  });
   try {
     await c.notaPrivada(st.chatId, nota);
-    registrar("crm", st.nome + ": resumo enviado ao SDR (nota privada)");
+    registrar(
+      "crm",
+      st.nome + ": nota do cliente enviada ao SDR (nota privada)",
+    );
   } catch (erro) {
     registrar(
       "erro",
@@ -586,7 +609,7 @@ async function entregarResumo(c: ClienteEscrita, st: EstadoChat) {
         (erro as Error).message.slice(0, 120),
     );
   }
-  if (f.pediuFinanciamento) f.entregue = true;
+  f.entregue = true;
 }
 
 /** Envia o texto, depois as fotos em ordem, e aplica transferência/encerramento nas etiquetas do contato. */
@@ -858,22 +881,16 @@ export function painel() {
         mensagens: c.historico.length,
         ultima: c.historico.at(-1) ?? null,
         ultimaIaEm: c.ultimaIaEm,
-        // Ficha do lead para o painel (CPF e nascimento nunca aparecem aqui).
-        resumo:
-          c.ficha &&
-          (c.ficha.veiculo ||
-            c.ficha.entrada ||
-            c.ficha.cpf ||
-            c.ficha.nascimento ||
-            c.ficha.troca)
-            ? resumoParaSdr(
-                {
-                  ...c.ficha,
-                  nascimento: c.ficha.nascimento ? "informado" : "",
-                },
-                { nome: c.nome },
-              )
-            : null,
+        // Nota do cliente para o painel (CPF e nascimento nunca aparecem aqui).
+        resumo: c.ficha
+          ? resumoParaSdr(c.ficha, {
+              nome: c.nome,
+              motivo:
+                c.status === "ativo"
+                  ? undefined
+                  : motivoDaTransferencia(c.ficha),
+            })
+          : null,
       }))
       .sort((a, b) => (b.ultima?.em ?? 0) - (a.ultima?.em ?? 0)),
     registros: e.registros.slice(0, 80),

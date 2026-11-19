@@ -90,7 +90,7 @@ describe("avaliarTurno", () => {
     ).toContain("fechamento-repetido");
     expect(
       avaliarTurno({ ...base, texto: fecha, anteriores: [fecha] }),
-    ).toEqual([]);
+    ).not.toContain("fechamento-repetido");
   });
 
   it("resposta vazia, longa e pedido de foto sem plano", () => {
@@ -142,45 +142,71 @@ describe("simulação e promessas sem transferir", () => {
   });
 });
 
-describe("financiamento sem coleta de dados", () => {
-  const fin = {
-    pediu: true,
-    faltando: ["CPF", "entrada"],
+describe("qualificação do lead", () => {
+  const coleta = {
+    financiado: true,
+    pendentes: ["cpf", "nascimento", "entrada"],
     podeTransferir: false,
   };
-  it("alerta quando não pede os dados ou quando transfere cedo", () => {
+  const fala = { ...base, recebidas: ["Vcs financiam?"] };
+
+  it("alerta quando o cliente fala de financiamento e a IA não pede os dados", () => {
     expect(
       avaliarTurno({
-        ...base,
+        ...fala,
         texto: "Trabalhamos com vários bancos.",
-        financiamento: fin,
-      }),
-    ).toContain("financiamento-sem-dados");
-    expect(
-      avaliarTurno({
-        ...base,
-        texto: "Certo, um consultor continua.",
-        transferir: true,
-        financiamento: fin,
+        coleta,
       }),
     ).toContain("financiamento-sem-dados");
   });
-  it("não alerta quando pede os dados ou quando já pode transferir", () => {
+  it("não alerta quando pede os dados, nem num simples cumprimento", () => {
     expect(
       avaliarTurno({
-        ...base,
+        ...fala,
         texto: "Preciso do seu CPF. Quanto você dispõe de entrada?",
-        financiamento: fin,
+        coleta,
       }),
     ).not.toContain("financiamento-sem-dados");
     expect(
       avaliarTurno({
         ...base,
-        texto: "Ok.",
-        transferir: true,
-        financiamento: { ...fin, podeTransferir: true },
+        recebidas: ["Oi"],
+        texto: "Oi! Como posso ajudar?",
+        coleta,
       }),
     ).not.toContain("financiamento-sem-dados");
+  });
+  it("alerta quando transfere antes de poder", () => {
+    expect(
+      avaliarTurno({
+        ...base,
+        texto: "Um consultor vai te ligar.",
+        transferir: true,
+        coleta,
+      }),
+    ).toContain("transferiu-sem-coletar");
+    expect(
+      avaliarTurno({
+        ...base,
+        texto: "Um consultor vai te ligar.",
+        transferir: true,
+        coleta: { ...coleta, podeTransferir: true },
+      }),
+    ).not.toContain("transferiu-sem-coletar");
+  });
+  it("oferecer agendar visita é alerta; combinar ligação não", () => {
+    expect(
+      avaliarTurno({
+        ...base,
+        texto: "Gostaria de agendar uma visita para ver o carro?",
+      }),
+    ).toContain("ofereceu-visita");
+    expect(
+      avaliarTurno({
+        ...base,
+        texto: "Um consultor vai te ligar e combinar os próximos passos.",
+      }),
+    ).not.toContain("ofereceu-visita");
   });
 });
 

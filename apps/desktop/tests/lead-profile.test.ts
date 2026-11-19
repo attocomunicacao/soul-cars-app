@@ -1,32 +1,46 @@
 /**
  * Testes (Vitest) da ficha do lead do Pré-atendimento IA (src/shared/lead-profile.ts): extração de
- * CPF, nascimento e entrada, coleta de dados do financiamento, máscara e resumo para o SDR.
- * CPF de teste público e válido (529.982.247-25); nenhum dado real.
+ * CPF, nascimento, entrada, região, forma de aquisição, CNH e horário da ligação; ordem da
+ * qualificação; regras de transferência; nota do SDR e máscara. CPF de teste público e válido
+ * (529.982.247-25); nenhum dado real.
  */
 import { describe, expect, it } from "vitest";
 import {
   FICHA_VAZIA,
-  avisoDeFinanciamento,
+  avisoDeColeta,
   blocoFicha,
+  coletaAtiva,
+  coletaCompleta,
   cpfValido,
   extrairDados,
-  faltando,
+  fichaCompativel,
   fichaDaConversa,
-  frasePedido,
   mascarar,
   mascararConversa,
+  motivoDaTransferencia,
+  pediuHumano,
+  pendentes,
   podeTransferir,
+  proximaPergunta,
   resumoParaSdr,
+  rotulos,
+  type FichaLead,
 } from "../src/shared/lead-profile";
 import {
   LOJA_PADRAO,
   PERSONA_PADRAO,
+  RESPOSTAS_PADRAO,
   interpretarResposta,
   montarMensagens,
 } from "../src/shared/pre-service";
+import type { MensagemIa } from "../src/shared/pre-service";
 
 const AGORA = new Date(2026, 10, 19);
 const CPF = "529.982.247-25";
+const ia = (content: string): MensagemIa => ({ role: "assistant", content });
+const cli = (content: string): MensagemIa => ({ role: "user", content });
+/** Ficha de um lead que já demonstrou interesse num carro (a coleta está ativa). */
+const interessado: FichaLead = { ...FICHA_VAZIA, veiculo: "Jeep Renegade" };
 
 describe("CPF, nascimento e entrada", () => {
   it("valida os dígitos verificadores", () => {
@@ -43,12 +57,11 @@ describe("CPF, nascimento e entrada", () => {
   });
 
   it("lê nascimento plausível e rejeita datas impossíveis ou de menor", () => {
-    expect(extrairDados("nasci em 15/03/1990", "", AGORA).nascimento).toBe(
-      "15/03/1990",
-    );
-    expect(extrairDados("15/03/90", "", AGORA).nascimento).toBe("15/03/1990");
-    expect(extrairDados("32/13/1990", "", AGORA).nascimento).toBe("");
-    expect(extrairDados("10/10/2015", "", AGORA).nascimento).toBe("");
+    const n = (t: string) => extrairDados(t, "", AGORA).nascimento;
+    expect(n("nasci em 15/03/1990")).toBe("15/03/1990");
+    expect(n("15/03/90")).toBe("15/03/1990");
+    expect(n("32/13/1990")).toBe("");
+    expect(n("10/10/2015")).toBe("");
   });
 
   it("entende a entrada de vários jeitos", () => {
@@ -59,136 +72,233 @@ describe("CPF, nascimento e entrada", () => {
     expect(e("sem entrada")).toBe("sem entrada");
     expect(e("10 mil")).toBe(""); // sem a IA ter perguntado, não é entrada
     expect(e("10 mil", "Quanto você dispõe de entrada?")).toBe("R$ 10.000");
-    expect(
-      e(`cpf ${CPF}, nasci 15/03/1990 e tenho 10 mil`, "e a entrada?"),
-    ).toBe("R$ 10.000");
+    expect(e("R$10.000,00", "Quanto você dispõe de entrada?")).toBe(
+      "R$ 10.000",
+    );
     expect(e("meu carro é 2019", "Quanto você dispõe de entrada?")).toBe("");
   });
 });
 
-describe("coleta de dados do financiamento", () => {
-  const pergunta = frasePedido({
-    ...FICHA_VAZIA,
-    pediuFinanciamento: true,
+describe("região, forma de aquisição, CNH e horário", () => {
+  const regiao = "Para te atender melhor, em qual região você está?";
+  const cnh = "Você possui CNH?";
+  const horario = "Qual o melhor dia e horário para essa ligação?";
+
+  it("região: dita na frase ou como resposta curta à pergunta da IA", () => {
+    expect(extrairDados("moro em Osasco", "", AGORA).regiao).toBe("Osasco");
+    expect(extrairDados("Zona Leste, Tatuapé", regiao, AGORA).regiao).toBe(
+      "Zona Leste, Tatuapé",
+    );
+    expect(extrairDados("Zona Leste", "", AGORA).regiao).toBe(""); // sem pergunta, não vale
+    expect(extrairDados("estou em dúvida", "", AGORA).regiao).toBe("");
+    expect(extrairDados("qual o preço?", regiao, AGORA).regiao).toBe("");
   });
 
-  it("a frase pede só o que falta", () => {
-    expect(pergunta).toBe(
-      "Consigo fazer uma análise de crédito pra você: preciso do seu CPF e data de nascimento. Quanto você dispõe de entrada?",
-    );
+  it("forma de aquisição pode ter várias opções", () => {
     expect(
-      frasePedido({ ...FICHA_VAZIA, pediuFinanciamento: true, cpf: "x" }),
-    ).toBe(
-      "Consigo fazer uma análise de crédito pra você: preciso da sua data de nascimento. Quanto você dispõe de entrada?",
-    );
+      extrairDados("quero financiar e dar meu Gol na troca", "", AGORA)
+        .pagamento,
+    ).toEqual(["financiado", "troca"]);
+    expect(extrairDados("pago à vista no pix", "", AGORA).pagamento).toEqual([
+      "a vista",
+    ]);
     expect(
-      frasePedido({
-        ...FICHA_VAZIA,
-        pediuFinanciamento: true,
-        nascimento: "01/01/1990",
-        entrada: "R$ 5.000",
-      }),
-    ).toBe(
-      "Consigo fazer uma análise de crédito pra você: preciso do seu CPF.",
-    );
-    expect(
-      frasePedido({
-        ...FICHA_VAZIA,
-        pediuFinanciamento: true,
-        cpf: "x",
-        nascimento: "01/01/1990",
-      }),
-    ).toBe("Para a análise de crédito, quanto você dispõe de entrada?");
+      extrairDados("posso passar no cartão?", "", AGORA).pagamento,
+    ).toEqual(["cartao"]);
   });
 
-  it("sem pedido de financiamento nada falta e a IA pode transferir", () => {
+  it("CNH: dita ou como sim/não depois da pergunta", () => {
+    expect(extrairDados("tenho cnh B", "", AGORA).cnh).toBe("sim");
+    expect(extrairDados("não tenho habilitação", "", AGORA).cnh).toBe("nao");
+    expect(extrairDados("sim", cnh, AGORA).cnh).toBe("sim");
+    expect(extrairDados("não", cnh, AGORA).cnh).toBe("nao");
+    expect(extrairDados("sim", "Quer ver fotos?", AGORA).cnh).toBe("");
+  });
+
+  it("horário da ligação: resposta à pergunta ou frase com 'ligar'", () => {
+    expect(extrairDados("amanhã depois das 14h", horario, AGORA).horario).toBe(
+      "amanhã depois das 14h",
+    );
+    expect(extrairDados("pode ligar hoje à tarde", "", AGORA).horario).toBe(
+      "pode ligar hoje à tarde",
+    );
+    expect(extrairDados("amanhã", "", AGORA).horario).toBe("");
+  });
+});
+
+describe("ordem da qualificação", () => {
+  it("sem interesse ainda, a coleta não começa e a IA pode transferir", () => {
+    const f = fichaDaConversa([cli("Oi")], FICHA_VAZIA, AGORA);
+    expect(coletaAtiva(f)).toBe(false);
+    expect(pendentes(f)).toEqual([]);
+    expect(avisoDeColeta(f)).toBe("");
+    expect(podeTransferir(f)).toBe(true);
+    expect(coletaCompleta(f)).toBe(false);
+  });
+
+  it("segue região → pagamento → (financiado) dados e entrada → horário", () => {
+    let c: MensagemIa[] = [cli("Tenho interesse no Renegade")];
+    let f = fichaDaConversa(c, interessado, AGORA);
+    expect(proximaPergunta(f)?.frase).toContain("em qual região");
+    expect(podeTransferir(f)).toBe(false);
+
+    c = [...c, ia(proximaPergunta(f)!.frase), cli("Osasco")];
+    f = fichaDaConversa(c, interessado, AGORA);
+    expect(f.regiao).toBe("Osasco");
+    expect(proximaPergunta(f)?.frase).toContain("à vista, financiado, cartão");
+
+    c = [
+      ...c,
+      ia(proximaPergunta(f)!.frase),
+      cli("financiado, com meu Gol 2015 na troca"),
+    ];
+    f = fichaDaConversa(c, interessado, AGORA);
+    expect(f.pagamento).toEqual(["financiado", "troca"]);
+    expect(rotulos(pendentes(f))).toEqual([
+      "CPF",
+      "data de nascimento",
+      "CNH",
+      "entrada",
+      "melhor horário para a ligação",
+    ]);
+    // os itens do financiamento vão juntos, na frase do usuário (mais CNH e entrada)
+    expect(proximaPergunta(f)?.frase).toBe(
+      "Consigo fazer uma análise de crédito pra você: preciso do seu CPF e data de nascimento. Você possui CNH? Quanto você dispõe de entrada?",
+    );
+
+    c = [
+      ...c,
+      ia(proximaPergunta(f)!.frase),
+      cli(`cpf ${CPF}, nasci em 15/03/1990, tenho cnh e 10 mil de entrada`),
+    ];
+    f = fichaDaConversa(c, interessado, AGORA);
+    expect(f.cnh).toBe("sim");
+    expect(f.entrada).toBe("R$ 10.000");
+    expect(rotulos(pendentes(f))).toEqual(["melhor horário para a ligação"]);
+    expect(proximaPergunta(f)?.frase).toContain("Um consultor vai te ligar");
+    expect(coletaCompleta(f)).toBe(false);
+
+    c = [...c, ia(proximaPergunta(f)!.frase), cli("amanhã depois das 14h")];
+    f = fichaDaConversa(c, interessado, AGORA);
+    expect(f.horarioLigacao).toBe("amanhã depois das 14h");
+    expect(coletaCompleta(f)).toBe(true);
+    expect(podeTransferir(f)).toBe(true);
+    expect(avisoDeColeta(f)).toContain("inclua [TRANSFERIR]");
+    expect(avisoDeColeta(f)).toContain("amanhã depois das 14h");
+    // idempotente: rodar de novo com as mesmas mensagens não muda nada
+    expect(fichaDaConversa(c, f, AGORA)).toEqual(f);
+  });
+
+  it("à vista pula os dados do financiamento", () => {
     const f = fichaDaConversa(
-      [{ role: "user", content: "Quero ver o Kicks" }],
-      FICHA_VAZIA,
+      [
+        ia("Para te atender melhor, em qual região você está?"),
+        cli("Moro em Barueri e pago à vista"),
+      ],
+      interessado,
       AGORA,
     );
-    expect(faltando(f)).toEqual([]);
-    expect(podeTransferir(f)).toBe(true);
-    expect(avisoDeFinanciamento(f)).toBe("");
+    expect(rotulos(pendentes(f))).toEqual(["melhor horário para a ligação"]);
   });
 
-  it("financiamento: bloqueia a transferência até ter CPF, nascimento e entrada", () => {
-    const c1 = [{ role: "user" as const, content: "Vcs financiam?" }];
-    const f1 = fichaDaConversa(c1, FICHA_VAZIA, AGORA);
-    expect(f1.pediuFinanciamento).toBe(true);
-    expect(faltando(f1)).toEqual(["CPF", "data de nascimento", "entrada"]);
-    expect(podeTransferir(f1)).toBe(false);
-    expect(avisoDeFinanciamento(f1)).toContain(
-      "preciso do seu CPF e data de nascimento",
-    );
-    expect(avisoDeFinanciamento(f1)).toContain("NÃO inclua [TRANSFERIR]");
-
-    const c2 = [
-      ...c1,
-      { role: "assistant" as const, content: pergunta },
-      {
-        role: "user" as const,
-        content: `cpf ${CPF}, nasci em 15/03/1990 e tenho 10 mil`,
-      },
-    ];
-    const f2 = fichaDaConversa(c2, FICHA_VAZIA, AGORA);
-    expect(faltando(f2)).toEqual([]);
-    expect(podeTransferir(f2)).toBe(true);
-    expect(avisoDeFinanciamento(f2)).toContain("inclua [TRANSFERIR]");
-    // idempotente: rodar de novo com as mesmas mensagens não muda nada
-    expect(fichaDaConversa(c2, f2, AGORA)).toEqual(f2);
+  it("o aviso manda uma pergunta, bloqueia a transferência e não oferece visita", () => {
+    const f = fichaDaConversa([cli("Quero o Renegade")], interessado, AGORA);
+    const aviso = avisoDeColeta(f);
+    expect(aviso).toContain("NÃO inclua [TRANSFERIR]");
+    expect(aviso).toContain("NÃO ofereça nem agende visita");
+    expect(aviso).toContain("UMA pergunta");
   });
 
-  it("depois de pedir duas vezes ou se o cliente recusa, pode transferir", () => {
-    const base = [
-      { role: "user" as const, content: "Quero financiar" },
-      { role: "assistant" as const, content: pergunta },
-      { role: "user" as const, content: "depois" },
-      { role: "assistant" as const, content: pergunta },
-      { role: "user" as const, content: "agora não" },
-    ];
-    expect(podeTransferir(fichaDaConversa(base, FICHA_VAZIA, AGORA))).toBe(
-      true,
-    );
-    const recusa = fichaDaConversa(
+  it("item perguntado 2 vezes sem resposta é dispensado", () => {
+    const pergunta = "Para te atender melhor, em qual região você está?";
+    const f = fichaDaConversa(
       [
-        { role: "user", content: "Quero financiar" },
-        { role: "user", content: "não quero passar meu cpf por aqui" },
+        cli("Quero o Renegade"),
+        ia(pergunta),
+        cli("e o preço?"),
+        ia(pergunta),
+        cli("e a cor?"),
       ],
-      FICHA_VAZIA,
+      interessado,
+      AGORA,
+    );
+    expect(pendentes(f)).not.toContain("regiao");
+    expect(blocoFicha(f)).toContain("Não responderam");
+  });
+
+  it("pode transferir se o cliente recusa ou pede para falar com alguém", () => {
+    const f = fichaDaConversa([cli("Quero o Renegade")], interessado, AGORA);
+    expect(podeTransferir(f)).toBe(false);
+    expect(podeTransferir(f, { pediuHumano: true })).toBe(true);
+    expect(pediuHumano("Quero falar com um vendedor")).toBe(true);
+    expect(pediuHumano("Pode me ligar?")).toBe(true);
+    expect(pediuHumano("Quanto custa?")).toBe(false);
+    const recusa = fichaDaConversa(
+      [cli("Quero o Renegade"), cli("não quero passar meu cpf por aqui")],
+      interessado,
       AGORA,
     );
     expect(recusa.recusou).toBe(true);
     expect(podeTransferir(recusa)).toBe(true);
+    expect(avisoDeColeta(recusa)).toContain("inclua [TRANSFERIR]");
+  });
+
+  it("explica o motivo da transferência na nota", () => {
+    const f = fichaDaConversa([cli("Quero o Renegade")], interessado, AGORA);
+    expect(motivoDaTransferencia(f, { pediuHumano: true })).toContain("pediu");
+    expect(motivoDaTransferencia({ ...f, recusou: true })).toContain(
+      "não passar",
+    );
+    expect(motivoDaTransferencia(FICHA_VAZIA)).toBe(
+      "a IA encaminhou o atendimento",
+    );
   });
 
   it("[TRANSFERIR] é bloqueado quando a opção pede", () => {
-    const bruto = "Ok! [TRANSFERIR]";
-    const conversa = [{ role: "user" as const, content: "Vcs financiam?" }];
-    expect(interpretarResposta(bruto, conversa).transferir).toBe(true);
+    const conversa = [cli("Quero o Renegade")];
+    expect(interpretarResposta("Ok! [TRANSFERIR]", conversa).transferir).toBe(
+      true,
+    );
     expect(
-      interpretarResposta(bruto, conversa, { bloquearTransferencia: true })
-        .transferir,
+      interpretarResposta("Ok! [TRANSFERIR]", conversa, {
+        bloquearTransferencia: true,
+      }).transferir,
     ).toBe(false);
   });
 });
 
-describe("ficha no prompt, máscara e resumo", () => {
-  const ficha = {
-    ...FICHA_VAZIA,
-    veiculo: "Jeep Renegade",
-    pediuFinanciamento: true,
-    formaPagamento: "financiamento" as const,
+describe("compatibilidade, prompt, máscara e nota", () => {
+  const completa: FichaLead = {
+    ...interessado,
+    regiao: "Osasco",
+    pagamento: ["financiado", "troca"],
+    troca: "Gol 2015",
     entrada: "R$ 10.000",
     cpf: "enc:abc",
-    nascimento: "15/03/1990",
+    nascimento: "enc:def",
+    cnh: "sim",
+    horarioLigacao: "amanhã depois das 14h",
   };
 
+  it("fichas salvas por versões anteriores continuam valendo", () => {
+    const f = fichaCompativel({
+      veiculo: "Kicks",
+      formaPagamento: "financiamento",
+      entrada: "R$ 5.000",
+      tentativasDados: 3,
+    });
+    expect(f.pagamento).toEqual(["financiado"]);
+    expect(f.pedidos).toEqual({});
+    expect(f.veiculo).toBe("Kicks");
+  });
+
   it("o prompt mostra o que já sabemos sem expor CPF nem nascimento", () => {
-    const bloco = blocoFicha(ficha);
-    expect(bloco).toContain("Carro de interesse: Jeep Renegade");
+    const bloco = blocoFicha(completa);
+    expect(bloco).toContain("Região: Osasco");
+    expect(bloco).toContain("Forma de aquisição: financiado, veículo na troca");
     expect(bloco).toContain("CPF: informado");
-    expect(bloco).not.toContain("15/03/1990");
+    expect(bloco).toContain("CNH: possui");
+    expect(bloco).not.toContain("enc:");
     const sistema = montarMensagens({
       persona: PERSONA_PADRAO,
       loja: LOJA_PADRAO,
@@ -197,12 +307,32 @@ describe("ficha no prompt, máscara e resumo", () => {
       respostas: [],
       exemplos: [],
       reais: [],
-      conversa: [{ role: "user", content: "Oi" }],
+      conversa: [cli("Oi")],
       nomeLead: "Ana",
-      ficha,
+      ficha: completa,
     }).mensagens[0].content;
     expect(sistema).toContain("O QUE JÁ SABEMOS DO LEAD");
-    expect(sistema).not.toContain("15/03/1990");
+    expect(sistema).toContain("LIGAÇÃO");
+    expect(sistema).not.toContain("agendar uma visita");
+  });
+
+  it("a saudação rápida só entra na primeira mensagem da IA", () => {
+    const monta = (conversa: MensagemIa[]) =>
+      montarMensagens({
+        persona: PERSONA_PADRAO,
+        loja: LOJA_PADRAO,
+        config: { nomeAgente: "Sofia" } as never,
+        veiculos: [],
+        respostas: RESPOSTAS_PADRAO,
+        exemplos: [],
+        reais: [],
+        conversa,
+        nomeLead: "Ana",
+      }).usados.respostas;
+    expect(monta([cli("Bom dia")])).toContain("Saudação follow-up");
+    expect(monta([ia("Oi, Ana!"), cli("Bom dia")])).not.toContain(
+      "Saudação follow-up",
+    );
   });
 
   it("mascara CPF sempre e datas só quando falam de nascimento", () => {
@@ -211,21 +341,49 @@ describe("ficha no prompt, máscara e resumo", () => {
       "passo na loja dia 20/11/2026",
     );
     const m = mascararConversa([
-      { role: "assistant", content: "Qual sua data de nascimento?" },
-      { role: "user", content: "15/03/1990" },
-      { role: "user", content: "visita em 20/11/2026" },
+      ia("Qual sua data de nascimento?"),
+      cli("15/03/1990"),
+      cli("ligue dia 20/11/2026"),
     ]);
     expect(m[1].content).toBe("[data de nascimento informada]");
-    expect(m[2].content).toBe("visita em 20/11/2026");
+    expect(m[2].content).toBe("ligue dia 20/11/2026");
   });
 
-  it("o resumo do SDR leva o CPF completo só na nota privada", () => {
-    const nota = resumoParaSdr(ficha, { nome: "Ana", cpfPlano: "52998224725" });
-    expect(nota).toContain(`CPF: ${CPF}`);
-    expect(nota).toContain("Nascimento: 15/03/1990");
-    expect(nota).toContain("Entrada: R$ 10.000");
-    const painel = resumoParaSdr(ficha, { nome: "Ana" });
+  it("a nota do SDR traz tudo, o motivo e o próximo passo; o painel não traz CPF", () => {
+    const nota = resumoParaSdr(completa, {
+      nome: "Ana",
+      motivo: "dados completos",
+      cpfPlano: "52998224725",
+      nascimentoPlano: "15/03/1990",
+    });
+    for (const trecho of [
+      "NOTA DO CLIENTE",
+      "Carro de interesse: Jeep Renegade",
+      "Região: Osasco",
+      "Forma de aquisição: financiado, veículo na troca",
+      "Veículo na troca: Gol 2015",
+      "Entrada: R$ 10.000",
+      `CPF: ${CPF}`,
+      "Nascimento: 15/03/1990",
+      "CNH: possui",
+      "Melhor horário para a ligação: amanhã depois das 14h",
+      "Motivo da transferência: dados completos",
+      "ligar para o cliente e, depois da ligação, agendar a visita",
+    ])
+      expect(nota).toContain(trecho);
+    const painel = resumoParaSdr(completa, { nome: "Ana" });
     expect(painel).toContain("CPF: informado no chat");
+    expect(painel).toContain("Nascimento: informado no chat");
     expect(painel).not.toContain(CPF);
+  });
+
+  it("a nota é gerada mesmo sem dados e lista o que não foi informado", () => {
+    const nota = resumoParaSdr(FICHA_VAZIA, {
+      nome: "Ana",
+      motivo: "o cliente pediu para falar com a equipe",
+    });
+    expect(nota).toContain("Lead: Ana");
+    expect(nota).toContain("Não informado: região, forma de pagamento");
+    expect(nota).toContain("Motivo da transferência: o cliente pediu");
   });
 });

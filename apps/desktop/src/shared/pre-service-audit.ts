@@ -18,6 +18,8 @@ export type SinalAuditoria =
   | "foto-sem-plano"
   | "ofereceu-simulacao"
   | "financiamento-sem-dados"
+  | "transferiu-sem-coletar"
+  | "ofereceu-visita"
   | "erro";
 
 /** Texto curto de cada sinal, para a tela. */
@@ -33,7 +35,11 @@ export const ROTULO_SINAL: Record<SinalAuditoria, string> = {
   "foto-sem-plano": "Disse que enviou fotos, mas nenhuma foi planejada",
   "ofereceu-simulacao": "Ofereceu simular parcelas (a IA não calcula)",
   "financiamento-sem-dados":
-    "Financiamento sem pedir CPF, nascimento e entrada (ou transferiu sem eles)",
+    "Cliente falou de financiamento e a IA não pediu os dados que faltavam",
+  "transferiu-sem-coletar":
+    "Transferiu antes de coletar os dados (região, pagamento, horário…)",
+  "ofereceu-visita":
+    "Ofereceu agendar visita (o consultor combina depois da ligação)",
   erro: "Erro ao responder ou entregar",
 };
 
@@ -69,7 +75,7 @@ export type TurnoAuditado = {
   desfecho: Desfecho;
   erro?: string;
   sinais: SinalAuditoria[];
-  /** Dados do financiamento que ainda faltavam (CPF, data de nascimento, entrada). */
+  /** Itens da qualificação que a IA ainda ia perguntar (região, CPF, entrada…). */
   faltando?: string[];
 };
 
@@ -83,10 +89,10 @@ export type EntradaAvaliacao = {
   /** Últimas respostas da IA nesta conversa (mais recente por último), sem a atual. */
   anteriores: string[];
   fotosPlanejadas: number;
-  /** Situação da coleta de dados do financiamento (ficha do lead). */
-  financiamento?: {
-    pediu: boolean;
-    faltando: string[];
+  /** Situação da qualificação do lead (ficha): financiado?, itens pendentes e se já podia transferir. */
+  coleta?: {
+    financiado: boolean;
+    pendentes: string[];
     podeTransferir: boolean;
   };
 };
@@ -111,6 +117,8 @@ const fechamento = (texto: string) =>
   );
 
 const AGENDAR = /agendar.{0,12}visita|conhecer o carro pessoalmente/;
+const OFERECE_VISITA =
+  /(quer|queira|gostaria|prefere|posso|podemos|vamos)[^.?!]{0,25}(agendar|marcar)[^.?!]{0,15}visita|agendar (uma )?visita para|conhecer o carro pessoalmente/;
 const PROMETE_EQUIPE =
   /(vou|vamos|irei|posso)\s+(confirmar|verificar|checar|consultar|passar|encaminhar|chamar|falar).{0,50}(consultor|equipe|vendedor|atendente|time)|(consultor|equipe|vendedor|atendente)\s+(vai|ir[áa]|entrar[áa]|retornar[áa]|fazer|faz)|(para|pra)\s+o\s+(consultor|vendedor|time)\s+(fazer|te|ligar|entrar|passar|confirmar|enviar)/;
 const SIMULAR = /(posso|podemos|vou|vamos)\s+simular/;
@@ -156,11 +164,28 @@ export function avaliarTurno(e: EntradaAvaliacao): SinalAuditoria[] {
 
   if (e.texto.length > 500) sinais.push("resposta-longa");
 
-  const fin = e.financiamento;
-  if (fin?.pediu && fin.faltando.length && !fin.podeTransferir) {
-    const pediuDados = /cpf|nascimento|entrada/.test(t);
-    if (e.transferir || !pediuDados) sinais.push("financiamento-sem-dados");
+  const col = e.coleta;
+  if (col) {
+    if (e.transferir && !col.podeTransferir)
+      sinais.push("transferiu-sem-coletar");
+    // Só vale quando o cliente falou de financiamento agora e a IA não pediu nenhum dos dados.
+    const docs = ["cpf", "nascimento", "cnh", "entrada"].some((c) =>
+      col.pendentes.includes(c),
+    );
+    const falouDeFinanciar = /financ|parcel|entrada|credito/.test(
+      normalizar(e.recebidas.join(" ")),
+    );
+    if (
+      col.financiado &&
+      docs &&
+      falouDeFinanciar &&
+      !/cpf|nascimento|cnh|entrada/.test(t) &&
+      !e.transferir
+    )
+      sinais.push("financiamento-sem-dados");
   }
+
+  if (OFERECE_VISITA.test(t)) sinais.push("ofereceu-visita");
 
   if (SIMULAR.test(t) && !e.transferir) sinais.push("ofereceu-simulacao");
 

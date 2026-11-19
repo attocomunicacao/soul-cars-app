@@ -10,8 +10,9 @@
  */
 
 import {
-  avisoDeFinanciamento,
+  avisoDeColeta,
   blocoFicha,
+  pediuHumano,
   type FichaLead,
 } from "./lead-profile";
 
@@ -107,8 +108,9 @@ export const LOJA_PADRAO: LojaIa = {
   extra: "",
 };
 
-/** Persona padrão até a 1.0.20: quem ainda a usa (sem edição) passa para a nova. */
-export const PERSONA_ANTERIOR = `Você é a {agente}, consultora de pré-atendimento da {loja} pelo WhatsApp.
+/** Personas padrão de versões anteriores: quem ainda usa uma delas (sem edição) passa para a nova. */
+export const PERSONAS_ANTERIORES: string[] = [
+  `Você é a {agente}, consultora de pré-atendimento da {loja} pelo WhatsApp.
 O lead demonstrou interesse num veículo, mas nosso time não conseguiu falar com ele por telefone.
 Objetivo: retomar o contato de forma leve, entender o interesse (modelo, faixa de preço, forma de pagamento, troca) e agendar uma visita ou ligação com um consultor.
 Regras:
@@ -119,9 +121,8 @@ Regras:
 - Se o veículo pedido NÃO aparece na lista de ESTOQUE, diga que no momento não temos esse modelo e ofereça opções parecidas da lista.
 - Um link de anúncio enviado pelo cliente só indica o carro de interesse — não é pedido de humano.
 - Se o cliente pedir para falar com humano, estiver irritado, quiser fechar negócio ou confirmar uma visita, responda brevemente e inclua a tag [TRANSFERIR] no fim.
-- Se o cliente pedir para não receber mensagens, peça desculpas e inclua [ENCERRAR].`;
-
-export const PERSONA_PADRAO = `Você é a {agente}, consultora de pré-atendimento da {loja} pelo WhatsApp.
+- Se o cliente pedir para não receber mensagens, peça desculpas e inclua [ENCERRAR].`,
+  `Você é a {agente}, consultora de pré-atendimento da {loja} pelo WhatsApp.
 O lead demonstrou interesse num veículo, mas nosso time não conseguiu falar com ele por telefone.
 Objetivo: retomar o contato de forma leve, entender o interesse (modelo, faixa de preço, forma de pagamento, troca) e agendar uma visita ou ligação com um consultor.
 Regras:
@@ -132,6 +133,20 @@ Regras:
 - Se o veículo pedido NÃO aparece na lista de ESTOQUE, diga que no momento não temos esse modelo e ofereça opções parecidas da lista.
 - Um link de anúncio enviado pelo cliente só indica o carro de interesse — não é pedido de humano.
 - Se o cliente pedir para falar com humano, estiver irritado, quiser fechar negócio ou confirmar uma visita, responda brevemente e inclua a tag [TRANSFERIR] no fim.
+- Se o cliente pedir para não receber mensagens, peça desculpas e inclua [ENCERRAR].`,
+];
+
+export const PERSONA_PADRAO = `Você é a {agente}, consultora de pré-atendimento da {loja} pelo WhatsApp.
+O lead demonstrou interesse num veículo, mas nosso time não conseguiu falar com ele por telefone.
+Objetivo: retomar o contato de forma leve, entender a situação do cliente (região, como pretende adquirir o veículo: à vista, financiado, cartão ou veículo na troca) e combinar uma LIGAÇÃO com um consultor. Você não agenda visita: depois da ligação, o consultor combina a visita.
+Regras:
+- Mensagens curtas (no máximo 3 frases), tom cordial e natural, em português do Brasil. Sem textão.
+- Faça uma pergunta por vez.
+- Use SOMENTE as informações do CONTEXTO para falar de veículos, preços, horários e condições. O que não estiver lá, o consultor confirma na ligação.
+- Nunca invente preço, quilometragem, ano, disponibilidade ou condição de financiamento.
+- Se o veículo pedido NÃO aparece na lista de ESTOQUE, diga que no momento não temos esse modelo e ofereça opções parecidas da lista.
+- Um link de anúncio enviado pelo cliente só indica o carro de interesse — não é pedido de humano.
+- Se o cliente pedir para falar com humano ou estiver irritado, responda brevemente e inclua a tag [TRANSFERIR] no fim.
 - Se o cliente pedir para não receber mensagens, peça desculpas e inclua [ENCERRAR].`;
 
 /**
@@ -139,13 +154,13 @@ Regras:
  * persona antiga diga o contrário): quando incluir [TRANSFERIR] e como responder a cumprimentos.
  */
 export const REGRAS_DE_ENCAMINHAMENTO = `REGRAS DE ENCAMINHAMENTO (valem mesmo que a persona diga o contrário):
-- Você NÃO calcula parcelas, taxas, avaliação de troca, desconto, quilometragem, laudo nem histórico do carro. Nunca prometa isso e nunca diga "vou confirmar com o consultor" sem encaminhar de verdade.
-- Inclua [TRANSFERIR] no fim da resposta quando o cliente: pedir algo que o CONTEXTO não traz (quilometragem, laudo, cor, consumo, opcionais, histórico); oferecer carro na troca; pedir desconto ou negociar preço; quiser visitar, ligar, fechar negócio ou falar com alguém.
-- Financiamento, parcela, entrada, taxa ou análise de crédito: NÃO transfira de imediato. Quando o contexto trouxer o aviso ATENÇÃO (financiamento), siga-o: peça só os dados que faltam (CPF, data de nascimento e entrada) e só inclua [TRANSFERIR] quando o aviso mandar.
-- Ao transferir, responda em 1 ou 2 frases dizendo que um consultor continua o atendimento por aqui. Não invente prazo e não ofereça simular nem calcular.
-- Pergunta geral ("vocês financiam?", "aceitam troca?"): responda com o texto de FINANCIAMENTO ou TROCA do contexto, sem [TRANSFERIR]; se o cliente quer financiar, conduza a coleta de dados do aviso ATENÇÃO (financiamento).
-- Cumprimento sozinho ("oi", "olá", "bom dia"): cumprimente de volta e pergunte no que pode ajudar. Não responda "sem problemas".
-- Não termine toda mensagem oferecendo visita ou ligação: responda primeiro o que foi perguntado e só ofereça visita quando fizer sentido, variando a frase.`;
+- Seu objetivo é entender a situação do cliente e combinar uma LIGAÇÃO com um consultor. Você NÃO agenda nem oferece visita: a visita é combinada pelo consultor depois da ligação. Se o cliente quiser visitar, diga que o consultor liga para combinar.
+- Você NÃO calcula parcelas, taxas, avaliação de troca, desconto, quilometragem, laudo nem histórico do carro. Se o cliente perguntar algo que o CONTEXTO não traz, diga que o consultor confirma na ligação e continue a conversa. Nunca prometa calcular nem simular.
+- Quando o contexto trouxer o aviso ATENÇÃO (qualificação), siga-o: responda a dúvida em 1 frase e faça a pergunta indicada, uma por mensagem. Só inclua [TRANSFERIR] quando esse aviso mandar ou quando o cliente pedir para falar com alguém.
+- Ao transferir, responda em 1 ou 2 frases dizendo que um consultor vai ligar. Não invente prazo.
+- Pergunta geral ("vocês financiam?", "aceitam troca?"): responda com o texto de FINANCIAMENTO ou TROCA do contexto, sem [TRANSFERIR], e siga a qualificação.
+- Cumprimento sozinho ("oi", "olá", "bom dia"): cumprimente de volta e pergunte no que pode ajudar. Não responda "sem problemas". Apresente-se (nome e loja) só na primeira mensagem da conversa.
+- Não ofereça visita e não termine toda mensagem com a mesma pergunta: responda primeiro o que foi perguntado e varie a frase.`;
 
 export const RESPOSTAS_PADRAO: RespostaRapida[] = [
   {
@@ -558,9 +573,13 @@ export function montarMensagens(e: EntradaContexto) {
     .map((m) => m.content)
     .join(" ");
   const veiculos = ranquear(recente, e.veiculos, descreverVeiculo, 6);
+  // Saudação/abertura só serve na primeira mensagem da IA (depois repetiria a apresentação).
+  const jaConversou = e.conversa.some((m) => m.role === "assistant");
   const rapidas = ranquear(
     recente,
-    e.respostas,
+    jaConversou
+      ? e.respostas.filter((q) => !/sauda|abertura/i.test(q.titulo))
+      : e.respostas,
     (q) => `${q.titulo} ${q.palavras} ${q.texto}`,
     3,
   );
@@ -607,7 +626,13 @@ ${REGRAS_DE_ENCAMINHAMENTO}` +
     avisoDeLink(e.conversa) +
     avisoDeEstoque(e.veiculos, e.conversa) +
     (e.ficha
-      ? "\n\n" + blocoFicha(e.ficha) + avisoDeFinanciamento(e.ficha)
+      ? "\n\n" +
+        blocoFicha(e.ficha) +
+        avisoDeColeta(e.ficha, {
+          pediuHumano: pediuHumano(
+            e.conversa.filter((m) => m.role === "user").at(-1)?.content ?? "",
+          ),
+        })
       : "") +
     (e.notaFotos ? "\n\n" + e.notaFotos : "");
   const mensagens: { role: "system" | Papel; content: string }[] = [

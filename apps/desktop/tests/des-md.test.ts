@@ -81,7 +81,8 @@ describe("prompt do Pré-atendimento IA", () => {
     );
     expect(sistema).toContain(REGRAS_DE_ENCAMINHAMENTO);
     expect(REGRAS_DE_ENCAMINHAMENTO).toContain("[TRANSFERIR]");
-    expect(REGRAS_DE_ENCAMINHAMENTO).toMatch(/entrada/);
+    expect(REGRAS_DE_ENCAMINHAMENTO).toMatch(/LIGAÇÃO/);
+    expect(REGRAS_DE_ENCAMINHAMENTO).toMatch(/NÃO agenda nem oferece visita/);
     expect(REGRAS_DE_ENCAMINHAMENTO).toMatch(/Não responda "sem problemas"/);
   });
 });
