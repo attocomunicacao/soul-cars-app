@@ -33,6 +33,7 @@ import {
   planoDeFotos,
   preencher,
   respostaDeAbertura,
+  voltouParaIa,
   variaveis,
   type ConfigIa,
   type ExemploIa,
@@ -71,6 +72,8 @@ type EstadoChat = {
   vistoAte: number;
   ultimaIaEm: number | null;
   fotosEnviadas: Record<string, number>;
+  /** A IA conseguiu tirar a etiqueta de gatilho ao transferir? (`false` = ela ainda está no lead) */
+  gatilhoRetirado?: boolean;
 };
 export type Rascunho = {
   id: string;
@@ -553,7 +556,12 @@ async function entregar(r: Rascunho) {
       await c
         .porEtiqueta(await contatoDo(c, st), e.config.etiquetaTransferenciaId)
         .catch(falha);
-    await tirarEtiqueta(c, st, e.config.etiquetaGatilhoId).catch(falha);
+    st.gatilhoRetirado = await tirarEtiqueta(c, st, e.config.etiquetaGatilhoId)
+      .then(() => true)
+      .catch((erro) => {
+        falha(erro);
+        return false;
+      });
     st.status = r.encerrar ? "encerrado" : "humano";
   }
   registrar("envio", `→ ${st.nome}: ${r.texto}`);
@@ -588,6 +596,15 @@ export async function rodar() {
         fotosEnviadas: {},
       });
       if (chat.contact?.id) st.contatoId = chat.contact.id;
+      // Etiqueta de gatilho de volta num lead entregue à equipe = a equipe devolveu à IA.
+      if (voltouParaIa(st)) {
+        st.status = "ativo";
+        st.vistoAte = Date.now(); // só responde o que chegar daqui em diante
+        registrar(
+          "crm",
+          `${st.nome}: voltou para a IA (etiqueta de gatilho recolocada)`,
+        );
+      }
       if (
         st.status !== "ativo" ||
         e.rascunhos.some((d) => d.chatId === chat.id)

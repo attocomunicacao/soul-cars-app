@@ -523,6 +523,16 @@ export const variaveis = (
 });
 
 /** A resposta-rápida de abertura ("Saudação…"/"Abertura…"), se houver: mais previsível que o modelo. */
+/**
+ * Um lead com a etiqueta de gatilho de volta, que a IA tinha entregue à equipe ("humano"), foi devolvido
+ * à IA no uTalk. Não vale se a IA não conseguiu tirar a etiqueta (ela nunca saiu) nem para "encerrado":
+ * quem pediu para não receber mensagens só volta pelo botão "Devolver à IA".
+ */
+export const voltouParaIa = (chat: {
+  status: string;
+  gatilhoRetirado?: boolean;
+}) => chat.status === "humano" && chat.gatilhoRetirado !== false;
+
 export const respostaDeAbertura = (respostas: RespostaRapida[]) =>
   respostas.find((q) => /sauda|abertura/i.test(q.titulo)) ?? null;
 
