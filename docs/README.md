@@ -41,6 +41,10 @@ Documentação do Soul Cars, organizada por assunto (pastas e arquivos em inglê
 | [github-workflow.md](development/github-workflow.md) | GitHub, CI e releases |
 | [handoff-context.md](development/handoff-context.md) | Contexto técnico para retomar o projeto |
 
+## `ai/` — Laboratório de testes da IA
+
+[lab.md](ai/lab.md) · [lab-cenarios.md](ai/lab-cenarios.md) (lista gerada dos cenários)
+
 ## `crm/` — CRM e Soul IA
 
 [utalk-api-library.md](crm/utalk-api-library.md) · [crm-market-research.md](crm/crm-market-research.md) · [crm-data-and-reports.md](crm/crm-data-and-reports.md) · [soul-ai.md](crm/soul-ai.md)

@@ -42,6 +42,10 @@
     "tests/soul-ai.test.ts",
     "tests/performance.test.ts",
     "tests/soul-app-modules.test.ts",
-    "tests/canceled-sales.test.ts"
+    "tests/canceled-sales.test.ts",
+    "tests/lab-runner.test.ts",
+    "tests/lab-offline.test.ts",
+    "tests/lab-history.test.ts",
+    "tests/lab-lista.test.ts"
   ]
 }

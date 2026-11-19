@@ -37,3 +37,9 @@ O smoke do Instagram usa uma página local simulada e não acessa uma conta real
 A auditoria npm identificou problemas nas versões herdadas; Electron foi atualizado para 44.7.0 e Vitest para 5.0.3. Permanecem avisos moderados transitivos na ferramenta electron-builder (cadeia @electron/get/global-agent/roarr/sprintf-js). O npm audit fix não ofereceu correção compatível efetiva dessa cadeia; não foi aplicado override incompatível. Essas ferramentas não são incluídas como dependências Node do executável.
 
 Para repetir, veja os comandos no README. Evidências de smoke e logs de instalação são geradas localmente e ignoradas pelo Git. O instalador foi gerado; a instalação sobre outros computadores não foi testada nesta sessão.
+
+## Pré-atendimento IA: Laboratório (1.0.22)
+
+- `npm run lab:ai:offline`: corpus inteiro sem modelo; qualquer falha é bug do pipeline (repetição, CPF em claro, pergunta repetida, tag vazada). Também roda em `npm test`.
+- `npm run lab:corpus`: regenera `docs/ai/lab-cenarios.md`; o teste `lab-lista` falha se estiver desatualizado.
+- Com modelo: aba Laboratório do app, `npm run eval:ai` (Ollama) ou `npm run eval:ai:groq`. Detalhes em [ai/lab.md](../ai/lab.md).

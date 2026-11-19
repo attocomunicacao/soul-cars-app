@@ -1,7 +1,7 @@
 /**
  * Página Pré-atendimento IA (portada do Soul IA): a IA atende pelo WhatsApp (uTalk) os leads com a
  * etiqueta de gatilho, envia fotos das pastas do ESTOQUE e passa para a equipe quando o lead quer
- * visitar ou falar com alguém. Abas: Visão geral, Aprovação, Auditoria, Ensinar (simulador), Respostas-rápidas,
+ * visitar ou falar com alguém. Abas: Visão geral, Aprovação, Auditoria, Ensinar (simulador), Laboratório (testes), Respostas-rápidas,
  * Loja e Configurações. Tudo passa pelos comandos `pre_*` do processo principal; a chave do Groq e o
  * token do uTalk nunca chegam aqui.
  */
@@ -27,6 +27,7 @@ import {
 } from "../../app/components";
 import { Icon } from "../../app/icons";
 import { invoke, listen } from "../../lib/desktop-bridge";
+import { LabTab } from "./lab/LabTab";
 
 type Rascunho = {
   id: string;
@@ -71,6 +72,7 @@ type Aba =
   | "aprovacao"
   | "auditoria"
   | "ensinar"
+  | "laboratorio"
   | "respostas"
   | "loja"
   | "config";
@@ -80,6 +82,7 @@ const ABAS = [
   ["aprovacao", "Aprovação"],
   ["auditoria", "Auditoria"],
   ["ensinar", "Ensinar"],
+  ["laboratorio", "Laboratório"],
   ["respostas", "Respostas-rápidas"],
   ["loja", "Loja"],
   ["config", "Configurações"],
@@ -203,6 +206,7 @@ export function PreServicePage({
       {aba === "aprovacao" && <Aprovacao p={p} agir={agir} ocupado={ocupado} />}
       {aba === "auditoria" && <Auditoria p={p} aoErro={aoErro} />}
       {aba === "ensinar" && <Ensinar p={p} agir={agir} aoErro={aoErro} />}
+      {aba === "laboratorio" && <LabTab aoErro={aoErro} />}
       {aba === "respostas" && <Respostas p={p} agir={agir} />}
       {aba === "loja" && <Loja p={p} agir={agir} />}
       {aba === "config" && <Configuracoes p={p} agir={agir} aoErro={aoErro} />}

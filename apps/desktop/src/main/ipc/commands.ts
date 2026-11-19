@@ -38,6 +38,7 @@ import * as metaAds from "../meta/meta";
 import * as funil from "../funnel/funnel";
 import * as souliaIa from "../soul-ai/soul-ai";
 import * as preAtendimento from "../pre-service/pre-service";
+import * as lab from "../lab/lab";
 import { vitrine } from "../inventory/showcase";
 import { exportarRelatorioPdf } from "../inventory/report-pdf";
 import { gerarHtml } from "../inventory/report";
@@ -304,6 +305,26 @@ const COMANDOS: Record<string, Comando> = {
   pre_modelos: () => preAtendimento.modelos(),
   pre_auditoria: (a) =>
     preAtendimento.auditoria(a.limite === undefined ? 200 : Number(a.limite)),
+  // ---- Laboratório de testes da IA ----
+  lab_cenarios: () => lab.listarCenarios(),
+  lab_rodar: (a) =>
+    lab.rodarLab(
+      {
+        ids: a.ids as string[] | undefined,
+        categoria: a.categoria as string | undefined,
+        repeticoes: a.repeticoes as number | undefined,
+      },
+      emitir,
+    ),
+  lab_cancelar: () => lab.cancelarLab(),
+  lab_execucoes: () => lab.listarExecucoes(),
+  lab_execucao: (a) => lab.lerExecucao(String(a.id)),
+  lab_avaliar: (a) => lab.salvarAvaliacao(a as never),
+  lab_avaliacoes: (a) =>
+    lab.listarAvaliacoes(a.execucaoId as string | undefined),
+  lab_relatorio: (a) => lab.relatorioDaExecucao(String(a.execucaoId)),
+  lab_analisar_historico: () => lab.analisarHistoricoLab(),
+  lab_abrir_pasta: () => lab.abrirPastaLab(),
   estoque_vitrine: () => vitrine(),
   // ---- Finanças (planilha mensal vinculada) ----
   financas_estado: () => financas.estadoFinancas(),

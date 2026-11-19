@@ -13,7 +13,7 @@ Objetivo: gastar o mínimo de tokens aqui. NÃO leia código nem docs neste chat
 |---|---|---|---|
 | crm, lead, kanban, sdr, utalk | `renderer/src/pages/crm-leads`, `renderer/src/pages/leads` | `docs/crm/` | Soul · CRM |
 | meta, ads, campanha, funil | `renderer/src/pages/meta-ads`, `renderer/src/pages/funnel`, `renderer/src/lib/ads-reports.ts` | — | Soul · Meta Ads / Funil |
-| ia, pré-atendimento, ollama, groq, whatsapp | `renderer/src/pages/pre-service`, `main/pre-service`, `shared/pre-service.ts` | `tests/ai-evals/` | Soul · Pré-atendimento IA |
+| ia, pré-atendimento, ollama, groq, whatsapp | `renderer/src/pages/pre-service`, `main/pre-service`, `main/lab`, `shared/pre-service*.ts` | `docs/ai/lab.md`, `tests/ai-evals/` | Soul · Pré-atendimento IA |
 | estoque, studio, veículo, fotos, anúncio | `renderer/src/pages/inventory`, `renderer/src/pages/vehicle` | `DESIGN.md` | Soul · Estoque / Studio |
 | ci, release, launcher, build, versão | `.github/`, `apps/launcher`, `scripts/release` | `CHANGELOG.md` | Soul · Infra / Release |
 
@@ -24,7 +24,7 @@ Se não der para saber o módulo, pergunte em uma linha. Se envolver dois módul
 - **feature** (acrescentar, criar, novo) → branch `feat/<modulo>-<slug>`
 - **fix** (erro, bug, quebrado, corrigir) → branch `fix/<modulo>-<slug>`
 - **segurança** → rodar `/security-review` no módulo; sem branch se nada mudar
-- **testar IA** → `npm run eval:ai` (Ollama aberto), relatar falhas e propor correção
+- **testar IA** → `npm run lab:ai:offline` (sem modelo) e `npm run eval:ai` (Ollama aberto); para melhorar a partir de notas use `/ia-lab`, para novos cenários `/ia-corpus`. Relatar falhas e propor correção
 - **teste** (cobrir com testes) → branch `test/<modulo>-<slug>`
 
 slug: 2–4 palavras, minúsculas, sem acento, com hífen.
@@ -36,7 +36,7 @@ Tarefa: <frase objetiva do que mudar>, no módulo <módulo> (<pastas>).
 Leia antes: <docs da tabela> e as regras do AGENTS.md que tocam o assunto. Não varra o resto do repositório.
 Branch: crie `<branch>` a partir da `main` atualizada.
 Pronto quando: <2–3 critérios verificáveis>.
-Validar: npm run lint, npm run typecheck, npm test<, npm run smoke se tocar IPC/preload><, npm run eval:ai se tocar a IA>.
+Validar: npm run lint, npm run typecheck, npm test<, npm run smoke se tocar IPC/preload><, npm run lab:ai:offline e npm run eval:ai se tocar a IA>.
 Ao final: commit com mensagem em português, push e PR; atualize o CHANGELOG.md se for para release.
 ```
 

@@ -2,6 +2,14 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.0.22]
+
+- **Laboratório de testes da IA** (Pré-atendimento IA › aba Laboratório): roda mais de 900 cenários (frases, perguntas e situações de clientes, inclusive conversas de vários turnos) pelo mesmo caminho do atendimento real, com o modelo configurado, e mostra a resposta da IA com alertas automáticos. Você dá nota de 1 a 5, marca o tipo de erro e exporta um relatório com as notas. Nada é enviado ao uTalk
+- **Histórico do uTalk**: botão para sincronizar todas as conversas e gerar uma análise anonimizada (perguntas mais frequentes, respostas repetidas, dados pedidos de novo) que vira cenários de teste. Os dados ficam só neste computador
+- Pré-atendimento IA: **fim das respostas duplicadas**. Frases repetidas dentro da mesma resposta, frases já ditas nas últimas respostas (iguais ou quase iguais), palavras em dobro, espaços e pontuação repetidos são removidos antes do envio; a lista completa de carros não é reenviada logo em seguida; resposta quase igual às últimas é omitida
+- Pré-atendimento IA: aprovar um rascunho não envia duas vezes com clique duplo e o texto editado passa pelo mesmo filtro; o estado do atendimento é gravado a cada conversa (evita resposta repetida se o app fechar no meio)
+- Pré-atendimento IA: novos alertas na Auditoria (resposta quase repetida, frase duplicada, palavra repetida, CPF escrito na resposta, texto com espaços/pontuação duplicados) e pedidos como "chama um atendente", "passa pro gerente" e "alguém de verdade" agora passam o lead para a equipe
+
 ## [1.0.21]
 
 - Pré-atendimento IA: a IA passa a ler a **quilometragem e o valor do DES.md** da pasta de cada carro (o valor do DES.md vale mais que o do BNDV, que vem zerado em vários carros) e informa o km ao cliente. Carros sem DES.md continuam sem km: nesse caso a IA encaminha para a equipe em vez de prometer

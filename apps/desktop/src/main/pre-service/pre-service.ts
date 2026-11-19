@@ -27,15 +27,12 @@ import {
   doContato,
   extrairPares,
   fotosNumeradas,
-  interpretarResposta,
   montarMensagens,
   normalizar,
   planoDeFotos,
   preencher,
   respostaDeAbertura,
   veiculoMencionado,
-  listaDeVeiculos,
-  pediuLista,
   FINANCIAMENTO_ANTERIOR,
   voltouParaIa,
   variaveis,
@@ -50,14 +47,9 @@ import {
 import { lerKmEValor } from "../../shared/des-md";
 import {
   FICHA_VAZIA,
-  anexarPergunta,
-  coletaAtiva,
   ausentes,
-  coletaCompleta,
   MAX_PEDIDOS,
-  fecharTransferencia,
   informados,
-  proximaPergunta,
   fichaCompativel,
   fichaDaConversa,
   mascarar,
@@ -75,6 +67,8 @@ import {
   mascararTelefone,
   type Desfecho,
 } from "../../shared/pre-service-audit";
+import { guardarTexto } from "../../shared/pre-service-guard";
+import { deveOmitir, posProcessar } from "../../shared/pre-service-pipeline";
 import { gravarDesfecho, gravarTurno, lerTurnos } from "./audit";
 import { gerar, listarModelos, type UsoModelo } from "./llm";
 import {
@@ -512,54 +506,41 @@ async function responder(conversa: MensagemIa[], lead: Lead) {
     (t) => registrar("reserva", t),
     uso,
   );
-  const f = lead.ficha;
-  const humano = pediuHumano(
-    conversa.filter((m) => m.role === "user").at(-1)?.content ?? "",
-  );
-  const lido = interpretarResposta(bruto, conversa, {
-    bloquearTransferencia: !!f && !podeTransferir(f, { pediuHumano: humano }),
+  const final = posProcessar({
+    bruto,
+    conversa,
+    ficha: lead.ficha,
+    veiculos,
+    fotos: plano?.fotos.length ?? 0,
+    anteriores: conversa
+      .filter((m) => m.role === "assistant")
+      .map((m) => m.content),
   });
-  // Qualificação completa, cliente que recusa ou que pede alguém: a transferência não depende de o modelo lembrar da tag.
-  const proxima =
-    f && !f.entregue && coletaAtiva(f) ? proximaPergunta(f) : null;
-  // O modelo prometeu "um consultor vai ligar" e não há mais nada a perguntar: transfere de verdade.
-  const prometeu =
-    /consultor (vai|ira|entrara|continua)/.test(normalizar(lido.texto)) &&
-    !proxima;
-  const forcar =
-    !!f &&
-    !f.entregue &&
-    (coletaCompleta(f) || f.recusou || humano || prometeu);
-  const transferir = lido.transferir || (forcar && !lido.encerrar);
-  // Quem pergunta é o sistema (sempre o item certo, na ordem): o texto do modelo fica só com a resposta.
-  let texto = lido.texto;
-  // Pediu "todas as opções": a lista completa vem do estoque (o modelo escolhia só alguns).
-  const pediuTodos =
-    pediuLista(
-      conversa.filter((m) => m.role === "user").at(-1)?.content ?? "",
-    ) &&
-    veiculos.length > 0 &&
-    (plano?.fotos.length ?? 0) === 0;
-  if (f && transferir) texto = fecharTransferencia(texto, f);
-  else if (pediuTodos && !lido.encerrar)
-    texto = listaDeVeiculos(veiculos) + (proxima ? `\n\n${proxima.frase}` : "");
-  else if (proxima && !lido.encerrar && (plano?.fotos.length ?? 0) === 0)
-    texto = anexarPergunta(
-      texto,
-      proxima.frase,
-      proxima.campos,
-      // Modelo calado e o cliente só deu o dado (sem perguntar nada): confirma com "Anotado!".
-      !(
-        conversa.filter((m) => m.role === "user").at(-1)?.content ?? ""
-      ).includes("?"),
-    );
   return {
-    ...lido,
-    texto,
-    transferir,
+    texto: final.texto,
+    transferir: final.transferir,
+    encerrar: final.encerrar,
     plano,
     usados,
     auditoria: { bruto, uso, latenciaMs: Date.now() - inicio, veiculos },
+  };
+}
+
+/**
+ * Contexto do Laboratório de testes: a mesma persona, loja, respostas rápidas, estoque e modelo do
+ * atendimento real. O laboratório nunca envia nada ao uTalk; só pede respostas ao modelo.
+ */
+export function contextoDoLab() {
+  const e = carregar();
+  return {
+    persona: e.persona,
+    loja: e.loja,
+    respostas: e.respostas,
+    nomeAgente: e.config.nomeAgente,
+    veiculos: veiculosDisponiveis(),
+    modelo: `${e.config.provedor}:${e.config.provedor === "groq" ? e.config.modeloGroq : e.config.modeloOllama}`,
+    gerar: (mensagens: { role: string; content: string }[]) =>
+      gerar(buscar, mensagens, e.config, chaveGroq()),
   };
 }
 
@@ -879,15 +860,15 @@ export async function rodar() {
         auditarTurno({ ...base, id: novoId(), desfecho: "descartado", r });
         continue;
       }
-      // Resposta idêntica à última da IA (ex.: o cliente mandou a mesma mensagem duas vezes): não repete.
-      const ultimaDaIa = st.historico
-        .filter((m) => m.role === "assistant")
-        .at(-1);
+      // Resposta igual (ou quase) a uma das últimas da IA (ex.: o cliente mandou a mesma mensagem duas vezes): não repete.
       if (
-        ultimaDaIa &&
-        !r.transferir &&
-        (r.plano?.fotos.length ?? 0) === 0 &&
-        normalizar(ultimaDaIa.content) === normalizar(r.texto)
+        deveOmitir(
+          r.texto,
+          st.historico
+            .filter((m) => m.role === "assistant")
+            .map((m) => m.content),
+          { transferir: r.transferir, fotos: r.plano?.fotos.length ?? 0 },
+        )
       ) {
         registrar("crm", `${st.nome}: resposta repetida omitida`);
         auditarTurno({ ...base, id: novoId(), desfecho: "descartado", r });
@@ -927,6 +908,8 @@ export async function rodar() {
         registrar("rascunho", `${st.nome}: aguardando aprovação`);
       }
       atendidos++;
+      // Grava já: se o app fechar na rodada, `vistoAte` e o histórico não voltam atrás (evita resposta repetida).
+      gravar();
     }
     ultimaRodada = new Date().toISOString();
     ultimoErro = null;
@@ -1064,29 +1047,46 @@ export function removerExemplo(id: string) {
 }
 
 /** Aprova um rascunho (texto editado vira exemplo) e envia. */
+/** Rascunhos em aprovação neste instante: impede o clique duplo de enviar a mesma mensagem duas vezes. */
+const aprovando = new Set<string>();
+
 export async function aprovar(id: string, texto?: string) {
-  const e = carregar();
-  const r = e.rascunhos.find((x) => x.id === id);
-  if (!r) throw new Error("Rascunho não encontrado.");
-  const final = (texto ?? r.texto).trim();
-  if (!final) throw new Error("A resposta está vazia.");
-  if (final !== r.texto && r.pergunta)
-    e.exemplos.unshift({
-      id: novoId(),
-      pergunta: r.pergunta,
-      resposta: final,
-      origem: "correcao",
-    });
+  if (aprovando.has(id))
+    throw new Error("Este rascunho já está sendo enviado.");
+  aprovando.add(id);
   try {
-    await entregar({ ...r, texto: final });
-  } catch (erro) {
-    gravarDesfecho(ARQUIVO_AUDITORIA(), id, "erro");
-    throw erro;
+    const e = carregar();
+    const r = e.rascunhos.find((x) => x.id === id);
+    if (!r) throw new Error("Rascunho não encontrado.");
+    // O texto editado passa pelo mesmo guarda da IA (espaços, palavra em dobro, frase repetida).
+    const final = guardarTexto(
+      (texto ?? r.texto).trim(),
+      (e.chats[r.chatId]?.historico ?? [])
+        .filter((m) => m.role === "assistant")
+        .map((m) => m.content),
+    );
+    if (!final)
+      throw new Error("A resposta está vazia ou repete o que a IA já disse.");
+    if (final !== r.texto && r.pergunta)
+      e.exemplos.unshift({
+        id: novoId(),
+        pergunta: r.pergunta,
+        resposta: final,
+        origem: "correcao",
+      });
+    try {
+      await entregar({ ...r, texto: final });
+    } catch (erro) {
+      gravarDesfecho(ARQUIVO_AUDITORIA(), id, "erro");
+      throw erro;
+    }
+    gravarDesfecho(ARQUIVO_AUDITORIA(), id, "aprovado");
+    e.rascunhos = e.rascunhos.filter((x) => x.id !== id);
+    gravar();
+    return painel();
+  } finally {
+    aprovando.delete(id);
   }
-  gravarDesfecho(ARQUIVO_AUDITORIA(), id, "aprovado");
-  e.rascunhos = e.rascunhos.filter((x) => x.id !== id);
-  gravar();
-  return painel();
 }
 /** Descarta um rascunho sem enviar. */
 export function descartar(id: string) {
