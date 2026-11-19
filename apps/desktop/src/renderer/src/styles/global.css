@@ -2503,6 +2503,15 @@ button.kanban-cartao {
 .registro-ia li.erro span:last-child {
   color: var(--danger);
 }
+.auditoria-bruto {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+  font-size: 12px;
+  background: var(--surface-2, transparent);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+}
 .pre-atendimento textarea {
   width: 100%;
 }

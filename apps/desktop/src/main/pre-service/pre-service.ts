@@ -41,7 +41,13 @@ import {
   type RespostaRapida,
   type VeiculoIa,
 } from "../../shared/pre-service";
-import { gerar, listarModelos } from "./llm";
+import {
+  avaliarTurno,
+  mascararTelefone,
+  type Desfecho,
+} from "../../shared/pre-service-audit";
+import { gravarDesfecho, gravarTurno, lerTurnos } from "./audit";
+import { gerar, listarModelos, type UsoModelo } from "./llm";
 import {
   clienteEscrita,
   horaDa,
@@ -128,6 +134,83 @@ function registrar(tipo: string, texto: string) {
 }
 const novoId = () =>
   Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+// ------------------------------------------------------------ auditoria
+const ARQUIVO_AUDITORIA = () =>
+  path.join(caminhos.userData(), "pre-atendimento-auditoria.jsonl");
+type RespostaIa = Awaited<ReturnType<typeof responder>>;
+
+/** Grava um turno na auditoria (nunca lança: a auditoria não pode atrapalhar o atendimento). */
+function auditarTurno(a: {
+  id: string;
+  origem: "laco" | "simulador";
+  chatId: string | null;
+  nome: string;
+  telefone: string | null;
+  recebidas: string[];
+  anteriores: string[];
+  desfecho: Desfecho;
+  r?: RespostaIa;
+  erro?: string;
+}) {
+  try {
+    const { r } = a;
+    const abertura = r?.auditoria.uso.provedor === "resposta-de-abertura";
+    const sinais =
+      r && !abertura
+        ? avaliarTurno({
+            texto: r.texto,
+            transferir: r.transferir,
+            encerrar: r.encerrar,
+            recebidas: a.recebidas,
+            veiculos: r.auditoria.veiculos,
+            anteriores: a.anteriores,
+            fotosPlanejadas: r.plano?.fotos.length ?? 0,
+          })
+        : [];
+    if (a.erro) sinais.push("erro");
+    gravarTurno(ARQUIVO_AUDITORIA(), {
+      id: a.id,
+      em: new Date().toISOString(),
+      origem: a.origem,
+      chatId: a.chatId,
+      nome: a.nome,
+      telefone: mascararTelefone(a.telefone),
+      recebidas: a.recebidas,
+      provedor: r?.auditoria.uso.provedor ?? "",
+      modelo: r?.auditoria.uso.modelo ?? "",
+      reserva: r?.auditoria.uso.reserva ?? false,
+      latenciaMs: r?.auditoria.latenciaMs ?? 0,
+      bruto: r?.auditoria.bruto ?? "",
+      texto: r?.texto ?? "",
+      transferir: r?.transferir ?? false,
+      encerrar: r?.encerrar ?? false,
+      usados: r?.usados ?? {
+        respostas: [],
+        veiculos: 0,
+        exemplos: 0,
+        reais: 0,
+      },
+      fotos: {
+        veiculo: r?.plano?.veiculo
+          ? `${r.plano.veiculo.marca} ${r.plano.veiculo.modelo}`
+          : null,
+        qtd: r?.plano?.fotos.length ?? 0,
+        semFotos: !!r?.plano?.semFotos,
+      },
+      estoque: r?.auditoria.veiculos.length ?? 0,
+      desfecho: a.desfecho,
+      ...(a.erro ? { erro: a.erro } : {}),
+      sinais,
+    });
+  } catch {
+    /* sem auditoria neste turno */
+  }
+}
+
+/** Turnos auditados, do mais recente ao mais antigo, para a aba Auditoria. */
+export const auditoria = (limite = 200) =>
+  lerTurnos(ARQUIVO_AUDITORIA(), Math.min(Math.max(limite, 1), 1000));
 
 // ------------------------------------------------------------ chave do Groq
 function chaveGroq(): string | null {
@@ -278,6 +361,12 @@ async function responder(conversa: MensagemIa[], lead: Lead) {
         exemplos: 0,
         reais: 0,
       },
+      auditoria: {
+        bruto: "",
+        uso: { provedor: "resposta-de-abertura", modelo: "", reserva: false },
+        latenciaMs: 0,
+        veiculos: [] as VeiculoIa[],
+      },
     };
   const veiculos = veiculosDisponiveis();
   const plano = planoDeFotos({
@@ -300,10 +389,26 @@ async function responder(conversa: MensagemIa[], lead: Lead) {
     nomeLead: lead.nome,
     notaFotos: plano?.nota,
   });
-  const bruto = await gerar(buscar, mensagens, cfg, chaveGroq(), (t) =>
-    registrar("reserva", t),
+  const inicio = Date.now();
+  const uso: UsoModelo = {
+    provedor: cfg.provedor,
+    modelo: cfg.provedor === "groq" ? cfg.modeloGroq : cfg.modeloOllama,
+    reserva: false,
+  };
+  const bruto = await gerar(
+    buscar,
+    mensagens,
+    cfg,
+    chaveGroq(),
+    (t) => registrar("reserva", t),
+    uso,
   );
-  return { ...interpretarResposta(bruto, conversa), plano, usados };
+  return {
+    ...interpretarResposta(bruto, conversa),
+    plano,
+    usados,
+    auditoria: { bruto, uso, latenciaMs: Date.now() - inicio, veiculos },
+  };
 }
 
 /** Simulador "Ensinar": responde à conversa digitada na tela, sem enviar nada. Fotos vêm como miniaturas. */
@@ -317,6 +422,23 @@ export async function simular(a: {
     nome: a.nome || "Cliente",
     etiquetas: a.etiquetas ?? [],
     fotosEnviadas: a.enviadas ?? {},
+  });
+  auditarTurno({
+    id: novoId(),
+    origem: "simulador",
+    chatId: null,
+    nome: a.nome || "Cliente",
+    telefone: null,
+    recebidas: a.conversa
+      .filter((m) => m.role === "user")
+      .slice(-1)
+      .map((m) => m.content),
+    anteriores: a.conversa
+      .filter((m) => m.role === "assistant")
+      .slice(-2)
+      .map((m) => m.content),
+    desfecho: "simulado",
+    r,
   });
   return {
     texto: r.texto,
@@ -469,17 +591,42 @@ export async function rodar() {
       const etiquetas = (chat.contact?.tags ?? [])
         .map((t) => t.name ?? t.tag?.name ?? "")
         .filter(Boolean);
-      const r = await responder(conversa, {
+      const base = {
+        origem: "laco" as const,
+        chatId: chat.id,
         nome: st.nome,
-        etiquetas,
-        fotosEnviadas: st.fotosEnviadas,
-      });
+        telefone: st.telefone,
+        recebidas: novas.map(textoDa),
+        anteriores: st.historico
+          .filter((m) => m.role === "assistant")
+          .slice(-2)
+          .map((m) => m.content),
+      };
+      let r: RespostaIa;
+      try {
+        r = await responder(conversa, {
+          nome: st.nome,
+          etiquetas,
+          fotosEnviadas: st.fotosEnviadas,
+        });
+      } catch (erro) {
+        auditarTurno({
+          ...base,
+          id: novoId(),
+          desfecho: "erro",
+          erro: (erro as Error).message.slice(0, 300),
+        });
+        throw erro;
+      }
       if (r.plano?.semFotos && r.plano.veiculo)
         registrar(
           "foto",
           `${st.nome} pediu fotos do ${r.plano.veiculo.marca} ${r.plano.veiculo.modelo}, mas ele não tem fotos na pasta FOTOS`,
         );
-      if (!r.texto) continue;
+      if (!r.texto) {
+        auditarTurno({ ...base, id: novoId(), desfecho: "descartado", r });
+        continue;
+      }
       const rascunho: Rascunho = {
         id: novoId(),
         chatId: chat.id,
@@ -496,8 +643,20 @@ export async function rodar() {
         inicioFotos: r.plano?.inicio ?? 0,
         em: Date.now(),
       };
-      if (cfg.enviarSemAprovacao) await entregar(rascunho);
-      else {
+      auditarTurno({
+        ...base,
+        id: rascunho.id,
+        desfecho: cfg.enviarSemAprovacao ? "enviado" : "rascunho",
+        r,
+      });
+      if (cfg.enviarSemAprovacao) {
+        try {
+          await entregar(rascunho);
+        } catch (erro) {
+          gravarDesfecho(ARQUIVO_AUDITORIA(), rascunho.id, "erro");
+          throw erro;
+        }
+      } else {
         e.rascunhos.unshift(rascunho);
         registrar("rascunho", `${st.nome}: aguardando aprovação`);
       }
@@ -642,7 +801,13 @@ export async function aprovar(id: string, texto?: string) {
       resposta: final,
       origem: "correcao",
     });
-  await entregar({ ...r, texto: final });
+  try {
+    await entregar({ ...r, texto: final });
+  } catch (erro) {
+    gravarDesfecho(ARQUIVO_AUDITORIA(), id, "erro");
+    throw erro;
+  }
+  gravarDesfecho(ARQUIVO_AUDITORIA(), id, "aprovado");
   e.rascunhos = e.rascunhos.filter((x) => x.id !== id);
   gravar();
   return painel();
@@ -650,6 +815,8 @@ export async function aprovar(id: string, texto?: string) {
 /** Descarta um rascunho sem enviar. */
 export function descartar(id: string) {
   const e = carregar();
+  if (e.rascunhos.some((x) => x.id === id))
+    gravarDesfecho(ARQUIVO_AUDITORIA(), id, "descartado");
   e.rascunhos = e.rascunhos.filter((x) => x.id !== id);
   gravar();
   return painel();

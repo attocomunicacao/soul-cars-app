@@ -302,6 +302,8 @@ const COMANDOS: Record<string, Comando> = {
   pre_esquecer: (a) => preAtendimento.esquecerChat(String(a.chatId)),
   pre_etiquetas: () => preAtendimento.etiquetasUtalk(),
   pre_modelos: () => preAtendimento.modelos(),
+  pre_auditoria: (a) =>
+    preAtendimento.auditoria(a.limite === undefined ? 200 : Number(a.limite)),
   estoque_vitrine: () => vitrine(),
   // ---- Finanças (planilha mensal vinculada) ----
   financas_estado: () => financas.estadoFinancas(),
