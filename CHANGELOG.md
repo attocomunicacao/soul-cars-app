@@ -2,6 +2,13 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.0.21]
+
+- Pré-atendimento IA: a IA passa a ler a **quilometragem e o valor do DES.md** da pasta de cada carro (o valor do DES.md vale mais que o do BNDV, que vem zerado em vários carros) e informa o km ao cliente. Carros sem DES.md continuam sem km: nesse caso a IA encaminha para a equipe em vez de prometer
+- Pré-atendimento IA: regras fixas de encaminhamento. A IA transfere para a equipe quando o cliente pede algo que ela não sabe (km, laudo, histórico), informa entrada ou parcela, pede simulação, taxa, desconto, oferece carro na troca, quer visitar ou fechar; não promete mais "vou confirmar com o consultor" nem oferece simular parcelas
+- Pré-atendimento IA: cumprimento sozinho ("oi") é respondido como cumprimento, e a IA não termina toda mensagem oferecendo visita ou ligação. Quem usava a persona padrão antiga recebe a nova automaticamente; personas editadas à mão não mudam
+- Auditoria: corrigidos dois alertas falsos (valor que o próprio cliente digitou e pergunta "de qual carro são as fotos?") e novo alerta quando a IA oferece simular parcelas
+
 ## [1.0.20]
 
 - Pré-atendimento IA: nova aba **Auditoria** com cada resposta da IA (o que o cliente escreveu, a resposta enviada, a saída bruta do modelo, provedor, tempo, estoque usado e desfecho: enviado, aprovado, descartado ou erro)

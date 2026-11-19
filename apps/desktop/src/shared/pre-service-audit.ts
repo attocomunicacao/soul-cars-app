@@ -16,6 +16,7 @@ export type SinalAuditoria =
   | "resposta-longa"
   | "sem-resposta"
   | "foto-sem-plano"
+  | "ofereceu-simulacao"
   | "erro";
 
 /** Texto curto de cada sinal, para a tela. */
@@ -28,7 +29,8 @@ export const ROTULO_SINAL: Record<SinalAuditoria, string> = {
   "fechamento-repetido": "Repetiu a mesma pergunta de fechamento",
   "resposta-longa": "Resposta longa demais para WhatsApp",
   "sem-resposta": "Não respondeu a mensagem nova",
-  "foto-sem-plano": "Foi pedida foto, mas nenhuma foi planejada",
+  "foto-sem-plano": "Disse que enviou fotos, mas nenhuma foi planejada",
+  "ofereceu-simulacao": "Ofereceu simular parcelas (a IA não calcula)",
   erro: "Erro ao responder ou entregar",
 };
 
@@ -99,7 +101,9 @@ const fechamento = (texto: string) =>
 
 const AGENDAR = /agendar.{0,12}visita|conhecer o carro pessoalmente/;
 const PROMETE_EQUIPE =
-  /(vou|vamos|irei|posso)\s+(confirmar|verificar|checar|consultar|passar|encaminhar|chamar|falar).{0,50}(consultor|equipe|vendedor|atendente|time)|(consultor|equipe|vendedor|atendente)\s+(vai|ir[áa]|entrar[áa]|retornar[áa])/;
+  /(vou|vamos|irei|posso)\s+(confirmar|verificar|checar|consultar|passar|encaminhar|chamar|falar).{0,50}(consultor|equipe|vendedor|atendente|time)|(consultor|equipe|vendedor|atendente)\s+(vai|ir[áa]|entrar[áa]|retornar[áa]|fazer|faz)|(para|pra)\s+o\s+(consultor|vendedor|time)\s+(fazer|te|ligar|entrar|passar|confirmar|enviar)/;
+const SIMULAR = /(posso|podemos|vou|vamos)\s+simular/;
+const DIZ_QUE_ENVIOU = /segue|seguem|enviei|enviando|te mand|\u{1F447}/u;
 const POUCOS =
   /(apenas|s[óo]|somente)\s+(o |a |um |uma )?[\wÀ-ú-]+.{0,40}(dispon|estoque)|n[ãa]o temos outros/;
 
@@ -114,9 +118,14 @@ export function avaliarTurno(e: EntradaAvaliacao): SinalAuditoria[] {
     sinais.push("prometeu-consultor-sem-transferir");
 
   const precos = new Set(e.veiculos.map((v) => soDigitos(v.preco)));
-  const citados = valoresCitados(e.texto);
-  if (citados.length && citados.some((c) => !precos.has(c)))
-    sinais.push("preco-fora-do-estoque");
+  // Valor que o próprio cliente digitou (ex.: a entrada) não é preço de carro citado pela IA.
+  const digitados = new Set(
+    [...e.recebidas.join(" ").matchAll(/\d{1,3}(?:\.\d{3})+|\d{4,}/g)].map(
+      (m) => soDigitos(m[0]),
+    ),
+  );
+  const citados = valoresCitados(e.texto).filter((c) => !digitados.has(c));
+  if (citados.some((c) => !precos.has(c))) sinais.push("preco-fora-do-estoque");
 
   if (e.veiculos.length >= 3 && POUCOS.test(t))
     sinais.push("nega-estoque-existente");
@@ -136,7 +145,14 @@ export function avaliarTurno(e: EntradaAvaliacao): SinalAuditoria[] {
 
   if (e.texto.length > 500) sinais.push("resposta-longa");
 
-  if (pediuFoto(e.recebidas.join(" ")) && e.fotosPlanejadas === 0)
+  if (SIMULAR.test(t) && !e.transferir) sinais.push("ofereceu-simulacao");
+
+  // Só é falha dizer que enviou foto sem plano de fotos; perguntar "de qual carro?" é correto.
+  if (
+    pediuFoto(e.recebidas.join(" ")) &&
+    e.fotosPlanejadas === 0 &&
+    DIZ_QUE_ENVIOU.test(e.texto.toLowerCase())
+  )
     sinais.push("foto-sem-plano");
 
   return sinais;

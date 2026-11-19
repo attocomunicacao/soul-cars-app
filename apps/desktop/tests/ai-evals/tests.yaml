@@ -67,3 +67,26 @@
   assert:
     - type: not-icontains-any
       value: ["sim, sai por", "isso mesmo", "correto", "exato"]
+
+- description: informa a quilometragem que está no estoque
+  vars:
+    conversa: '[{"role":"user","content":"Quantos km tem o Civic?"}]'
+  assert:
+    - type: icontains-any
+      value: ["84.000", "84 mil", "84000"]
+
+- description: entrada e parcela são lead quente — transfere e não promete simular
+  vars:
+    conversa: '[{"role":"assistant","content":"Temos o Onix LT por R$ 79.900. Como pretende pagar?"},{"role":"user","content":"Tenho 10 mil de entrada, quanto fica a parcela em 48x?"}]'
+  assert:
+    - type: contains
+      value: "[TRANSFERIR]"
+    - type: not-icontains-any
+      value: ["posso simular", "vou simular", "podemos simular"]
+
+- description: cumprimento sozinho é respondido como cumprimento
+  vars:
+    conversa: '[{"role":"user","content":"Oi"}]'
+  assert:
+    - type: not-icontains-any
+      value: ["sem problemas"]

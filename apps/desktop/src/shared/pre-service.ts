@@ -17,6 +17,8 @@ export type VeiculoIa = {
   modelo: string;
   placa: string;
   preco: string;
+  /** Quilometragem (do DES.md da pasta), ex.: "84.000"; vazio se não houver. */
+  km?: string;
 };
 
 export type Papel = "user" | "assistant";
@@ -99,7 +101,8 @@ export const LOJA_PADRAO: LojaIa = {
   extra: "",
 };
 
-export const PERSONA_PADRAO = `Você é a {agente}, consultora de pré-atendimento da {loja} pelo WhatsApp.
+/** Persona padrão até a 1.0.20: quem ainda a usa (sem edição) passa para a nova. */
+export const PERSONA_ANTERIOR = `Você é a {agente}, consultora de pré-atendimento da {loja} pelo WhatsApp.
 O lead demonstrou interesse num veículo, mas nosso time não conseguiu falar com ele por telefone.
 Objetivo: retomar o contato de forma leve, entender o interesse (modelo, faixa de preço, forma de pagamento, troca) e agendar uma visita ou ligação com um consultor.
 Regras:
@@ -111,6 +114,31 @@ Regras:
 - Um link de anúncio enviado pelo cliente só indica o carro de interesse — não é pedido de humano.
 - Se o cliente pedir para falar com humano, estiver irritado, quiser fechar negócio ou confirmar uma visita, responda brevemente e inclua a tag [TRANSFERIR] no fim.
 - Se o cliente pedir para não receber mensagens, peça desculpas e inclua [ENCERRAR].`;
+
+export const PERSONA_PADRAO = `Você é a {agente}, consultora de pré-atendimento da {loja} pelo WhatsApp.
+O lead demonstrou interesse num veículo, mas nosso time não conseguiu falar com ele por telefone.
+Objetivo: retomar o contato de forma leve, entender o interesse (modelo, faixa de preço, forma de pagamento, troca) e agendar uma visita ou ligação com um consultor.
+Regras:
+- Mensagens curtas (no máximo 3 frases), tom cordial e natural, em português do Brasil. Sem textão.
+- Faça uma pergunta por vez.
+- Use SOMENTE as informações do CONTEXTO para falar de veículos, preços, horários e condições. Se não souber, encaminhe ao consultor conforme as REGRAS DE ENCAMINHAMENTO.
+- Nunca invente preço, quilometragem, ano, disponibilidade ou condição de financiamento.
+- Se o veículo pedido NÃO aparece na lista de ESTOQUE, diga que no momento não temos esse modelo e ofereça opções parecidas da lista.
+- Um link de anúncio enviado pelo cliente só indica o carro de interesse — não é pedido de humano.
+- Se o cliente pedir para falar com humano, estiver irritado, quiser fechar negócio ou confirmar uma visita, responda brevemente e inclua a tag [TRANSFERIR] no fim.
+- Se o cliente pedir para não receber mensagens, peça desculpas e inclua [ENCERRAR].`;
+
+/**
+ * Regras fixas de encaminhamento, sempre enviadas ao modelo depois da persona (valem mesmo que uma
+ * persona antiga diga o contrário): quando incluir [TRANSFERIR] e como responder a cumprimentos.
+ */
+export const REGRAS_DE_ENCAMINHAMENTO = `REGRAS DE ENCAMINHAMENTO (valem mesmo que a persona diga o contrário):
+- Você NÃO calcula parcelas, taxas, avaliação de troca, desconto, quilometragem, laudo nem histórico do carro. Nunca prometa isso e nunca diga "vou confirmar com o consultor" sem encaminhar de verdade.
+- Inclua [TRANSFERIR] no fim da resposta quando o cliente: pedir algo que o CONTEXTO não traz (quilometragem, laudo, cor, consumo, opcionais, histórico); pedir simulação de parcela, taxa ou análise de crédito, ou informar valor de entrada ou parcela; oferecer carro na troca; pedir desconto ou negociar preço; quiser visitar, ligar, fechar negócio ou falar com alguém.
+- Ao transferir, responda em 1 ou 2 frases dizendo que um consultor continua o atendimento por aqui. Não invente prazo e não ofereça simular nem calcular.
+- Pergunta geral ("vocês financiam?", "aceitam troca?"): responda com o texto de FINANCIAMENTO ou TROCA do contexto, sem [TRANSFERIR], e pergunte a forma de pagamento.
+- Cumprimento sozinho ("oi", "olá", "bom dia"): cumprimente de volta e pergunte no que pode ajudar. Não responda "sem problemas".
+- Não termine toda mensagem oferecendo visita ou ligação: responda primeiro o que foi perguntado e só ofereça visita quando fizer sentido, variando a frase.`;
 
 export const RESPOSTAS_PADRAO: RespostaRapida[] = [
   {
@@ -167,7 +195,11 @@ export function ranquear<T>(
 }
 
 export const descreverVeiculo = (v: VeiculoIa) =>
-  [`${v.marca} ${v.modelo}`.trim(), v.preco && `R$ ${v.preco}`]
+  [
+    `${v.marca} ${v.modelo}`.trim(),
+    v.preco && `R$ ${v.preco}`,
+    v.km && `${v.km} km`,
+  ]
     .filter(Boolean)
     .join(" · ");
 
@@ -521,7 +553,7 @@ export function montarMensagens(e: EntradaContexto) {
     `FINANCIAMENTO: ${l.financiamento}`,
     `TROCA: ${l.troca}`,
     l.extra && `OUTRAS INFORMAÇÕES: ${l.extra}`,
-    `ESTOQUE (${e.veiculos.length} veículos disponíveis; use esta lista quando o cliente perguntar o que temos):\n` +
+    `ESTOQUE (${e.veiculos.length} veículos disponíveis; use esta lista quando o cliente perguntar o que temos; se um veículo não mostra preço ou km, esse dado não está disponível: não invente e encaminhe ao consultor):\n` +
       ((veiculos.length ? veiculos : e.veiculos.slice(0, 12))
         .map((v) => "- " + descreverVeiculo(v))
         .join("\n") || "- (sem veículos disponíveis no momento)"),
@@ -543,6 +575,9 @@ export function montarMensagens(e: EntradaContexto) {
     .join("\n\n");
   const sistema =
     preencher(e.persona, vars) +
+    `
+
+${REGRAS_DE_ENCAMINHAMENTO}` +
     `\n\nNome do lead: ${e.nomeLead || "desconhecido"}.\n\nCONTEXTO:\n${contexto}` +
     avisoDeHorario(e.conversa) +
     avisoDeLink(e.conversa) +

@@ -17,6 +17,7 @@ const ESTOQUE = [
     modelo: "Civic EXL 2.0 2019",
     placa: "ABC1D23",
     preco: "R$ 109.900",
+    km: "84.000",
   },
   {
     id: "t2",

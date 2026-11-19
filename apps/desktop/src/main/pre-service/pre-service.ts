@@ -17,10 +17,11 @@ import { tokenUtalk } from "../crm/utalk";
 import { descobrirOrganizacao, type Buscar } from "../crm/utalk-api";
 import { ehAtivo, lerCsv } from "../inventory/folder-sync";
 import { conversasDaMemoria } from "../soul-ai/soul-ai";
-import { pastaFotos } from "../studio/files";
+import { arquivoNaRaiz, pastaFotos } from "../studio/files";
 import {
   CONFIG_PADRAO,
   LOJA_PADRAO,
+  PERSONA_ANTERIOR,
   PERSONA_PADRAO,
   RESPOSTAS_PADRAO,
   doContato,
@@ -41,6 +42,7 @@ import {
   type RespostaRapida,
   type VeiculoIa,
 } from "../../shared/pre-service";
+import { lerKmEValor } from "../../shared/des-md";
 import {
   avaliarTurno,
   mascararTelefone,
@@ -112,7 +114,10 @@ function carregar(): Estado {
   estado = {
     config: { ...CONFIG_PADRAO, ...lido.config },
     loja: { ...LOJA_PADRAO, ...lido.loja },
-    persona: lido.persona ?? PERSONA_PADRAO,
+    persona:
+      !lido.persona || lido.persona === PERSONA_ANTERIOR
+        ? PERSONA_PADRAO
+        : lido.persona,
     respostas: lido.respostas ?? structuredClone(RESPOSTAS_PADRAO),
     exemplos: lido.exemplos ?? [],
     chats: lido.chats ?? {},
@@ -260,20 +265,38 @@ export function veiculosDisponiveis(): VeiculoIa[] {
         const n = Number(
           String(v.salePrice ?? v.price ?? "").replace(",", "."),
         );
+        const id = String(v.idVehicle ?? "");
+        const des = desMdDo(id);
         return {
-          id: String(v.idVehicle ?? ""),
+          id,
           marca: String(v.brand ?? "").trim(),
           modelo: String(v.model ?? "").trim(),
           placa: String(v.plate ?? "").toUpperCase(),
+          // O valor do DES.md (o anunciado) vale mais que o do BNDV, que muitas vezes vem zerado.
           preco:
-            Number.isFinite(n) && n > 0
+            des.valor ||
+            (Number.isFinite(n) && n > 0
               ? Math.round(n).toLocaleString("pt-BR")
-              : "",
+              : ""),
+          km: des.km || String(v.km ?? "").trim(),
         };
       })
       // Regra da loja: só fica disponível (catálogo e IA) quem está em estoque no BNDV E tem fotos na pasta.
       .filter((v) => v.id && fotosDo(v.id).length > 0)
   );
+}
+
+/** Quilometragem e valor do DES.md da pasta do veículo ("" quando não há DES.md ou o campo). */
+function desMdDo(id: string): { km: string; valor: string } {
+  try {
+    const pasta = pastaDoVeiculo(id);
+    const arq = pasta && arquivoNaRaiz(pasta, "DES.md");
+    return arq
+      ? lerKmEValor(fs.readFileSync(arq, "utf8"))
+      : { km: "", valor: "" };
+  } catch {
+    return { km: "", valor: "" };
+  }
 }
 
 function pastaDoVeiculo(id: string): string | null {

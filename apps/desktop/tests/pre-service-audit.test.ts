@@ -57,6 +57,15 @@ describe("avaliarTurno", () => {
       avaliarTurno({ ...base, texto: "O Onix sai por R$ 66.900." }),
     ).toContain("preco-fora-do-estoque");
     expect(avaliarTurno({ ...base, texto: "Entrada de R$ 500." })).toEqual([]);
+    // O valor que o próprio cliente digitou (entrada) não conta como preço citado pela IA.
+    expect(
+      avaliarTurno({
+        ...base,
+        texto: "Com R$ 10.000 de entrada, um consultor continua por aqui.",
+        recebidas: ["Tenho 10.000 de entrada"],
+        transferir: true,
+      }),
+    ).toEqual([]);
   });
 
   it("diz ter só um carro com estoque maior e conta errada", () => {
@@ -90,8 +99,20 @@ describe("avaliarTurno", () => {
       "resposta-longa",
     );
     expect(
-      avaliarTurno({ ...base, texto: "Claro!", recebidas: ["Tem foto?"] }),
+      avaliarTurno({
+        ...base,
+        texto: "Segue as fotos do Onix 👇",
+        recebidas: ["Tem foto?"],
+      }),
     ).toContain("foto-sem-plano");
+    // Perguntar de qual carro são as fotos é o comportamento certo, não um alerta.
+    expect(
+      avaliarTurno({
+        ...base,
+        texto: "De qual carro você quer as fotos?",
+        recebidas: ["Tem foto?"],
+      }),
+    ).toEqual([]);
     expect(
       avaliarTurno({
         ...base,
@@ -100,6 +121,24 @@ describe("avaliarTurno", () => {
         fotosPlanejadas: 6,
       }),
     ).toEqual([]);
+  });
+});
+
+describe("simulação e promessas sem transferir", () => {
+  it("oferecer simular parcelas é alerta, salvo se transferiu", () => {
+    const t = "Podemos simular as parcelas para você.";
+    expect(avaliarTurno({ ...base, texto: t })).toContain("ofereceu-simulacao");
+    expect(avaliarTurno({ ...base, texto: t, transferir: true })).not.toContain(
+      "ofereceu-simulacao",
+    );
+  });
+  it("'para o consultor fazer a simulação' conta como promessa", () => {
+    expect(
+      avaliarTurno({
+        ...base,
+        texto: "Prefere uma ligação para o consultor fazer essa simulação?",
+      }),
+    ).toContain("prometeu-consultor-sem-transferir");
   });
 });
 
