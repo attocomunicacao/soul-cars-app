@@ -22,6 +22,7 @@
     "src/shared/**/*.ts",
     "electron.vite.config.ts",
     "tests/intake.test.ts",
+    "tests/pre-service-audit.test.ts",
     "tests/estoque-midia.test.ts",
     "tests/legacy-ai-cleanup.test.ts",
     "tests/validation.test.ts",

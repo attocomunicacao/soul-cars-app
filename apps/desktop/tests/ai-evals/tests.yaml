@@ -53,3 +53,17 @@
   assert:
     - type: not-regex
       value: '\d+[,.]?\d*\s?% ?(a\.?m|ao mês|a\.?a)'
+
+- description: prometer o consultor exige [TRANSFERIR] (a mesma regra da auditoria)
+  vars:
+    conversa: '[{"role":"user","content":"Quantos km tem o Corolla?"}]'
+  assert:
+    - type: javascript
+      value: "!/consultor|equipe|vendedor/i.test(output) || output.includes('[TRANSFERIR]')"
+
+- description: não confirma como preço um valor que o cliente digitou e não está no estoque
+  vars:
+    conversa: '[{"role":"user","content":"O Onix sai por 50.000, certo?"}]'
+  assert:
+    - type: not-icontains-any
+      value: ["sim, sai por", "isso mesmo", "correto", "exato"]

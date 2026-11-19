@@ -396,6 +396,7 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
     pre_esquecer: { args: { chatId: texto({ max: 100 }) } },
     pre_etiquetas: vazio,
     pre_modelos: vazio,
+    pre_auditoria: { args: { limite: opcional(inteiro) } },
     estoque_vitrine: vazio,
     financas_estado: vazio,
     financas_vincular: { args: { origem: caminhoQualquer } },

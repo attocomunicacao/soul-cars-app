@@ -11,6 +11,9 @@ export const BASE_GROQ = "https://api.groq.com/openai/v1";
 
 export type MensagemModelo = { role: string; content: string };
 
+/** Quem respondeu de fato (preenchido por `gerar`): serve à auditoria. */
+export type UsoModelo = { provedor: string; modelo: string; reserva: boolean };
+
 class ErroModelo extends Error {
   constructor(
     mensagem: string,
@@ -29,10 +32,30 @@ export async function gerar(
   cfg: ConfigIa,
   chaveGroq: string | null,
   avisar: (texto: string) => void = () => {},
+  uso?: UsoModelo,
 ): Promise<string> {
-  if (cfg.provedor !== "groq") return gerarOllama(buscar, mensagens, cfg);
+  const doOllama = (reserva: boolean) => {
+    if (uso)
+      Object.assign(uso, {
+        provedor: "ollama",
+        modelo: cfg.modeloOllama,
+        reserva,
+      });
+  };
+  if (cfg.provedor !== "groq") {
+    const r = await gerarOllama(buscar, mensagens, cfg);
+    doOllama(false);
+    return r;
+  }
   try {
-    return await gerarGroq(buscar, mensagens, cfg, chaveGroq);
+    const r = await gerarGroq(buscar, mensagens, cfg, chaveGroq);
+    if (uso)
+      Object.assign(uso, {
+        provedor: "groq",
+        modelo: cfg.modeloGroq,
+        reserva: false,
+      });
+    return r;
   } catch (e) {
     const erro = e as ErroModelo;
     if (!cfg.reservaOllama || erro.status === 401) throw e;
@@ -40,7 +63,9 @@ export async function gerar(
       `Groq indisponível (${erro.message.slice(0, 120)}) — respondendo com o Ollama local`,
     );
     try {
-      return await gerarOllama(buscar, mensagens, cfg);
+      const r = await gerarOllama(buscar, mensagens, cfg);
+      doOllama(true);
+      return r;
     } catch (e2) {
       throw new Error(
         `O Groq falhou (${erro.message.slice(0, 100)}) e a reserva Ollama também (${(e2 as Error).message.slice(0, 100)}).`,
