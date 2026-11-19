@@ -201,15 +201,16 @@ describe("ordem da qualificação", () => {
     expect(rotulos(pendentes(f))).toEqual(["melhor horário para a ligação"]);
   });
 
-  it("o aviso manda uma pergunta, bloqueia a transferência e não oferece visita", () => {
+  it("o aviso deixa a pergunta para o sistema, bloqueia a transferência e não oferece visita", () => {
     const f = fichaDaConversa([cli("Quero o Renegade")], interessado, AGORA);
     const aviso = avisoDeColeta(f);
     expect(aviso).toContain("NÃO inclua [TRANSFERIR]");
     expect(aviso).toContain("NÃO ofereça nem agende visita");
-    expect(aviso).toContain("UMA pergunta");
+    expect(aviso).toContain("SEM fazer perguntas");
+    expect(aviso).toContain("o sistema acrescenta");
   });
 
-  it("item perguntado 2 vezes sem resposta é dispensado", () => {
+  it("item perguntado 3 vezes sem resposta é dispensado", () => {
     const pergunta = "Para te atender melhor, em qual região você está?";
     const f = fichaDaConversa(
       [
@@ -218,6 +219,8 @@ describe("ordem da qualificação", () => {
         cli("e o preço?"),
         ia(pergunta),
         cli("e a cor?"),
+        ia(pergunta),
+        cli("e o motor?"),
       ],
       interessado,
       AGORA,

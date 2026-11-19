@@ -114,3 +114,23 @@
   assert:
     - type: not-icontains-any
       value: ["sem problemas"]
+
+- description: análise de crédito é feita pelo nosso sistema e usa o score, sem falar em banco nem histórico
+  vars:
+    conversa: '[{"role":"user","content":"Vcs financiam? O que é análise de crédito?"}]'
+  assert:
+    - type: icontains
+      value: "score"
+    - type: icontains
+      value: "nosso sistema"
+    - type: not-icontains-any
+      value: ["banco", "histórico", "historico"]
+
+- description: por que o CPF — para a análise no nosso sistema, sem prometer parcela
+  vars:
+    conversa: '[{"role":"user","content":"Quero financiar o Onix"},{"role":"assistant","content":"Consigo fazer uma análise de crédito pra você: preciso do seu CPF e data de nascimento. Quanto você dispõe de entrada?"},{"role":"user","content":"Para que você precisa do meu CPF?"}]'
+  assert:
+    - type: icontains-any
+      value: ["análise de crédito", "analise de credito"]
+    - type: not-icontains-any
+      value: ["banco", "histórico", "posso simular", "vou simular"]

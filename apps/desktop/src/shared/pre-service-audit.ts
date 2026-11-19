@@ -5,6 +5,7 @@
  * `main/pre-service/audit.ts` e a tela em `pages/pre-service/PreServicePage.tsx`.
  */
 import { normalizar, pediuFoto, type VeiculoIa } from "./pre-service";
+import { perguntouCampo, type Campo } from "./lead-profile";
 
 /** Sinais de alerta que a auditoria sabe detectar. */
 export type SinalAuditoria =
@@ -20,6 +21,7 @@ export type SinalAuditoria =
   | "financiamento-sem-dados"
   | "transferiu-sem-coletar"
   | "ofereceu-visita"
+  | "perguntou-dado-ja-informado"
   | "erro";
 
 /** Texto curto de cada sinal, para a tela. */
@@ -40,6 +42,8 @@ export const ROTULO_SINAL: Record<SinalAuditoria, string> = {
     "Transferiu antes de coletar os dados (região, pagamento, horário…)",
   "ofereceu-visita":
     "Ofereceu agendar visita (o consultor combina depois da ligação)",
+  "perguntou-dado-ja-informado":
+    "Perguntou de novo algo que o cliente já respondeu",
   erro: "Erro ao responder ou entregar",
 };
 
@@ -94,6 +98,8 @@ export type EntradaAvaliacao = {
     financiado: boolean;
     pendentes: string[];
     podeTransferir: boolean;
+    /** Itens que a ficha já tem: a IA não deveria perguntar de novo. */
+    informados: Campo[];
   };
 };
 
@@ -186,6 +192,16 @@ export function avaliarTurno(e: EntradaAvaliacao): SinalAuditoria[] {
   }
 
   if (OFERECE_VISITA.test(t)) sinais.push("ofereceu-visita");
+
+  // A IA perguntou de novo algo que a ficha já tem (CPF, entrada, região…)? Só conta frase com "?".
+  const jaSabia = e.coleta?.informados ?? [];
+  if (jaSabia.length) {
+    const perguntas = e.texto
+      .split(/(?<=[.!?])\s+|\n+/)
+      .filter((s) => s.includes("?"));
+    if (perguntas.some((p) => jaSabia.some((c) => perguntouCampo(p, c))))
+      sinais.push("perguntou-dado-ja-informado");
+  }
 
   if (SIMULAR.test(t) && !e.transferir) sinais.push("ofereceu-simulacao");
 

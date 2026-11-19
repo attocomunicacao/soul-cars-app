@@ -147,6 +147,7 @@ describe("qualificação do lead", () => {
     financiado: true,
     pendentes: ["cpf", "nascimento", "entrada"],
     podeTransferir: false,
+    informados: [],
   };
   const fala = { ...base, recebidas: ["Vcs financiam?"] };
 
@@ -253,5 +254,32 @@ describe("gravação da auditoria", () => {
     expect(lidos[1].desfecho).toBe("aprovado");
     expect(lerTurnos(path.join(dir, "nao-existe.jsonl"))).toEqual([]);
     fs.rmSync(dir, { recursive: true, force: true });
+  });
+});
+
+describe("pergunta repetida", () => {
+  const coleta = {
+    financiado: true,
+    pendentes: ["cnh"],
+    podeTransferir: false,
+    informados: ["cpf", "entrada"] as ("cpf" | "entrada")[],
+  };
+  it("alerta quando a IA pergunta de novo algo que a ficha já tem", () => {
+    expect(
+      avaliarTurno({
+        ...base,
+        texto: "Anotado. Qual é o seu CPF?",
+        coleta,
+      }),
+    ).toContain("perguntou-dado-ja-informado");
+  });
+  it("citar o dado sem perguntar, ou perguntar outro item, não é alerta", () => {
+    expect(
+      avaliarTurno({
+        ...base,
+        texto: "Anotei seu CPF. Você possui CNH?",
+        coleta,
+      }),
+    ).not.toContain("perguntou-dado-ja-informado");
   });
 });

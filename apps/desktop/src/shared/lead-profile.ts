@@ -44,6 +44,8 @@ export type FichaLead = {
   recusou: boolean;
   /** A ficha já foi entregue ao SDR (nota privada), para não repetir a transferência. */
   entregue: boolean;
+  /** O último CPF enviado não passou na validação (digitado errado). */
+  cpfInvalido: boolean;
 };
 
 export const FICHA_VAZIA: FichaLead = {
@@ -60,6 +62,7 @@ export const FICHA_VAZIA: FichaLead = {
   mensagensCliente: 0,
   recusou: false,
   entregue: false,
+  cpfInvalido: false,
 };
 
 /** Aceita fichas salvas por versões anteriores (`formaPagamento`, `tentativasDados`…) e completa o que falta. */
@@ -104,6 +107,15 @@ export function cpfValido(digitos: string): boolean {
 /** "52998224725" → "529.982.247-25". */
 export const formatarCpf = (d: string) =>
   d.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
+
+/** O texto tem algo no formato de CPF (com . ou -, ou 11 dígitos quando a IA acabou de pedir o CPF)? */
+function pareceCpf(texto: string, perguntouCpf: boolean): boolean {
+  for (const m of texto.matchAll(CPF_RE)) {
+    if (/[.-]/.test(m[0])) return true;
+    if (perguntouCpf && /^\d{11}$/.test(m[0].replace(/\s/g, ""))) return true;
+  }
+  return false;
+}
 
 /** Primeiro CPF válido do texto (só dígitos) ou "". */
 function acharCpf(texto: string): string {
@@ -152,9 +164,15 @@ function acharEntrada(texto: string, perguntouEntrada: boolean): string {
   const t = sem(texto).replace(CPF_RE, " ").replace(DATA_RE, " ");
   if (
     /(sem|nao tenho|zero de|nenhuma) entrada|entrada (zero|nenhuma)/.test(t) ||
-    (perguntouEntrada && /^\W*(nao|nada|zero)\W*$/.test(t))
+    (perguntouEntrada && /^\W*(nao|nada|zero|nenhum|nenhuma)\W*$/.test(t))
   )
     return "sem entrada";
+  // "Somente o carro na troca": o veículo é a entrada, em dinheiro não há nada.
+  if (
+    (perguntouEntrada || /entrada/.test(t)) &&
+    /\b(somente|so|apenas)\s+(o\s+)?(carro|veiculo|usado|automovel)\b/.test(t)
+  )
+    return "sem entrada (só o veículo na troca)";
   const antes =
     /(?:r\$\s*)?(\d[\d.,]*)\s*(mil|k)?\s*(?:reais\s*)?(?:de |pra |para )?entrada/.exec(
       t,
@@ -281,8 +299,11 @@ export function extrairDados(
       : /troc/.test(t)
         ? texto.trim().slice(0, 100)
         : "";
+  const cpf = acharCpf(texto);
   return {
-    cpf: acharCpf(texto),
+    cpf,
+    // Parece um CPF (com pontos/traço, ou resposta à pergunta do CPF), mas não passou nos dígitos.
+    cpfInvalido: !cpf && pareceCpf(texto, perguntou(perguntaAnterior, "cpf")),
     nascimento: acharNascimento(texto, agora),
     entrada: acharEntrada(texto, perguntou(perguntaAnterior, "entrada")),
     pagamento: acharPagamento(texto),
@@ -311,16 +332,19 @@ export function fichaDaConversa(
   const pedidosNaJanela: Partial<Record<Campo, number>> = {};
   let doCliente = 0;
   let anterior = "";
+  // Itens que a última mensagem da IA perguntou e ainda esperam a resposta do cliente.
+  let aguardando: Campo[] = [];
+  const GRUPO_FINANCIAMENTO: Campo[] = ["cpf", "nascimento", "cnh", "entrada"];
   for (const m of conversa) {
     if (m.role === "assistant") {
-      for (const c of CAMPOS)
-        if (perguntou(m.content, c))
-          pedidosNaJanela[c] = (pedidosNaJanela[c] ?? 0) + 1;
+      aguardando = CAMPOS.filter((c) => perguntou(m.content, c));
       anterior = m.content;
       continue;
     }
     doCliente++;
     const x = extrairDados(m.content, anterior, agora);
+    if (x.cpf) f.cpfInvalido = false;
+    else if (x.cpfInvalido) f.cpfInvalido = true;
     f.cpf = x.cpf || f.cpf;
     f.nascimento = x.nascimento || f.nascimento;
     f.entrada = x.entrada || f.entrada;
@@ -331,6 +355,19 @@ export function fichaDaConversa(
     for (const p of x.pagamento)
       if (!f.pagamento.includes(p)) f.pagamento.push(p);
     if (x.recusou) f.recusou = true;
+    // Um pedido só conta como "ignorado" depois que o cliente respondeu SEM dar nada do assunto:
+    // mandar um dado (mesmo um CPF errado) mostra que ele está colaborando.
+    const colaborou = !!(
+      x.cpf ||
+      x.cpfInvalido ||
+      x.nascimento ||
+      x.cnh ||
+      x.entrada
+    );
+    for (const c of aguardando)
+      if (!(colaborou && GRUPO_FINANCIAMENTO.includes(c)))
+        pedidosNaJanela[c] = (pedidosNaJanela[c] ?? 0) + 1;
+    aguardando = [];
   }
   f.mensagensCliente = Math.max(f.mensagensCliente, doCliente);
   for (const c of CAMPOS)
@@ -344,6 +381,8 @@ export const financiado = (f: FichaLead) => f.pagamento.includes("financiado");
 /** Troca "informada" quando há modelo/ano (ex.: "Gol 2015"), não só a palavra "troca". */
 const temDetalheDeTroca = (s: string) =>
   /\b(19|20)\d{2}\b/.test(s) || palavrasDe(s) >= 5;
+/** Quantas vezes a IA pergunta o mesmo item antes de dispensá-lo (o cliente pode tirar uma dúvida no meio). */
+export const MAX_PEDIDOS = 3;
 
 /** A coleta começa quando o cliente demonstrou interesse (carro, forma de pagamento ou 2+ mensagens). */
 export const coletaAtiva = (f: FichaLead) =>
@@ -367,9 +406,11 @@ export function ausentes(f: FichaLead): Campo[] {
   return falta;
 }
 
-/** Itens ainda a perguntar: os ausentes que a IA perguntou menos de 2 vezes. */
+/** Itens ainda a perguntar: os ausentes que a IA perguntou menos de `MAX_PEDIDOS` vezes. */
 export const pendentes = (f: FichaLead): Campo[] =>
-  coletaAtiva(f) ? ausentes(f).filter((c) => (f.pedidos[c] ?? 0) < 2) : [];
+  coletaAtiva(f)
+    ? ausentes(f).filter((c) => (f.pedidos[c] ?? 0) < MAX_PEDIDOS)
+    : [];
 
 const ROTULO: Record<Campo, string> = {
   regiao: "região",
@@ -382,6 +423,29 @@ const ROTULO: Record<Campo, string> = {
   horario: "melhor horário para a ligação",
 };
 export const rotulos = (campos: Campo[]) => campos.map((c) => ROTULO[c]);
+
+/** Itens da qualificação que a ficha já tem preenchidos (a IA não deve perguntar de novo). */
+export const informados = (f: FichaLead): Campo[] =>
+  CAMPOS.filter((c) => {
+    switch (c) {
+      case "regiao":
+        return !!f.regiao;
+      case "pagamento":
+        return f.pagamento.length > 0;
+      case "troca":
+        return temDetalheDeTroca(f.troca);
+      case "cpf":
+        return !!f.cpf;
+      case "nascimento":
+        return !!f.nascimento;
+      case "cnh":
+        return !!f.cnh;
+      case "entrada":
+        return !!f.entrada;
+      default:
+        return !!f.horarioLigacao;
+    }
+  });
 
 /** Já deu para entender a situação do cliente (nada mais a perguntar)? */
 export const coletaCompleta = (f: FichaLead) =>
@@ -407,23 +471,28 @@ export function motivoDaTransferencia(
   if (f.recusou) return "o cliente preferiu não passar os dados por mensagem";
   if (coletaAtiva(f) && ausentes(f).length === 0) return "dados completos";
   if (coletaAtiva(f) && pendentes(f).length === 0)
-    return "o cliente não respondeu a alguns itens (perguntados 2 vezes)";
+    return "o cliente não respondeu a alguns itens (perguntados 3 vezes)";
   return "a IA encaminhou o atendimento";
 }
 
 // ------------------------------------------------------------------ frases e avisos
 /** Os itens do financiamento viram uma só pergunta (a frase do usuário, mais CNH e entrada). */
 function fraseDoFinanciamento(f: FichaLead, campos: Campo[]): string {
-  const docs = [
-    campos.includes("cpf") && "CPF",
-    campos.includes("nascimento") && "data de nascimento",
-  ].filter(Boolean);
+  const semCpf = campos.includes("cpf");
+  const semNasc = campos.includes("nascimento");
+  // Concordância: "do seu CPF", "da sua data de nascimento", "do seu CPF e data de nascimento".
+  const docs =
+    semCpf && semNasc
+      ? "do seu CPF e data de nascimento"
+      : semCpf
+        ? "do seu CPF"
+        : semNasc
+          ? "da sua data de nascimento"
+          : "";
   const partes: string[] = [];
-  if (docs.length)
+  if (docs)
     partes.push(
-      "Consigo fazer uma análise de crédito pra você: preciso do seu " +
-        docs.join(" e ") +
-        ".",
+      "Consigo fazer uma análise de crédito pra você: preciso " + docs + ".",
     );
   else partes.push("Para a análise de crédito:");
   if (campos.includes("cnh")) partes.push("Você possui CNH?");
@@ -442,6 +511,13 @@ export function proximaPergunta(
     const grupo = pend.filter((c) =>
       ["cpf", "nascimento", "cnh", "entrada"].includes(c),
     );
+    // CPF digitado errado: pede só para conferir (não repete o pedido completo).
+    if (f.cpfInvalido && grupo.includes("cpf"))
+      return {
+        campos: ["cpf"],
+        frase:
+          "Não consegui validar esse CPF. Pode conferir e me enviar de novo?",
+      };
     return { campos: grupo, frase: fraseDoFinanciamento(f, grupo) };
   }
   const frases: Partial<Record<Campo, string>> = {
@@ -466,7 +542,7 @@ export function avisoDeColeta(
   const prox = proximaPergunta(f);
   if (!prox)
     return `\n\nATENÇÃO (qualificação): já temos todos os dados do cliente. Agradeça em 1 frase, diga que um consultor vai ligar${f.horarioLigacao ? ` (${f.horarioLigacao})` : ""} e inclua [TRANSFERIR]. Não faça mais perguntas e não ofereça visita.`;
-  return `\n\nATENÇÃO (qualificação): antes de passar ao consultor, entenda a situação do cliente. Responda a dúvida dele em no máximo 1 frase e faça UMA pergunta, com estas palavras: "${prox.frase}" NÃO inclua [TRANSFERIR] agora. NÃO ofereça nem agende visita: o consultor liga primeiro e combina a visita depois.`;
+  return `\n\nATENÇÃO (qualificação): o cliente ainda está sendo atendido pela IA. Responda a dúvida dele em no máximo 1 ou 2 frases, SEM fazer perguntas: o sistema acrescenta sozinho a próxima pergunta ("${prox.frase}"). Não repita essa pergunta. NÃO inclua [TRANSFERIR] agora. NÃO ofereça nem agende visita: o consultor liga primeiro e combina a visita depois.`;
 }
 
 const PAGAMENTO_ROTULO: Record<Pagamento, string> = {
@@ -478,7 +554,9 @@ const PAGAMENTO_ROTULO: Record<Pagamento, string> = {
 
 /** Bloco "o que já sabemos" para o prompt (CPF e nascimento só como "informado"). */
 export function blocoFicha(f: FichaLead): string {
-  const dispensados = ausentes(f).filter((c) => (f.pedidos[c] ?? 0) >= 2);
+  const dispensados = ausentes(f).filter(
+    (c) => (f.pedidos[c] ?? 0) >= MAX_PEDIDOS,
+  );
   const linhas = [
     f.veiculo && `- Carro de interesse: ${f.veiculo}`,
     f.regiao && `- Região: ${f.regiao}`,
@@ -539,9 +617,19 @@ export function resumoParaSdr(
 
 // ------------------------------------------------------------------ máscara
 /** Troca CPF por "[CPF informado]" e, se `datas`, datas por "[data de nascimento informada]". */
-export function mascarar(texto: string, datas = false): string {
+export function mascarar(
+  texto: string,
+  datas = false,
+  cpfQualquer = false,
+): string {
+  // CPF válido sempre; também o que tem cara de CPF (pontos/traço, ou 11 dígitos logo após o pedido do CPF),
+  // porque um CPF digitado errado continua sendo dado pessoal.
   let t = texto.replace(CPF_RE, (m, a, b, c, d) =>
-    cpfValido(a + b + c + d) ? "[CPF informado]" : m,
+    cpfValido(a + b + c + d) ||
+    /[.-]/.test(m) ||
+    (cpfQualquer && /^\d{11}$/.test(m.replace(/\s/g, "")))
+      ? "[CPF informado]"
+      : m,
   );
   if (datas)
     t = t.replace(DATA_RE, (m) =>
@@ -555,7 +643,45 @@ export function mascararConversa(conversa: MensagemIa[]): MensagemIa[] {
   let anterior = "";
   return conversa.map((m) => {
     const datas = /nasc/.test(sem(anterior)) || /nasc/.test(sem(m.content));
+    const cpfQualquer = perguntou(anterior, "cpf");
     anterior = m.content;
-    return { ...m, content: mascarar(m.content, datas) };
+    return { ...m, content: mascarar(m.content, datas, cpfQualquer) };
   });
+}
+
+/**
+ * Texto de uma resposta que transfere: sem perguntas (a conversa vai para o consultor) e sempre dizendo
+ * que um consultor vai ligar, mesmo que o modelo tenha esquecido.
+ */
+export function fecharTransferencia(texto: string, f: FichaLead): string {
+  const resposta = texto
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((s) => s.trim())
+    .filter((s) => s && !s.includes("?"))
+    .join(" ");
+  if (/consultor|ligar|ligacao|ligação/i.test(resposta)) return resposta;
+  const quando = f.horarioLigacao ? ` (${f.horarioLigacao})` : "";
+  const fecho = `Combinado! Um consultor vai te ligar${quando} para continuar o seu atendimento.`;
+  return resposta ? `${resposta}\n\n${fecho}` : fecho;
+}
+
+/** A IA fez pergunta sobre este item da qualificação? (para a auditoria) */
+export const perguntouCampo = (texto: string, campo: Campo) =>
+  perguntou(texto, campo);
+
+/** A mensagem da IA é uma pergunta da qualificação (então a resposta do cliente é dado, não um carro)? */
+export const perguntouQualificacao = (anterior: string) =>
+  CAMPOS.some((c) => perguntou(anterior, c));
+
+/**
+ * Junta a resposta do modelo com a próxima pergunta da qualificação: tira as frases com "?" que o modelo
+ * tenha escrito (quem pergunta é o sistema, sempre na ordem certa) e acrescenta a pergunta.
+ */
+export function anexarPergunta(texto: string, frase: string): string {
+  const resposta = texto
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((s) => s.trim())
+    .filter((s) => s && !s.includes("?"))
+    .join(" ");
+  return resposta ? `${resposta}\n\n${frase}` : frase;
 }

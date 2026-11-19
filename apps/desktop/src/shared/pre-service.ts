@@ -13,6 +13,7 @@ import {
   avisoDeColeta,
   blocoFicha,
   pediuHumano,
+  perguntouQualificacao,
   type FichaLead,
 } from "./lead-profile";
 
@@ -95,6 +96,10 @@ export const CONFIG_PADRAO: ConfigIa = {
   usarHistoricoCrm: true,
 };
 
+/** Texto padrão do financiamento até a 1.0.20: quem ainda o usa (sem edição) passa para o novo. */
+export const FINANCIAMENTO_ANTERIOR =
+  "Trabalhamos com financiamento pelos principais bancos; as condições dependem da análise de crédito.";
+
 export const LOJA_PADRAO: LojaIa = {
   nome: "Soul Cars",
   endereco: "Av. São Miguel, 8999",
@@ -103,7 +108,7 @@ export const LOJA_PADRAO: LojaIa = {
   telefone: "",
   site: "",
   financiamento:
-    "Trabalhamos com financiamento pelos principais bancos; as condições dependem da análise de crédito.",
+    "Trabalhamos com financiamento; a análise de crédito é feita pelo nosso sistema e as condições dependem do seu score.",
   troca: "Aceitamos seu usado na troca, mediante avaliação presencial.",
   extra: "",
 };
@@ -158,6 +163,7 @@ export const REGRAS_DE_ENCAMINHAMENTO = `REGRAS DE ENCAMINHAMENTO (valem mesmo q
 - Você NÃO calcula parcelas, taxas, avaliação de troca, desconto, quilometragem, laudo nem histórico do carro. Se o cliente perguntar algo que o CONTEXTO não traz, diga que o consultor confirma na ligação e continue a conversa. Nunca prometa calcular nem simular.
 - Quando o contexto trouxer o aviso ATENÇÃO (qualificação), siga-o: responda a dúvida em 1 frase e faça a pergunta indicada, uma por mensagem. Só inclua [TRANSFERIR] quando esse aviso mandar ou quando o cliente pedir para falar com alguém.
 - Ao transferir, responda em 1 ou 2 frases dizendo que um consultor vai ligar. Não invente prazo.
+- Análise de crédito: se o cliente perguntar o que é, explique que é feita pelo NOSSO SISTEMA, que consulta o score do cliente para definir as melhores condições de financiamento. Nunca diga que é um processo dos bancos e nunca use a palavra "histórico": diga "score". Se perguntarem para que serve o CPF: é para a análise de crédito no nosso sistema.
 - Pergunta geral ("vocês financiam?", "aceitam troca?"): responda com o texto de FINANCIAMENTO ou TROCA do contexto, sem [TRANSFERIR], e siga a qualificação.
 - Cumprimento sozinho ("oi", "olá", "bom dia"): cumprimente de volta e pergunte no que pode ajudar. Não responda "sem problemas". Apresente-se (nome e loja) só na primeira mensagem da conversa.
 - Não ofereça visita e não termine toda mensagem com a mesma pergunta: responda primeiro o que foi perguntado e varie a frase.`;
@@ -372,6 +378,37 @@ function decidir(placar: Map<VeiculoIa, number>): Escolha {
 /** Veículo citado no texto ("foto do Renagade", "o de 66.900"). */
 export const veiculoCitado = (veiculos: VeiculoIa[], texto: string) =>
   decidir(pontuar(veiculos, texto));
+
+/**
+ * Carro que o cliente citou nesta mensagem, para a ficha. Mais rígido que `veiculoCitado`: ignora a
+ * resposta a uma pergunta da qualificação ("Somente o carro na troca" não é o Sorento), só troca o carro
+ * da ficha por uma palavra EXATA do modelo (ou preço), e a aproximação (erro de digitação) só preenche
+ * quando a ficha ainda não tem carro.
+ */
+export function veiculoMencionado(
+  veiculos: VeiculoIa[],
+  texto: string,
+  perguntaAnterior: string,
+  carroDaFicha: string,
+): VeiculoIa | null {
+  if (perguntouQualificacao(perguntaAnterior)) return null;
+  const ditas = new Set(palavras(texto));
+  const exato = veiculos
+    .map((v) => ({
+      v,
+      s: palavrasDoVeiculo(v).reduce(
+        (n, { t, peso }) => n + (ditas.has(t) ? peso : 0),
+        0,
+      ),
+    }))
+    .filter((x) => x.s >= 3)
+    .sort((a, b) => b.s - a.s);
+  if (exato.length && (exato.length === 1 || exato[0].s > exato[1].s))
+    return exato[0].v;
+  if (carroDaFicha) return null;
+  const escolha = veiculoCitado(veiculos, texto);
+  return escolha.tipo === "um" ? escolha.veiculo : null;
+}
 
 /** O texto cita algo que parece um carro, mas que não está no estoque? (aí perguntamos, sem chutar) */
 export function citaDesconhecido(veiculos: VeiculoIa[], texto: string) {

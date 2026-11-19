@@ -33,7 +33,8 @@ import {
   planoDeFotos,
   preencher,
   respostaDeAbertura,
-  veiculoCitado,
+  veiculoMencionado,
+  FINANCIAMENTO_ANTERIOR,
   voltouParaIa,
   variaveis,
   type ConfigIa,
@@ -47,7 +48,12 @@ import {
 import { lerKmEValor } from "../../shared/des-md";
 import {
   FICHA_VAZIA,
+  anexarPergunta,
+  coletaAtiva,
   coletaCompleta,
+  fecharTransferencia,
+  informados,
+  proximaPergunta,
   fichaCompativel,
   fichaDaConversa,
   mascarar,
@@ -92,6 +98,8 @@ type EstadoChat = {
   gatilhoRetirado?: boolean;
   /** O que a IA já sabe do lead (CPF cifrado). */
   ficha?: FichaLead;
+  /** Só as mensagens depois deste instante contam para a ficha (começa um novo ciclo ao devolver o lead à IA). */
+  fichaDesde?: number;
 };
 export type Rascunho = {
   id: string;
@@ -134,7 +142,13 @@ function carregar(): Estado {
   }
   estado = {
     config: { ...CONFIG_PADRAO, ...lido.config },
-    loja: { ...LOJA_PADRAO, ...lido.loja },
+    loja: {
+      ...LOJA_PADRAO,
+      ...lido.loja,
+      ...(lido.loja?.financiamento === FINANCIAMENTO_ANTERIOR
+        ? { financiamento: LOJA_PADRAO.financiamento }
+        : {}),
+    },
     persona:
       !lido.persona || PERSONAS_ANTERIORES.includes(lido.persona)
         ? PERSONA_PADRAO
@@ -226,6 +240,7 @@ function auditarTurno(a: {
             coleta: a.ficha && {
               financiado: a.ficha.pagamento.includes("financiado"),
               pendentes: pendentes(a.ficha),
+              informados: informados(a.ficha),
               podeTransferir: podeTransferir(a.ficha),
             },
           })
@@ -493,11 +508,21 @@ async function responder(conversa: MensagemIa[], lead: Lead) {
   const lido = interpretarResposta(bruto, conversa, {
     bloquearTransferencia: !!f && !podeTransferir(f, { pediuHumano: humano }),
   });
-  // Qualificação completa: a transferência não depende de o modelo lembrar da tag.
-  const completo = !!f && !f.entregue && coletaCompleta(f);
+  // Qualificação completa, cliente que recusa ou que pede alguém: a transferência não depende de o modelo lembrar da tag.
+  const forcar =
+    !!f && !f.entregue && (coletaCompleta(f) || f.recusou || humano);
+  const transferir = lido.transferir || (forcar && !lido.encerrar);
+  // Quem pergunta é o sistema (sempre o item certo, na ordem): o texto do modelo fica só com a resposta.
+  let texto = lido.texto;
+  const proxima =
+    f && !f.entregue && coletaAtiva(f) ? proximaPergunta(f) : null;
+  if (f && transferir) texto = fecharTransferencia(texto, f);
+  else if (proxima && !lido.encerrar && (plano?.fotos.length ?? 0) === 0)
+    texto = anexarPergunta(texto, proxima.frase);
   return {
     ...lido,
-    transferir: lido.transferir || (completo && !lido.encerrar),
+    texto,
+    transferir,
     plano,
     usados,
     auditoria: { bruto, uso, latenciaMs: Date.now() - inicio, veiculos },
@@ -618,9 +643,12 @@ async function entregar(r: Rascunho) {
   const c = await cliente();
   const st = e.chats[r.chatId];
   if (!st) throw new Error("Lead não encontrado.");
-  // Nunca transfere na primeira mensagem da IA: o lead precisa ter conversado antes.
+  // Não transfere na primeira mensagem da IA (o lead precisa ter conversado antes), salvo se ele mesmo pediu para falar com alguém.
+  const ultimoDoLead = st.historico.filter((m) => m.role === "user").at(-1);
   const transferir =
-    r.transferir && st.historico.some((m) => m.role === "assistant");
+    r.transferir &&
+    (st.historico.some((m) => m.role === "assistant") ||
+      pediuHumano(ultimoDoLead?.content ?? ""));
   // Texto primeiro: as imagens demoram mais no uTalk e chegariam na frente.
   await c.enviar(r.chatId, r.texto);
   let enviadas = 0;
@@ -699,6 +727,8 @@ export async function rodar() {
       if (voltouParaIa(st)) {
         st.status = "ativo";
         st.vistoAte = Date.now(); // só responde o que chegar daqui em diante
+        st.ficha = undefined; // novo ciclo: a ficha do atendimento anterior não vale
+        st.fichaDesde = Date.now();
         registrar(
           "crm",
           `${st.nome}: voltou para a IA (etiqueta de gatilho recolocada)`,
@@ -725,7 +755,16 @@ export async function rodar() {
         : [];
       if (novas.length) st.vistoAte = horaDa(novas[novas.length - 1]);
       // O CPF e a data de nascimento ficam só na ficha (cifrada): o modelo, o histórico e a auditoria veem a versão mascarada.
-      st.ficha = atualizarFicha(st.ficha, conversa);
+      const doCiclo = msgs.filter((m) => horaDa(m) > (st.fichaDesde ?? 0));
+      st.ficha = atualizarFicha(
+        st.ficha,
+        novas.length
+          ? doCiclo.map((m) => ({
+              role: doContato(m) ? ("user" as const) : ("assistant" as const),
+              content: textoDa(m),
+            }))
+          : [],
+      );
       const mascaradas = mascararConversa(
         msgs.map((m) => ({
           role: doContato(m) ? ("user" as const) : ("assistant" as const),
@@ -764,10 +803,19 @@ export async function rodar() {
           ficha: st.ficha,
         });
         for (const m of novas) {
-          const achado = veiculoCitado(r.auditoria.veiculos, textoDa(m));
-          if (achado.tipo === "um" && st.ficha)
-            st.ficha.veiculo =
-              achado.veiculo.marca + " " + achado.veiculo.modelo;
+          const i = msgs.indexOf(m);
+          const anteriorIa = msgs
+            .slice(0, i)
+            .reverse()
+            .find((x) => !doContato(x));
+          const carro = veiculoMencionado(
+            r.auditoria.veiculos,
+            textoDa(m),
+            anteriorIa ? textoDa(anteriorIa) : "",
+            st.ficha?.veiculo ?? "",
+          );
+          if (carro && st.ficha)
+            st.ficha.veiculo = carro.marca + " " + carro.modelo;
         }
       } catch (erro) {
         auditarTurno({
@@ -1017,6 +1065,8 @@ export async function reativar(chatId: string) {
       () => {},
     );
   st.status = "ativo";
+  st.ficha = undefined; // novo ciclo de atendimento
+  st.fichaDesde = Date.now();
   registrar("crm", `${st.nome}: devolvido para a IA`);
   return painel();
 }
