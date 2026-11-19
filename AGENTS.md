@@ -9,7 +9,7 @@ App desktop privado da Atto Comunicação para a revenda SOUL Cars: estoque e ve
 - Não varrer o repositório; ir direto aos arquivos do mapa abaixo e aos testes do mesmo domínio.
 - Ignorar `node_modules/`, `out/`, `dist/`, `apps/engine/.venv/`, `apps/engine/tessdata/`, `*.lock`, `package-lock.json`, fontes/binários em `public/creative-editor/assets/`.
 - Protótipos antigos ficam em `../_legado/` (fora do git): não ler nem portar sem pedido explícito.
-- Ler `docs/` só quando a tarefa tocar o assunto: visual → `DESIGN.md`; arquitetura → `docs/architecture/`; dados/backup → `docs/guides/data-and-backup.md`; CRM/uTalk → `docs/crm/`; vídeo → `docs/video/`; Instagram → `docs/guides/instagram.md`; releases → `docs/architecture/launcher-and-updates.md`.
+- Ler `docs/` só quando a tarefa tocar o assunto: visual → `DESIGN.md`; arquitetura → `docs/architecture/`; dados/backup → `docs/guides/data-and-backup.md`; CRM/uTalk → `docs/crm/`; vídeo → `docs/video/`; IA/testes da IA → `docs/ai/lab.md`; Instagram → `docs/guides/instagram.md`; releases → `docs/architecture/launcher-and-updates.md`.
 - Vários docs (`docs/development/vibe-coding-guide.md`, `handoff-context.md`, `architecture-and-migration.md`) ainda citam nomes antigos em português (`ipc.ts`, `esquema.ts`, `Ficha.tsx`, `criativo/`…). **O mapa deste arquivo prevalece**; confira o caminho real antes de seguir um doc.
 
 ## Stack
@@ -67,7 +67,8 @@ Caminhos relativos a `apps/desktop/src/`.
 | Soul IA (memória, desempenho) | `pages/leads/*`, `main/soul-ai/*` (banco próprio `soul-ia.db`), engine `spreadsheets/soul_ai_sheet.py` |
 | Meta Ads (Campanhas) | `pages/meta-ads/MetaAdsPage.tsx`, `shared/meta-ads.ts`, `main/meta/graph-api.ts`, `meta.ts` |
 | Funil Meta → CRM | `pages/funnel/FunnelPage.tsx`, `shared/funnel.ts`, `main/funnel/funnel.ts` |
-| Pré-atendimento IA | `pages/pre-service/PreServicePage.tsx`, `shared/pre-service.ts`, `main/pre-service/pre-service.ts`, `llm.ts`, `utalk-writer.ts`; evals em `apps/desktop/tests/ai-evals/` |
+| Pré-atendimento IA | `pages/pre-service/PreServicePage.tsx`, `shared/pre-service.ts`, `shared/pre-service-pipeline.ts` (pós-processamento), `shared/pre-service-guard.ts` (anti-duplicação), `main/pre-service/pre-service.ts`, `llm.ts`, `utalk-writer.ts`; evals em `apps/desktop/tests/ai-evals/` |
+| Laboratório de testes da IA | `pages/pre-service/lab/LabTab.tsx`, `renderer/src/lib/lab-client.ts`, `main/lab/{runner,lab,history-analysis}.ts`, `shared/lab.ts`, `shared/lab-corpus.ts`; lista em `docs/ai/lab-cenarios.md`; skills `/ia-lab` e `/ia-corpus` |
 | Finanças | `pages/finance/FinancePage.tsx`, `lib/finance.ts`, `main/finance/finance.ts`; engine `spreadsheets/finance_sheet.py` |
 | Configurações e conexões | `pages/settings/*`, `main/crm/soul-app-import.ts` |
 | Launcher | `apps/launcher/src/{main,preload,renderer,shared}`; contrato em `shared/api.ts`, manifesto em `shared/manifest.ts` |
@@ -118,7 +119,7 @@ Antes do commit: `npm run lint && npm run typecheck && npm test` (e `npm run bui
 | IPC, preload, editor, disco | `npm run smoke` |
 | Instagram | `npm run smoke:instagram` |
 | Motor Python | `npm run test:engine` |
-| Pré-atendimento IA | `npm run eval:ai` (Ollama aberto) ou `npm run eval:ai:groq` |
+| Pré-atendimento IA | `npm run lab:ai:offline` (sem modelo; `npm run lab:corpus` se mexeu no corpus) e `npm run eval:ai` (Ollama aberto) ou `npm run eval:ai:groq` |
 | Launcher | `npm run e2e:launcher` (exige `npm run package:desktop`) |
 
 Mudanças só em documentação não precisam de novas suítes. Não afirme que um teste passou sem executá-lo.

@@ -6,6 +6,7 @@
  */
 import { normalizar, pediuFoto, type VeiculoIa } from "./pre-service";
 import { perguntouCampo, type Campo } from "./lead-profile";
+import { achados } from "./pre-service-guard";
 
 /** Sinais de alerta que a auditoria sabe detectar. */
 export type SinalAuditoria =
@@ -25,6 +26,11 @@ export type SinalAuditoria =
   | "dispensou-sem-recusa"
   | "perguntou-dado-ja-informado"
   | "perguntou-regiao-sem-carro"
+  | "quase-repetida"
+  | "frase-duplicada"
+  | "palavra-repetida"
+  | "cpf-em-claro"
+  | "texto-sujo"
   | "erro";
 
 /** Texto curto de cada sinal, para a tela. */
@@ -52,6 +58,11 @@ export const ROTULO_SINAL: Record<SinalAuditoria, string> = {
     "Perguntou a região antes de confirmar o carro de interesse",
   "perguntou-dado-ja-informado":
     "Perguntou de novo algo que o cliente já respondeu",
+  "quase-repetida": "Resposta quase igual a uma das últimas da IA",
+  "frase-duplicada": "Frase repetida dentro da mesma resposta",
+  "palavra-repetida": 'Palavra repetida em seguida (ex.: "de de")',
+  "cpf-em-claro": "CPF do cliente escrito na resposta",
+  "texto-sujo": "Espaços ou pontuação duplicados no texto",
   erro: "Erro ao responder ou entregar",
 };
 
@@ -246,6 +257,11 @@ export function avaliarTurno(e: EntradaAvaliacao): SinalAuditoria[] {
     DIZ_QUE_ENVIOU.test(e.texto.toLowerCase())
   )
     sinais.push("foto-sem-plano");
+
+  // Repetições e sujeira de texto (guarda anti-duplicação); a igualdade exata já foi sinalizada acima.
+  for (const a of achados(e.texto, e.anteriores))
+    if (a !== "quase-repetida" || !sinais.includes("resposta-repetida"))
+      sinais.push(a);
 
   return sinais;
 }

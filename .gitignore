@@ -33,3 +33,7 @@ apps/engine/video/assets/TRILHA.*
 .restructure/
 .ruff_cache/
 .promptfoo/
+
+# Resultados locais dos evals e do Laboratório da IA (podem conter respostas de modelo/dados de teste)
+apps/desktop/resultado-eval.*
+lab-ia/

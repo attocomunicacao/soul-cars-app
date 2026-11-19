@@ -397,6 +397,33 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
     pre_etiquetas: vazio,
     pre_modelos: vazio,
     pre_auditoria: { args: { limite: opcional(inteiro) } },
+    // ---- Laboratório de testes da IA ----
+    lab_cenarios: vazio,
+    lab_rodar: {
+      args: {
+        ids: opcional(lista(texto({ max: 200 }), 5000)),
+        categoria: opcional(texto({ max: 200 })),
+        repeticoes: opcional(inteiro),
+      },
+    },
+    lab_cancelar: vazio,
+    lab_execucoes: vazio,
+    lab_execucao: { args: { id: texto({ max: 100 }) } },
+    lab_avaliar: {
+      args: {
+        execucaoId: texto({ max: 100 }),
+        cenarioId: texto({ max: 200 }),
+        repeticao: inteiro,
+        turno: inteiro,
+        nota: inteiro,
+        etiquetas: lista(texto({ max: 50 }), 20),
+        comentario: texto({ max: 1000, vazio: true }),
+      },
+    },
+    lab_avaliacoes: { args: { execucaoId: opcional(texto({ max: 100 })) } },
+    lab_relatorio: { args: { execucaoId: texto({ max: 100 }) } },
+    lab_analisar_historico: vazio,
+    lab_abrir_pasta: vazio,
     estoque_vitrine: vazio,
     financas_estado: vazio,
     financas_vincular: { args: { origem: caminhoQualquer } },

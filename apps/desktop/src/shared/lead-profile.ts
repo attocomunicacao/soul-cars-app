@@ -257,7 +257,7 @@ const DUVIDA =
 const RECUSA =
   /nao (quero|vou|posso|prefiro) (passar|informar|dar|mandar|enviar)|prefiro nao (passar|informar|dar)|so (com|por) (o )?(consultor|vendedor|ligacao)/;
 const HUMANO =
-  /(falar|conversar|atendimento) com (um |uma |o |a )?(humano|atendente|vendedor|consultor|pessoa|gerente)|\bme (liga|ligue)\b|pode (me )?ligar|quero (que )?(voces |vcs )?(me )?(ligu?e|ligar)|prefiro (falar|ligacao)/;
+  /(falar|conversar|atendimento) com (um |uma |o |a )?(humano|atendente|vendedor|consultor|pessoa|gerente)|\bme (liga|ligue)\b|pode (me )?ligar|quero (que )?(voces |vcs )?(me )?(ligu?e|ligar)|prefiro (falar|ligacao)|\b(chama|chame|chamar)\s+(um |uma |o |a )?(humano|atendente|vendedor|consultor|gerente|alguem|pessoa)|\b(passa|passe|passar|transfere|transfira)\s+(pra|para|pro|p\/)?\s*(o |a |um |uma )?(humano|atendente|vendedor|consultor|gerente|alguem|pessoa)|falar com alguem|(alguem|pessoa|gente) de verdade|\bquero (um |uma )?(humano|atendente|vendedor|consultor)\b/;
 
 /** O cliente pediu para falar com alguém ou receber uma ligação? */
 export const pediuHumano = (texto: string) => HUMANO.test(sem(texto));

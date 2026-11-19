@@ -91,3 +91,7 @@ Ordem sugerida:
 ## Seção unificada: Leads e Soul IA
 
 A aba **03 · Leads e Soul IA** reúne duas abas internas: **Painel** (visão geral do CRM pelas etiquetas, seguida do desempenho, com gráficos calculados pela memória: conversas por dia, espera pela 1ª resposta, horário, atendente e anúncio de origem) e **Memória (Soul IA)**, à parte por tratar de dados sensíveis (sincronização, planilha e padrão de atendimento). O desempenho usa `soulia_desempenho` (`apps/desktop/src/main/soul-ai/performance.ts`), só leitura da memória local, com cache até a memória mudar.
+
+## Histórico completo e o Laboratório da IA
+
+A sincronização da memória (`soul-ia.db`) também alimenta o Laboratório de testes da IA (Pré-atendimento › Laboratório): o botão **Sincronizar histórico** usa o mesmo comando `soulia_sincronizar`, e **Analisar histórico** gera um relatório anonimizado. Ver [../ai/lab.md](../ai/lab.md).
