@@ -39,6 +39,8 @@ export type FichaLead = {
   horarioLigacao: string;
   /** Quantas vezes a IA já perguntou cada item sem receber (2 = dispensado). */
   pedidos: Partial<Record<Campo, number>>;
+  /** Quantas vezes a IA fez a pergunta de cada item (inclusive as respondidas com uma dúvida). */
+  perguntados: Partial<Record<Campo, number>>;
   /** Mensagens do cliente vistas (a coleta só começa depois de algum interesse). */
   mensagensCliente: number;
   /** O cliente se recusou a passar os dados. */
@@ -60,6 +62,7 @@ export const FICHA_VAZIA: FichaLead = {
   cnh: "",
   horarioLigacao: "",
   pedidos: {},
+  perguntados: {},
   mensagensCliente: 0,
   recusou: false,
   entregue: false,
@@ -74,6 +77,7 @@ export function fichaCompativel(bruto: unknown): FichaLead {
     ...(r as Partial<FichaLead>),
     pagamento: Array.isArray(r.pagamento) ? (r.pagamento as Pagamento[]) : [],
     pedidos: (r.pedidos as FichaLead["pedidos"]) ?? {},
+    perguntados: (r.perguntados as FichaLead["perguntados"]) ?? {},
   };
   if (!f.pagamento.length) {
     if (r.formaPagamento === "financiamento") f.pagamento = ["financiado"];
@@ -246,6 +250,10 @@ const perguntou = (anterior: string, campo: Campo) =>
   PERGUNTA[campo].test(sem(anterior));
 
 // ------------------------------------------------------------------ extração
+/** O cliente fez uma pergunta ou pediu explicação (não ignorou o pedido do sistema). */
+const DUVIDA =
+  /\?|\b(pra|para)\s+que\b|\bpor\s*que\b|\bo\s+que\s+(e|eh)\b|\bcomo\s+assim\b|\bnao\s+entendi\b|\bpra\s+que\b/;
+
 const RECUSA =
   /nao (quero|vou|posso|prefiro) (passar|informar|dar|mandar|enviar)|prefiro nao (passar|informar|dar)|so (com|por) (o )?(consultor|vendedor|ligacao)/;
 const HUMANO =
@@ -270,10 +278,14 @@ function acharRegiao(texto: string, anterior: string): string {
       t,
     );
   if (daqui && palavrasDe(daqui[1]) <= 4) return daqui[1].trim();
+  // "ok", "sim", "depois"… não são uma região.
+  const SEM_REGIAO =
+    /^(ok|sim|nao|n|ta|hum|uhum|blz|beleza|certo|depois|talvez|agora|tanto faz|nao sei)\b/;
   if (
     perguntou(anterior, "regiao") &&
     t &&
     !/[?\d]/.test(t) &&
+    !SEM_REGIAO.test(sem(t)) &&
     palavrasDe(t) <= 8 &&
     t.length <= 80
   )
@@ -379,6 +391,7 @@ export function fichaDaConversa(
     ...base,
     pagamento: [...base.pagamento],
     pedidos: { ...base.pedidos },
+    perguntados: { ...base.perguntados },
   };
   const pedidosNaJanela: Partial<Record<Campo, number>> = {};
   let doCliente = 0;
@@ -386,9 +399,12 @@ export function fichaDaConversa(
   // Itens que a última mensagem da IA perguntou e ainda esperam a resposta do cliente.
   let aguardando: Campo[] = [];
   const GRUPO_FINANCIAMENTO: Campo[] = ["cpf", "nascimento", "cnh", "entrada"];
+  const perguntadosNaJanela: Partial<Record<Campo, number>> = {};
   for (const m of conversa) {
     if (m.role === "assistant") {
       aguardando = CAMPOS.filter((c) => perguntou(m.content, c));
+      for (const c of aguardando)
+        perguntadosNaJanela[c] = (perguntadosNaJanela[c] ?? 0) + 1;
       anterior = m.content;
       continue;
     }
@@ -415,14 +431,22 @@ export function fichaDaConversa(
       x.cnh ||
       x.entrada
     );
+    // Uma dúvida ("pra que meu CPF?", "o que é análise de crédito?") também não é pedido ignorado: o cliente
+    // está engajado e merece a resposta antes de a pergunta ser repetida.
+    const duvida = DUVIDA.test(sem(m.content));
     for (const c of aguardando)
-      if (!(colaborou && GRUPO_FINANCIAMENTO.includes(c)))
+      if (!duvida && !(colaborou && GRUPO_FINANCIAMENTO.includes(c)))
         pedidosNaJanela[c] = (pedidosNaJanela[c] ?? 0) + 1;
     aguardando = [];
   }
   f.mensagensCliente = Math.max(f.mensagensCliente, doCliente);
-  for (const c of CAMPOS)
+  for (const c of CAMPOS) {
     f.pedidos[c] = Math.max(f.pedidos[c] ?? 0, pedidosNaJanela[c] ?? 0);
+    f.perguntados[c] = Math.max(
+      f.perguntados[c] ?? 0,
+      perguntadosNaJanela[c] ?? 0,
+    );
+  }
   return f;
 }
 
@@ -563,7 +587,7 @@ export function proximaPergunta(
           "Não consegui validar esse CPF. Pode conferir e me enviar de novo?",
       };
     // A primeira pergunta do financiamento explica o motivo (a frase do usuário), uma só vez.
-    if (!(f.pedidos.cpf ?? 0))
+    if (!(f.perguntados.cpf ?? 0))
       return {
         campos: ["cpf"],
         frase:
@@ -730,6 +754,13 @@ export const perguntouQualificacao = (anterior: string) =>
 const PROMETE_LIGACAO =
   /(consultor|equipe|vendedor)[^.?!]{0,25}(vai|ira|entrara)[^.?!]{0,25}(ligar|ligue|contato)|vai te ligar|ligar (para|pra) voce/;
 
+/** Frase que pede um dado ("preciso do seu CPF", "me informe", "qual é o seu…"). */
+const PEDE_DADO =
+  /\b(preciso|precisamos|precisa|me\s+(informe|envie|passe|mande|diga)|(pode|poderia)\s+(me\s+)?(informar|enviar|passar|mandar)|informe|envie|digite|qual\s+(e|eh|seria)\s+(o|a)\s+seu)\b/;
+/** Frase que explica para que serve o dado (resposta a "para que meu CPF?"). */
+const EXPLICA =
+  /\b(para|pois|porque|serve|utiliza|utilizado|usado|consulta|score)\b|nosso sistema/;
+
 /**
  * Junta a resposta do modelo com a próxima pergunta da qualificação: tira as frases com "?" que o modelo
  * tenha escrito (quem pergunta é o sistema, sempre na ordem certa) e acrescenta a pergunta.
@@ -738,6 +769,7 @@ export function anexarPergunta(
   texto: string,
   frase: string,
   campos: Campo[] = [],
+  confirmar = false,
 ): string {
   // Frases da pergunta do sistema: o modelo costuma copiá-las ("Não consegui validar esse CPF.").
   const dela = frase
@@ -761,8 +793,14 @@ export function anexarPergunta(
         .trim();
       if (dela.some((d) => d.includes(norma) || norma.includes(d)))
         return false;
-      return !campos.some((c) => perguntou(x, c)); // não repete o pedido dos mesmos itens
+      // Some a frase que PEDE o dado (o sistema já pede); a que EXPLICA ("o CPF é usado para a análise…") fica.
+      const pede =
+        PEDE_DADO.test(sem(x)) &&
+        !EXPLICA.test(sem(x)) &&
+        campos.some((c) => perguntou(x, c));
+      return !pede;
     })
     .join(" ");
-  return resposta ? `${resposta}\n\n${frase}` : frase;
+  if (!resposta) return confirmar ? `Anotado!\n\n${frase}` : frase;
+  return `${resposta}\n\n${frase}`;
 }

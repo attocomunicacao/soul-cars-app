@@ -188,7 +188,7 @@ describe("pedidos de dados no financiamento", () => {
     const f = fichaDaConversa(
       [
         ia(pedido),
-        cli("Para que o CPF?"),
+        cli("deixa pra depois"),
         ia(pedido),
         cli("827.948.293-48"), // CPF errado: está colaborando
         ia("Não consegui validar esse CPF. Pode conferir e me enviar de novo?"),
@@ -197,14 +197,14 @@ describe("pedidos de dados no financiamento", () => {
       financiando,
       AGORA,
     );
-    expect(f.pedidos.cpf).toBe(1); // só a dúvida contou
+    expect(f.pedidos.cpf).toBe(1); // só o "deixa pra depois" contou; o CPF errado colaborou
     expect(f.cpf).toBe("52998224725");
   });
   it("pergunta uma coisa de cada vez, na ordem CPF, nascimento, CNH e entrada", () => {
     const campos = (f: FichaLead) => proximaPergunta(f)?.campos;
     const frase = (f: FichaLead) => proximaPergunta(f)?.frase;
     expect(campos(financiando)).toEqual(["cpf"]);
-    const c1 = { ...financiando, cpf: "x", pedidos: { cpf: 1 } };
+    const c1 = { ...financiando, cpf: "x", perguntados: { cpf: 1 } };
     expect(campos(c1)).toEqual(["nascimento"]);
     expect(frase(c1)).toBe("Qual é a sua data de nascimento?");
     const c2 = { ...c1, nascimento: "x" };
@@ -212,7 +212,7 @@ describe("pedidos de dados no financiamento", () => {
     const c3 = { ...c2, cnh: "sim" as const };
     expect(frase(c3)).toBe("Quanto você dispõe de entrada?");
     // depois da primeira pergunta, o CPF não repete a explicação
-    expect(frase({ ...financiando, pedidos: { cpf: 1 } })).toBe(
+    expect(frase({ ...financiando, perguntados: { cpf: 1 } })).toBe(
       "Qual é o seu CPF?",
     );
   });
@@ -422,5 +422,89 @@ describe("lista completa e repetição", () => {
     expect(
       anexarPergunta("A quilometragem o consultor confirma na ligação.", frase),
     ).toContain("confirma na ligação");
+  });
+});
+
+describe("conversa real das 20:14: 'para que meu CPF?'", () => {
+  const explicacao =
+    "O CPF é utilizado para a análise de crédito no nosso sistema, que consulta seu score para definir as melhores condições de financiamento.";
+  const pedido =
+    "Consigo fazer uma análise de crédito pra você. Para começar, qual é o seu CPF?";
+
+  it("a explicação do modelo é mantida e a pergunta vem depois", () => {
+    const texto = anexarPergunta(explicacao, "Qual é o seu CPF?", ["cpf"]);
+    expect(texto).toBe(`${explicacao}\n\nQual é o seu CPF?`);
+    // a frase que PEDE o dado continua sendo removida (o sistema já pede)
+    expect(
+      anexarPergunta("Preciso do seu CPF.", "Qual é o seu CPF?", ["cpf"]),
+    ).toBe("Qual é o seu CPF?");
+  });
+
+  it("três dúvidas seguidas não dispensam o CPF nem viram recusa", () => {
+    const base = {
+      ...financiando,
+      nascimento: "",
+      cnh: "" as const,
+      entrada: "",
+    };
+    const f = fichaDaConversa(
+      [
+        ia(pedido),
+        cli("Pra que meu CPF?"),
+        ia("Qual é o seu CPF?"),
+        cli("Pra que louca? Vc quer meu CPF"),
+        ia("Qual é o seu CPF?"),
+        cli("O que é analise de crédito?"),
+      ],
+      base,
+      AGORA,
+    );
+    expect(f.pedidos.cpf ?? 0).toBe(0);
+    expect(f.recusou).toBe(false);
+    expect(proximaPergunta(f)?.campos).toEqual(["cpf"]);
+    expect(proximaPergunta(f)?.frase).toBe("Qual é o seu CPF?");
+  });
+
+  it("depois de explicar, o CPF enviado entra na ficha e na nota", () => {
+    const f = fichaDaConversa(
+      [
+        ia(pedido),
+        cli("Pra que meu CPF?"),
+        ia(`${explicacao}\n\nQual é o seu CPF?`),
+        cli("529.982.247-25"),
+      ],
+      financiando,
+      AGORA,
+    );
+    expect(f.cpf).toBe("52998224725");
+    expect(proximaPergunta(f)?.campos).toEqual(["nascimento"]);
+  });
+
+  it("modelo calado e cliente só deu o dado: confirma com Anotado", () => {
+    expect(anexarPergunta("", "Você possui CNH?", [], true)).toBe(
+      "Anotado!\n\nVocê possui CNH?",
+    );
+    expect(anexarPergunta("", "Você possui CNH?", [], false)).toBe(
+      "Você possui CNH?",
+    );
+  });
+});
+
+describe("isolamento entre leads", () => {
+  it("fichaDaConversa não altera o objeto base nem a ficha vazia", () => {
+    const antes = JSON.stringify(FICHA_VAZIA);
+    fichaDaConversa(
+      [
+        ia("Qual é o seu CPF?"),
+        cli("não sei"),
+        ia("Qual é o seu CPF?"),
+        cli("hum"),
+      ],
+      FICHA_VAZIA,
+      AGORA,
+    );
+    expect(JSON.stringify(FICHA_VAZIA)).toBe(antes);
+    expect(FICHA_VAZIA.perguntados).toEqual({});
+    expect(FICHA_VAZIA.pedidos).toEqual({});
   });
 });

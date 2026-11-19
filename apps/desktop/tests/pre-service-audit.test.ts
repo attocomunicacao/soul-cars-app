@@ -309,3 +309,25 @@ describe("promessa no meio da coleta e resposta repetida", () => {
     ).not.toContain("resposta-repetida");
   });
 });
+
+describe("dado dispensado", () => {
+  it("alerta quando um item foi dispensado sem o cliente recusar", () => {
+    const coleta = {
+      financiado: true,
+      pendentes: [],
+      podeTransferir: true,
+      informados: [] as never[],
+      dispensados: ["cpf"] as "cpf"[],
+    };
+    expect(avaliarTurno({ ...base, texto: "Ok.", coleta })).toContain(
+      "dispensou-sem-recusa",
+    );
+    expect(
+      avaliarTurno({
+        ...base,
+        texto: "Ok.",
+        coleta: { ...coleta, dispensados: [] },
+      }),
+    ).not.toContain("dispensou-sem-recusa");
+  });
+});

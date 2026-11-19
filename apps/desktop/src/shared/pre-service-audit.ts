@@ -22,6 +22,7 @@ export type SinalAuditoria =
   | "transferiu-sem-coletar"
   | "ofereceu-visita"
   | "resposta-repetida"
+  | "dispensou-sem-recusa"
   | "perguntou-dado-ja-informado"
   | "perguntou-regiao-sem-carro"
   | "erro";
@@ -43,6 +44,8 @@ export const ROTULO_SINAL: Record<SinalAuditoria, string> = {
   "transferiu-sem-coletar":
     "Transferiu antes de coletar os dados (região, pagamento, horário…)",
   "resposta-repetida": "Repetiu a mesma resposta da mensagem anterior",
+  "dispensou-sem-recusa":
+    "Deixou de pedir um dado (3 pedidos sem resposta) sem o cliente recusar",
   "ofereceu-visita":
     "Ofereceu agendar visita (o consultor combina depois da ligação)",
   "perguntou-regiao-sem-carro":
@@ -105,6 +108,8 @@ export type EntradaAvaliacao = {
     podeTransferir: boolean;
     /** Itens que a ficha já tem: a IA não deveria perguntar de novo. */
     informados: Campo[];
+    /** Itens dispensados por falta de resposta (3 pedidos), quando o cliente não recusou. */
+    dispensados?: Campo[];
   };
 };
 
@@ -223,6 +228,7 @@ export function avaliarTurno(e: EntradaAvaliacao): SinalAuditoria[] {
     .filter((s) => s.includes("?"));
   if (perguntas.some((p) => jaSabia.some((c) => perguntouCampo(p, c))))
     sinais.push("perguntou-dado-ja-informado");
+  if (e.coleta?.dispensados?.length) sinais.push("dispensou-sem-recusa");
   // O carro de interesse vem antes da região.
   if (
     e.coleta &&

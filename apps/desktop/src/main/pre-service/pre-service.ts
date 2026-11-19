@@ -52,7 +52,9 @@ import {
   FICHA_VAZIA,
   anexarPergunta,
   coletaAtiva,
+  ausentes,
   coletaCompleta,
+  MAX_PEDIDOS,
   fecharTransferencia,
   informados,
   proximaPergunta,
@@ -243,6 +245,11 @@ function auditarTurno(a: {
               financiado: a.ficha.pagamento.includes("financiado"),
               pendentes: pendentes(a.ficha),
               informados: informados(a.ficha),
+              dispensados: a.ficha.recusou
+                ? []
+                : ausentes(a.ficha).filter(
+                    (c) => (a.ficha?.pedidos[c] ?? 0) >= MAX_PEDIDOS,
+                  ),
               podeTransferir: podeTransferir(a.ficha),
             },
           })
@@ -537,7 +544,15 @@ async function responder(conversa: MensagemIa[], lead: Lead) {
   else if (pediuTodos && !lido.encerrar)
     texto = listaDeVeiculos(veiculos) + (proxima ? `\n\n${proxima.frase}` : "");
   else if (proxima && !lido.encerrar && (plano?.fotos.length ?? 0) === 0)
-    texto = anexarPergunta(texto, proxima.frase, proxima.campos);
+    texto = anexarPergunta(
+      texto,
+      proxima.frase,
+      proxima.campos,
+      // Modelo calado e o cliente só deu o dado (sem perguntar nada): confirma com "Anotado!".
+      !(
+        conversa.filter((m) => m.role === "user").at(-1)?.content ?? ""
+      ).includes("?"),
+    );
   return {
     ...lido,
     texto,
