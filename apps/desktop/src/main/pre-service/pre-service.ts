@@ -33,6 +33,7 @@ import {
   planoDeFotos,
   preencher,
   respostaDeAbertura,
+  veiculoCitado,
   voltouParaIa,
   variaveis,
   type ConfigIa,
@@ -44,6 +45,16 @@ import {
   type VeiculoIa,
 } from "../../shared/pre-service";
 import { lerKmEValor } from "../../shared/des-md";
+import {
+  FICHA_VAZIA,
+  fichaDaConversa,
+  faltando,
+  mascarar,
+  mascararConversa,
+  podeTransferir,
+  resumoParaSdr,
+  type FichaLead,
+} from "../../shared/lead-profile";
 import {
   avaliarTurno,
   mascararTelefone,
@@ -74,6 +85,8 @@ type EstadoChat = {
   fotosEnviadas: Record<string, number>;
   /** A IA conseguiu tirar a etiqueta de gatilho ao transferir? (`false` = ela ainda está no lead) */
   gatilhoRetirado?: boolean;
+  /** O que a IA já sabe do lead (CPF cifrado). */
+  ficha?: FichaLead;
 };
 export type Rascunho = {
   id: string;
@@ -143,6 +156,29 @@ function registrar(tipo: string, texto: string) {
 const novoId = () =>
   Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
+// ------------------------------------------------------------ ficha do lead
+/** Guarda o CPF cifrado (safeStorage); sem criptografia no sistema, só marca como informado. */
+function cifrarCpf(digitos: string): string {
+  return safeStorage.isEncryptionAvailable()
+    ? "enc:" + safeStorage.encryptString(digitos).toString("base64")
+    : "informado";
+}
+/** CPF em claro a partir do que está guardado ("" se não der para decifrar). */
+function lerCpf(guardado: string): string {
+  if (!guardado.startsWith("enc:")) return "";
+  try {
+    return safeStorage.decryptString(Buffer.from(guardado.slice(4), "base64"));
+  } catch {
+    return "";
+  }
+}
+/** Atualiza a ficha com a conversa e cifra o CPF recém-lido (o CPF em claro nunca é gravado). */
+function atualizarFicha(base: FichaLead | undefined, conversa: MensagemIa[]) {
+  const f = fichaDaConversa(conversa, base ?? FICHA_VAZIA);
+  if (/^[0-9]{11}$/.test(f.cpf)) f.cpf = cifrarCpf(f.cpf);
+  return f;
+}
+
 // ------------------------------------------------------------ auditoria
 const ARQUIVO_AUDITORIA = () =>
   path.join(caminhos.userData(), "pre-atendimento-auditoria.jsonl");
@@ -160,6 +196,7 @@ function auditarTurno(a: {
   desfecho: Desfecho;
   r?: RespostaIa;
   erro?: string;
+  ficha?: FichaLead;
 }) {
   try {
     const { r } = a;
@@ -174,6 +211,11 @@ function auditarTurno(a: {
             veiculos: r.auditoria.veiculos,
             anteriores: a.anteriores,
             fotosPlanejadas: r.plano?.fotos.length ?? 0,
+            financiamento: a.ficha && {
+              pediu: a.ficha.pediuFinanciamento,
+              faltando: faltando(a.ficha),
+              podeTransferir: podeTransferir(a.ficha),
+            },
           })
         : [];
     if (a.erro) sinais.push("erro");
@@ -208,6 +250,7 @@ function auditarTurno(a: {
       },
       estoque: r?.auditoria.veiculos.length ?? 0,
       desfecho: a.desfecho,
+      ...(a.ficha ? { faltando: faltando(a.ficha) } : {}),
       ...(a.erro ? { erro: a.erro } : {}),
       sinais,
     });
@@ -366,6 +409,7 @@ type Lead = {
   nome: string;
   etiquetas: string[];
   fotosEnviadas: Record<string, number>;
+  ficha?: FichaLead;
 };
 
 async function responder(conversa: MensagemIa[], lead: Lead) {
@@ -414,6 +458,7 @@ async function responder(conversa: MensagemIa[], lead: Lead) {
     conversa,
     nomeLead: lead.nome,
     notaFotos: plano?.nota,
+    ficha: lead.ficha,
   });
   const inicio = Date.now();
   const uso: UsoModelo = {
@@ -429,8 +474,16 @@ async function responder(conversa: MensagemIa[], lead: Lead) {
     (t) => registrar("reserva", t),
     uso,
   );
+  const f = lead.ficha;
+  const lido = interpretarResposta(bruto, conversa, {
+    bloquearTransferencia: !!f && !podeTransferir(f),
+  });
+  // Dados do financiamento completos: a transferência não depende de o modelo lembrar da tag.
+  const completo =
+    !!f && f.pediuFinanciamento && !f.entregue && faltando(f).length === 0;
   return {
-    ...interpretarResposta(bruto, conversa),
+    ...lido,
+    transferir: lido.transferir || (completo && !lido.encerrar),
     plano,
     usados,
     auditoria: { bruto, uso, latenciaMs: Date.now() - inicio, veiculos },
@@ -444,10 +497,11 @@ export async function simular(a: {
   etiquetas?: string[];
   enviadas?: Record<string, number>;
 }) {
-  const r = await responder(a.conversa, {
+  const r = await responder(mascararConversa(a.conversa), {
     nome: a.nome || "Cliente",
     etiquetas: a.etiquetas ?? [],
     fotosEnviadas: a.enviadas ?? {},
+    ficha: fichaDaConversa(a.conversa),
   });
   auditarTurno({
     id: novoId(),
@@ -458,13 +512,14 @@ export async function simular(a: {
     recebidas: a.conversa
       .filter((m) => m.role === "user")
       .slice(-1)
-      .map((m) => m.content),
+      .map((m) => mascarar(m.content, true)),
     anteriores: a.conversa
       .filter((m) => m.role === "assistant")
       .slice(-2)
       .map((m) => m.content),
     desfecho: "simulado",
     r,
+    ficha: fichaDaConversa(a.conversa),
   });
   return {
     texto: r.texto,
@@ -512,6 +567,26 @@ async function tirarEtiqueta(
     .tirarEtiquetaDoChat(st.chatId, etiquetaId)
     .catch((e) => erros.push(e));
   if (erros.length === 2) throw erros[0];
+}
+
+/** Resumo do que a IA coletou: fica no painel (CPF mascarado) e vai ao SDR em nota privada no chat. */
+async function entregarResumo(c: ClienteEscrita, st: EstadoChat) {
+  const f = st.ficha;
+  if (!f || (!f.veiculo && !f.entrada && !f.cpf && !f.nascimento && !f.troca))
+    return;
+  const nota = resumoParaSdr(f, { nome: st.nome, cpfPlano: lerCpf(f.cpf) });
+  try {
+    await c.notaPrivada(st.chatId, nota);
+    registrar("crm", st.nome + ": resumo enviado ao SDR (nota privada)");
+  } catch (erro) {
+    registrar(
+      "erro",
+      st.nome +
+        ": nota privada não criada — " +
+        (erro as Error).message.slice(0, 120),
+    );
+  }
+  if (f.pediuFinanciamento) f.entregue = true;
 }
 
 /** Envia o texto, depois as fotos em ordem, e aplica transferência/encerramento nas etiquetas do contato. */
@@ -562,6 +637,7 @@ async function entregar(r: Rascunho) {
         falha(erro);
         return false;
       });
+    if (transferir) await entregarResumo(c, st);
     st.status = r.encerrar ? "encerrado" : "humano";
   }
   registrar("envio", `→ ${st.nome}: ${r.texto}`);
@@ -625,8 +701,21 @@ export async function rodar() {
           }))
         : [];
       if (novas.length) st.vistoAte = horaDa(novas[novas.length - 1]);
+      // O CPF e a data de nascimento ficam só na ficha (cifrada): o modelo, o histórico e a auditoria veem a versão mascarada.
+      st.ficha = atualizarFicha(st.ficha, conversa);
+      const mascaradas = mascararConversa(
+        msgs.map((m) => ({
+          role: doContato(m) ? ("user" as const) : ("assistant" as const),
+          content: textoDa(m),
+        })),
+      );
+      const doCliente = novas.map((m) => mascaradas[msgs.indexOf(m)].content);
       for (const m of novas)
-        st.historico.push({ role: "user", content: textoDa(m), em: horaDa(m) });
+        st.historico.push({
+          role: "user",
+          content: mascaradas[msgs.indexOf(m)].content,
+          em: horaDa(m),
+        });
 
       const etiquetas = (chat.contact?.tags ?? [])
         .map((t) => t.name ?? t.tag?.name ?? "")
@@ -636,7 +725,8 @@ export async function rodar() {
         chatId: chat.id,
         nome: st.nome,
         telefone: st.telefone,
-        recebidas: novas.map(textoDa),
+        recebidas: doCliente,
+        ficha: st.ficha,
         anteriores: st.historico
           .filter((m) => m.role === "assistant")
           .slice(-2)
@@ -644,11 +734,18 @@ export async function rodar() {
       };
       let r: RespostaIa;
       try {
-        r = await responder(conversa, {
+        r = await responder(novas.length ? mascaradas : conversa, {
           nome: st.nome,
           etiquetas,
           fotosEnviadas: st.fotosEnviadas,
+          ficha: st.ficha,
         });
+        for (const m of novas) {
+          const achado = veiculoCitado(r.auditoria.veiculos, textoDa(m));
+          if (achado.tipo === "um" && st.ficha)
+            st.ficha.veiculo =
+              achado.veiculo.marca + " " + achado.veiculo.modelo;
+        }
       } catch (erro) {
         auditarTurno({
           ...base,
@@ -671,7 +768,7 @@ export async function rodar() {
         id: novoId(),
         chatId: chat.id,
         nome: st.nome,
-        pergunta: novas.map(textoDa).join("\n"),
+        pergunta: doCliente.join("\n"),
         texto: r.texto,
         transferir: r.transferir,
         encerrar: r.encerrar,
@@ -761,6 +858,22 @@ export function painel() {
         mensagens: c.historico.length,
         ultima: c.historico.at(-1) ?? null,
         ultimaIaEm: c.ultimaIaEm,
+        // Ficha do lead para o painel (CPF e nascimento nunca aparecem aqui).
+        resumo:
+          c.ficha &&
+          (c.ficha.veiculo ||
+            c.ficha.entrada ||
+            c.ficha.cpf ||
+            c.ficha.nascimento ||
+            c.ficha.troca)
+            ? resumoParaSdr(
+                {
+                  ...c.ficha,
+                  nascimento: c.ficha.nascimento ? "informado" : "",
+                },
+                { nome: c.nome },
+              )
+            : null,
       }))
       .sort((a, b) => (b.ultima?.em ?? 0) - (a.ultima?.em ?? 0)),
     registros: e.registros.slice(0, 80),

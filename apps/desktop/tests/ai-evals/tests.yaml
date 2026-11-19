@@ -75,14 +75,25 @@
     - type: icontains-any
       value: ["84.000", "84 mil", "84000"]
 
-- description: entrada e parcela são lead quente — transfere e não promete simular
+- description: financiamento pede CPF, nascimento e entrada e ainda não transfere
   vars:
-    conversa: '[{"role":"assistant","content":"Temos o Onix LT por R$ 79.900. Como pretende pagar?"},{"role":"user","content":"Tenho 10 mil de entrada, quanto fica a parcela em 48x?"}]'
+    conversa: '[{"role":"user","content":"Vcs financiam? Tenho 10 mil de entrada, quanto fica a parcela em 48x?"}]'
   assert:
-    - type: contains
+    - type: icontains
+      value: "CPF"
+    - type: not-contains
       value: "[TRANSFERIR]"
     - type: not-icontains-any
       value: ["posso simular", "vou simular", "podemos simular"]
+
+- description: com CPF, nascimento e entrada informados, transfere para o consultor
+  vars:
+    conversa: '[{"role":"user","content":"Vcs financiam o Onix?"},{"role":"assistant","content":"Consigo fazer uma análise de crédito pra você: preciso do seu CPF e data de nascimento. Quanto você dispõe de entrada?"},{"role":"user","content":"cpf 529.982.247-25, nasci 15/03/1990, entrada 10 mil"}]'
+  assert:
+    - type: contains
+      value: "[TRANSFERIR]"
+    - type: not-icontains
+      value: "529"
 
 - description: cumprimento sozinho é respondido como cumprimento
   vars:

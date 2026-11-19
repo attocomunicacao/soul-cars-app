@@ -8,6 +8,7 @@ import {
   LOJA_PADRAO,
   RESPOSTAS_PADRAO,
 } from "../../src/shared/pre-service.ts";
+import { fichaDaConversa } from "../../src/shared/lead-profile.ts";
 
 /** Estoque fictício (nunca dados reais da loja). */
 const ESTOQUE = [
@@ -58,6 +59,7 @@ export default async function ({ vars }) {
     reais: [],
     conversa,
     nomeLead: vars.nome ?? "Carlos",
+    ficha: fichaDaConversa(conversa),
   });
   return mensagens;
 }

@@ -5,10 +5,13 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões
 ## [1.0.21]
 
 - Pré-atendimento IA: a IA passa a ler a **quilometragem e o valor do DES.md** da pasta de cada carro (o valor do DES.md vale mais que o do BNDV, que vem zerado em vários carros) e informa o km ao cliente. Carros sem DES.md continuam sem km: nesse caso a IA encaminha para a equipe em vez de prometer
-- Pré-atendimento IA: regras fixas de encaminhamento. A IA transfere para a equipe quando o cliente pede algo que ela não sabe (km, laudo, histórico), informa entrada ou parcela, pede simulação, taxa, desconto, oferece carro na troca, quer visitar ou fechar; não promete mais "vou confirmar com o consultor" nem oferece simular parcelas
+- Pré-atendimento IA: regras fixas de encaminhamento. A IA transfere para a equipe quando o cliente pede algo que ela não sabe (km, laudo, histórico), pede desconto, oferece carro na troca, quer visitar ou fechar; não promete mais "vou confirmar com o consultor" nem oferece simular parcelas
 - Pré-atendimento IA: cumprimento sozinho ("oi") é respondido como cumprimento, e a IA não termina toda mensagem oferecendo visita ou ligação. Quem usava a persona padrão antiga recebe a nova automaticamente; personas editadas à mão não mudam
 - Pré-atendimento IA: recolocar a etiqueta de gatilho no uTalk num lead que estava com a equipe devolve o lead à IA sozinho (antes só o botão "Devolver à IA" funcionava). Quem pediu para não receber mensagens continua só voltando pelo botão
-- Auditoria: corrigidos dois alertas falsos (valor que o próprio cliente digitou e pergunta "de qual carro são as fotos?") e novo alerta quando a IA oferece simular parcelas
+- Pré-atendimento IA: **ficha do lead**. A IA guarda o que o cliente já contou (carro, forma de pagamento, entrada, CPF, data de nascimento, troca), mesmo depois das últimas 12 mensagens, e não repete perguntas
+- Financiamento: ao pedir financiamento, a IA pede "CPF e data de nascimento" e a entrada (só o que falta) e só transfere para o SDR quando tiver os três, o cliente recusar ou depois de 2 pedidos. Ao transferir, a ficha vai em **nota privada** no chat do uTalk (o cliente não vê) e aparece no painel (Visão geral › Ficha do lead)
+- Privacidade: CPF e data de nascimento são mascarados antes de ir ao Groq, ao histórico e à auditoria; o CPF fica só na ficha, cifrado no computador
+- Auditoria: novo alerta quando o financiamento não pede os dados ou transfere sem eles; corrigidos dois alertas falsos (valor que o próprio cliente digitou e pergunta "de qual carro são as fotos?") e novo alerta quando a IA oferece simular parcelas
 
 ## [1.0.20]
 

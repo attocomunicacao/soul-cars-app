@@ -9,6 +9,12 @@
  *  - exemplos reais: pares lead → resposta da equipe extraídos das conversas do CRM.
  */
 
+import {
+  avisoDeFinanciamento,
+  blocoFicha,
+  type FichaLead,
+} from "./lead-profile";
+
 // ------------------------------------------------------------------ tipos
 /** Veículo disponível no estoque (o BNDV só traz marca, modelo, placa, preço e status). */
 export type VeiculoIa = {
@@ -134,9 +140,10 @@ Regras:
  */
 export const REGRAS_DE_ENCAMINHAMENTO = `REGRAS DE ENCAMINHAMENTO (valem mesmo que a persona diga o contrário):
 - Você NÃO calcula parcelas, taxas, avaliação de troca, desconto, quilometragem, laudo nem histórico do carro. Nunca prometa isso e nunca diga "vou confirmar com o consultor" sem encaminhar de verdade.
-- Inclua [TRANSFERIR] no fim da resposta quando o cliente: pedir algo que o CONTEXTO não traz (quilometragem, laudo, cor, consumo, opcionais, histórico); pedir simulação de parcela, taxa ou análise de crédito, ou informar valor de entrada ou parcela; oferecer carro na troca; pedir desconto ou negociar preço; quiser visitar, ligar, fechar negócio ou falar com alguém.
+- Inclua [TRANSFERIR] no fim da resposta quando o cliente: pedir algo que o CONTEXTO não traz (quilometragem, laudo, cor, consumo, opcionais, histórico); oferecer carro na troca; pedir desconto ou negociar preço; quiser visitar, ligar, fechar negócio ou falar com alguém.
+- Financiamento, parcela, entrada, taxa ou análise de crédito: NÃO transfira de imediato. Quando o contexto trouxer o aviso ATENÇÃO (financiamento), siga-o: peça só os dados que faltam (CPF, data de nascimento e entrada) e só inclua [TRANSFERIR] quando o aviso mandar.
 - Ao transferir, responda em 1 ou 2 frases dizendo que um consultor continua o atendimento por aqui. Não invente prazo e não ofereça simular nem calcular.
-- Pergunta geral ("vocês financiam?", "aceitam troca?"): responda com o texto de FINANCIAMENTO ou TROCA do contexto, sem [TRANSFERIR], e pergunte a forma de pagamento.
+- Pergunta geral ("vocês financiam?", "aceitam troca?"): responda com o texto de FINANCIAMENTO ou TROCA do contexto, sem [TRANSFERIR]; se o cliente quer financiar, conduza a coleta de dados do aviso ATENÇÃO (financiamento).
 - Cumprimento sozinho ("oi", "olá", "bom dia"): cumprimente de volta e pergunte no que pode ajudar. Não responda "sem problemas".
 - Não termine toda mensagem oferecendo visita ou ligação: responda primeiro o que foi perguntado e só ofereça visita quando fizer sentido, variando a frase.`;
 
@@ -230,13 +237,18 @@ export function avisoDeHorario(conversa: MensagemIa[]): string {
 }
 
 /** Tira as tags [TRANSFERIR]/[ENCERRAR] e o raciocínio do texto do modelo. */
-export function interpretarResposta(bruto: string, conversa: MensagemIa[]) {
+export function interpretarResposta(
+  bruto: string,
+  conversa: MensagemIa[],
+  opcoes: { bloquearTransferencia?: boolean } = {},
+) {
   const texto = bruto.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
   // Horário fora do expediente não é visita confirmada: não transfere.
   const transferir =
     /\[TRANSFERIR\]/i.test(texto) &&
     !avisoDeHorario(conversa) &&
-    !soLinkDeAnuncio(conversa);
+    !soLinkDeAnuncio(conversa) &&
+    !opcoes.bloquearTransferencia;
   const encerrar = /\[ENCERRAR\]/i.test(texto);
   return {
     texto: texto.replace(/\[(TRANSFERIR|ENCERRAR)\]/gi, "").trim(),
@@ -506,6 +518,8 @@ export type EntradaContexto = {
   conversa: MensagemIa[];
   nomeLead: string;
   notaFotos?: string;
+  /** O que já sabemos do lead (carro, entrada, CPF…): evita repetir perguntas e conduz o financiamento. */
+  ficha?: FichaLead;
 };
 
 export const variaveis = (
@@ -592,6 +606,9 @@ ${REGRAS_DE_ENCAMINHAMENTO}` +
     avisoDeHorario(e.conversa) +
     avisoDeLink(e.conversa) +
     avisoDeEstoque(e.veiculos, e.conversa) +
+    (e.ficha
+      ? "\n\n" + blocoFicha(e.ficha) + avisoDeFinanciamento(e.ficha)
+      : "") +
     (e.notaFotos ? "\n\n" + e.notaFotos : "");
   const mensagens: { role: "system" | Papel; content: string }[] = [
     { role: "system", content: sistema },

@@ -142,6 +142,48 @@ describe("simulação e promessas sem transferir", () => {
   });
 });
 
+describe("financiamento sem coleta de dados", () => {
+  const fin = {
+    pediu: true,
+    faltando: ["CPF", "entrada"],
+    podeTransferir: false,
+  };
+  it("alerta quando não pede os dados ou quando transfere cedo", () => {
+    expect(
+      avaliarTurno({
+        ...base,
+        texto: "Trabalhamos com vários bancos.",
+        financiamento: fin,
+      }),
+    ).toContain("financiamento-sem-dados");
+    expect(
+      avaliarTurno({
+        ...base,
+        texto: "Certo, um consultor continua.",
+        transferir: true,
+        financiamento: fin,
+      }),
+    ).toContain("financiamento-sem-dados");
+  });
+  it("não alerta quando pede os dados ou quando já pode transferir", () => {
+    expect(
+      avaliarTurno({
+        ...base,
+        texto: "Preciso do seu CPF. Quanto você dispõe de entrada?",
+        financiamento: fin,
+      }),
+    ).not.toContain("financiamento-sem-dados");
+    expect(
+      avaliarTurno({
+        ...base,
+        texto: "Ok.",
+        transferir: true,
+        financiamento: { ...fin, podeTransferir: true },
+      }),
+    ).not.toContain("financiamento-sem-dados");
+  });
+});
+
 describe("mascararTelefone", () => {
   it("guarda só o começo e os 2 últimos dígitos", () => {
     expect(mascararTelefone("+55 11 91234-5678")).toBe("5511*******78");

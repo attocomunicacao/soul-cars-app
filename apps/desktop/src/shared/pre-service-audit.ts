@@ -17,6 +17,7 @@ export type SinalAuditoria =
   | "sem-resposta"
   | "foto-sem-plano"
   | "ofereceu-simulacao"
+  | "financiamento-sem-dados"
   | "erro";
 
 /** Texto curto de cada sinal, para a tela. */
@@ -31,6 +32,8 @@ export const ROTULO_SINAL: Record<SinalAuditoria, string> = {
   "sem-resposta": "Não respondeu a mensagem nova",
   "foto-sem-plano": "Disse que enviou fotos, mas nenhuma foi planejada",
   "ofereceu-simulacao": "Ofereceu simular parcelas (a IA não calcula)",
+  "financiamento-sem-dados":
+    "Financiamento sem pedir CPF, nascimento e entrada (ou transferiu sem eles)",
   erro: "Erro ao responder ou entregar",
 };
 
@@ -66,6 +69,8 @@ export type TurnoAuditado = {
   desfecho: Desfecho;
   erro?: string;
   sinais: SinalAuditoria[];
+  /** Dados do financiamento que ainda faltavam (CPF, data de nascimento, entrada). */
+  faltando?: string[];
 };
 
 /** Entrada de `avaliarTurno`. */
@@ -78,6 +83,12 @@ export type EntradaAvaliacao = {
   /** Últimas respostas da IA nesta conversa (mais recente por último), sem a atual. */
   anteriores: string[];
   fotosPlanejadas: number;
+  /** Situação da coleta de dados do financiamento (ficha do lead). */
+  financiamento?: {
+    pediu: boolean;
+    faltando: string[];
+    podeTransferir: boolean;
+  };
 };
 
 const soDigitos = (s: string) => s.replace(/\D/g, "");
@@ -144,6 +155,12 @@ export function avaliarTurno(e: EntradaAvaliacao): SinalAuditoria[] {
   }
 
   if (e.texto.length > 500) sinais.push("resposta-longa");
+
+  const fin = e.financiamento;
+  if (fin?.pediu && fin.faltando.length && !fin.podeTransferir) {
+    const pediuDados = /cpf|nascimento|entrada/.test(t);
+    if (e.transferir || !pediuDados) sinais.push("financiamento-sem-dados");
+  }
 
   if (SIMULAR.test(t) && !e.transferir) sinais.push("ofereceu-simulacao");
 

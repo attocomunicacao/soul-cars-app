@@ -29,6 +29,7 @@
     "tests/intake.test.ts",
     "tests/pre-service-audit.test.ts",
     "tests/des-md.test.ts",
+    "tests/lead-profile.test.ts",
     "tests/estoque-midia.test.ts",
     "tests/legacy-ai-cleanup.test.ts",
     "tests/validation.test.ts",
