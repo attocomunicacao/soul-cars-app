@@ -151,6 +151,36 @@ function acharNascimento(texto: string, agora: Date): string {
   return "";
 }
 
+const MESES: Record<string, number> = {
+  janeiro: 1,
+  fevereiro: 2,
+  marco: 3,
+  abril: 4,
+  maio: 5,
+  junho: 6,
+  julho: 7,
+  agosto: 8,
+  setembro: 9,
+  outubro: 10,
+  novembro: 11,
+  dezembro: 12,
+};
+/** Datas escritas de outro jeito ("15 de março de 1990", "15 03 1990", "15031990"), em formato dd/mm/aaaa. */
+const DATA_SOLTA = [
+  /(?<!\d)(\d{1,2})\s+de\s+([a-zç]+)\s+de\s+(\d{4})(?!\d)/g,
+  /(?<!\d)(\d{1,2})\s+(\d{1,2})\s+(\d{4})(?!\d)/g,
+  /(?<!\d)(\d{2})(\d{2})(\d{4})(?!\d)/g,
+];
+/** Passa as datas "soltas" para dd/mm/aaaa (só vale quando a IA acabou de perguntar o nascimento). */
+function dataNormalizada(texto: string): string {
+  let t = sem(texto);
+  t = t.replace(DATA_SOLTA[0], (m, d: string, mes: string, a: string) =>
+    MESES[mes] ? `${d}/${MESES[mes]}/${a}` : m,
+  );
+  for (const re of DATA_SOLTA.slice(1)) t = t.replace(re, "$1/$2/$3");
+  return t;
+}
+
 // ------------------------------------------------------------------ entrada
 const brl = (n: number) => `R$ ${Math.round(n).toLocaleString("pt-BR")}`;
 
@@ -321,7 +351,11 @@ export function extrairDados(
     cpf,
     // Parece um CPF (com pontos/traço, ou resposta à pergunta do CPF), mas não passou nos dígitos.
     cpfInvalido: !cpf && pareceCpf(texto, perguntou(perguntaAnterior, "cpf")),
-    nascimento: acharNascimento(texto, agora),
+    nascimento:
+      acharNascimento(texto, agora) ||
+      (perguntou(perguntaAnterior, "nascimento")
+        ? acharNascimento(dataNormalizada(texto), agora)
+        : ""),
     entrada: acharEntrada(texto, perguntou(perguntaAnterior, "entrada")),
     pagamento: acharPagamento(texto),
     troca,
@@ -498,60 +532,45 @@ export function motivoDaTransferencia(
 }
 
 // ------------------------------------------------------------------ frases e avisos
-/** Os itens do financiamento viram uma só pergunta (a frase do usuário, mais CNH e entrada). */
-function fraseDoFinanciamento(f: FichaLead, campos: Campo[]): string {
-  const semCpf = campos.includes("cpf");
-  const semNasc = campos.includes("nascimento");
-  // Concordância: "do seu CPF", "da sua data de nascimento", "do seu CPF e data de nascimento".
-  const docs =
-    semCpf && semNasc
-      ? "do seu CPF e data de nascimento"
-      : semCpf
-        ? "do seu CPF"
-        : semNasc
-          ? "da sua data de nascimento"
-          : "";
-  const partes: string[] = [];
-  if (docs)
-    partes.push(
-      "Consigo fazer uma análise de crédito pra você: preciso " + docs + ".",
-    );
-  else partes.push("Para a análise de crédito:");
-  if (campos.includes("cnh")) partes.push("Você possui CNH?");
-  if (campos.includes("entrada")) partes.push("Quanto você dispõe de entrada?");
-  return partes.join(" ");
-}
+/** Uma pergunta por mensagem: o cliente responde uma coisa de cada vez e a ficha guarda sem confusão. */
+const FRASES: Record<Campo, string> = {
+  veiculo: "Qual carro você tem interesse?",
+  regiao: "Para te atender melhor, em qual região você está?",
+  pagamento:
+    "Como você pretende adquirir o veículo: à vista, financiado, cartão ou com veículo na troca?",
+  troca: "Qual o modelo e ano do veículo que você daria na troca?",
+  cpf: "Qual é o seu CPF?",
+  nascimento: "Qual é a sua data de nascimento?",
+  cnh: "Você possui CNH?",
+  entrada: "Quanto você dispõe de entrada?",
+  horario:
+    "Perfeito! Um consultor vai te ligar para entender melhor o que você procura. Qual o melhor dia e horário para essa ligação?",
+};
 
-/** A próxima pergunta (uma por mensagem; os itens do financiamento vão juntos) e os itens que ela cobre. */
+/** A próxima pergunta (sempre um único item) e o item que ela cobre. */
 export function proximaPergunta(
   f: FichaLead,
 ): { campos: Campo[]; frase: string } | null {
   const pend = pendentes(f);
   if (!pend.length) return null;
   const primeiro = pend[0];
-  if (["cpf", "nascimento", "cnh", "entrada"].includes(primeiro)) {
-    const grupo = pend.filter((c) =>
-      ["cpf", "nascimento", "cnh", "entrada"].includes(c),
-    );
-    // CPF digitado errado: pede só para conferir (não repete o pedido completo).
-    if (f.cpfInvalido && grupo.includes("cpf"))
+  if (primeiro === "cpf") {
+    // CPF digitado errado: pede só para conferir.
+    if (f.cpfInvalido)
       return {
         campos: ["cpf"],
         frase:
           "Não consegui validar esse CPF. Pode conferir e me enviar de novo?",
       };
-    return { campos: grupo, frase: fraseDoFinanciamento(f, grupo) };
+    // A primeira pergunta do financiamento explica o motivo (a frase do usuário), uma só vez.
+    if (!(f.pedidos.cpf ?? 0))
+      return {
+        campos: ["cpf"],
+        frase:
+          "Consigo fazer uma análise de crédito pra você. Para começar, qual é o seu CPF?",
+      };
   }
-  const frases: Partial<Record<Campo, string>> = {
-    veiculo: "Qual carro você tem interesse?",
-    regiao: "Para te atender melhor, em qual região você está?",
-    pagamento:
-      "Como você pretende adquirir o veículo: à vista, financiado, cartão ou com veículo na troca?",
-    troca: "Qual o modelo e ano do veículo que você daria na troca?",
-    horario:
-      "Perfeito! Um consultor vai te ligar para entender melhor o que você procura. Qual o melhor dia e horário para essa ligação?",
-  };
-  return { campos: [primeiro], frase: frases[primeiro] ?? "" };
+  return { campos: [primeiro], frase: FRASES[primeiro] };
 }
 
 /** Instrução para o modelo sobre a coleta de dados ("" se a coleta não começou ou a ficha já foi entregue). */
@@ -565,7 +584,7 @@ export function avisoDeColeta(
   const prox = proximaPergunta(f);
   if (!prox)
     return `\n\nATENÇÃO (qualificação): já temos todos os dados do cliente. Agradeça em 1 frase, diga que um consultor vai ligar${f.horarioLigacao ? ` (${f.horarioLigacao})` : ""} e inclua [TRANSFERIR]. Não faça mais perguntas e não ofereça visita.`;
-  return `\n\nATENÇÃO (qualificação): o cliente ainda está sendo atendido pela IA. Responda a dúvida dele em no máximo 1 ou 2 frases, SEM fazer perguntas: o sistema acrescenta sozinho a próxima pergunta. Não escreva pedidos de dados nem de documentos. NÃO inclua [TRANSFERIR] agora. NÃO ofereça nem agende visita: o consultor liga primeiro e combina a visita depois.`;
+  return `\n\nATENÇÃO (qualificação): o cliente ainda está sendo atendido pela IA. Responda a dúvida dele em no máximo 1 ou 2 frases, SEM fazer perguntas: o sistema acrescenta sozinho a próxima pergunta. Não escreva pedidos de dados nem de documentos. NÃO inclua [TRANSFERIR] agora. NÃO diga que um consultor vai ligar (isso só no fim, quando o sistema mandar). NÃO ofereça nem agende visita: o consultor liga primeiro e combina a visita depois.`;
 }
 
 const PAGAMENTO_ROTULO: Record<Pagamento, string> = {
@@ -660,6 +679,14 @@ export function mascarar(
       ? "[data de nascimento informada]"
       : m,
   );
+  // Com contexto de nascimento, também as datas escritas por extenso ou sem barras.
+  if (datas)
+    for (const re of DATA_SOLTA)
+      t = t.replace(new RegExp(re.source, "gi"), (m) =>
+        acharNascimento(dataNormalizada(m), new Date())
+          ? "[data de nascimento informada]"
+          : m,
+      );
   return t;
 }
 
@@ -699,6 +726,10 @@ export const perguntouCampo = (texto: string, campo: Campo) =>
 export const perguntouQualificacao = (anterior: string) =>
   CAMPOS.some((c) => perguntou(anterior, c));
 
+/** Promessa de ligação do consultor: só pode aparecer no fim da qualificação, não no meio dela. */
+const PROMETE_LIGACAO =
+  /(consultor|equipe|vendedor)[^.?!]{0,25}(vai|ira|entrara)[^.?!]{0,25}(ligar|ligue|contato)|vai te ligar|ligar (para|pra) voce/;
+
 /**
  * Junta a resposta do modelo com a próxima pergunta da qualificação: tira as frases com "?" que o modelo
  * tenha escrito (quem pergunta é o sistema, sempre na ordem certa) e acrescenta a pergunta.
@@ -723,6 +754,7 @@ export function anexarPergunta(
     .map((x) => x.trim())
     .filter((x) => {
       if (!x || x.includes("?")) return false;
+      if (PROMETE_LIGACAO.test(sem(x))) return false; // ainda está perguntando: não promete ligação
       const norma = sem(x)
         .replace(/[^a-z0-9 ]/g, " ")
         .replace(/ +/g, " ")

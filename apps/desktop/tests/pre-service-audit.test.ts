@@ -283,3 +283,29 @@ describe("pergunta repetida", () => {
     ).not.toContain("perguntou-dado-ja-informado");
   });
 });
+
+describe("promessa no meio da coleta e resposta repetida", () => {
+  const frase =
+    "Perfeito! Um consultor vai te ligar para entender melhor o que você procura. Qual o melhor dia e horário para essa ligação?";
+  it("o roteiro do horário não é promessa; 'um consultor vai te ligar agora' no meio da coleta é", () => {
+    expect(avaliarTurno({ ...base, texto: frase })).not.toContain(
+      "prometeu-consultor-sem-transferir",
+    );
+    expect(
+      avaliarTurno({
+        ...base,
+        texto:
+          "Perfeito! Um consultor vai te ligar agora para alinhar os detalhes.\n\nQual é o seu CPF?",
+      }),
+    ).toContain("prometeu-consultor-sem-transferir");
+  });
+  it("alerta quando manda a mesma resposta duas vezes seguidas", () => {
+    const r = "Quanto você dispõe de entrada?";
+    expect(
+      avaliarTurno({ ...base, texto: r, anteriores: ["Oi", r] }),
+    ).toContain("resposta-repetida");
+    expect(
+      avaliarTurno({ ...base, texto: r, anteriores: [r, "Oi"] }),
+    ).not.toContain("resposta-repetida");
+  });
+});

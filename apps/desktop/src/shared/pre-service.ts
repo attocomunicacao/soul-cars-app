@@ -162,9 +162,10 @@ export const REGRAS_DE_ENCAMINHAMENTO = `REGRAS DE ENCAMINHAMENTO (valem mesmo q
 - Seu objetivo é entender a situação do cliente e combinar uma LIGAÇÃO com um consultor. Você NÃO agenda nem oferece visita: a visita é combinada pelo consultor depois da ligação. Se o cliente quiser visitar, diga que o consultor liga para combinar.
 - Você NÃO calcula parcelas, taxas, avaliação de troca, desconto, quilometragem, laudo nem histórico do carro. Se o cliente perguntar algo que o CONTEXTO não traz, diga que o consultor confirma na ligação e continue a conversa. Nunca prometa calcular nem simular.
 - Quando o contexto trouxer o aviso ATENÇÃO (qualificação), siga-o: responda a dúvida em 1 frase e faça a pergunta indicada, uma por mensagem. Só inclua [TRANSFERIR] quando esse aviso mandar ou quando o cliente pedir para falar com alguém.
-- Ao transferir, responda em 1 ou 2 frases dizendo que um consultor vai ligar. Não invente prazo.
+- Só diga que um consultor vai ligar quando for transferir (no fim da qualificação ou a pedido do cliente); enquanto estiver perguntando, não prometa ligação. Ao transferir, responda em 1 ou 2 frases e não invente prazo.
 - Análise de crédito: se o cliente perguntar o que é, explique que é feita pelo NOSSO SISTEMA, que consulta o score do cliente para definir as melhores condições de financiamento. Nunca diga que é um processo dos bancos e nunca use a palavra "histórico": diga "score". Se perguntarem para que serve o CPF: é para a análise de crédito no nosso sistema.
 - Pergunta geral ("vocês financiam?", "aceitam troca?"): responda com o texto de FINANCIAMENTO ou TROCA do contexto, sem [TRANSFERIR], e siga a qualificação.
+- Não comente a localização do cliente nem diga que a loja é perto ou longe dele; só agradeça a informação.
 - Cumprimento sozinho ("oi", "olá", "bom dia"): cumprimente de volta e pergunte no que pode ajudar. Não responda "sem problemas". Apresente-se (nome e loja) só na primeira mensagem da conversa.
 - Não ofereça visita e não termine toda mensagem com a mesma pergunta: responda primeiro o que foi perguntado e varie a frase.`;
 
@@ -602,6 +603,16 @@ export const voltouParaIa = (chat: {
 export const respostaDeAbertura = (respostas: RespostaRapida[]) =>
   respostas.find((q) => /sauda|abertura/i.test(q.titulo)) ?? null;
 
+/** O cliente quer ver todos os carros ("quais são todas as opções?", "o que vocês têm?")? */
+const LISTA =
+  /(todas?|todos)\s+(as\s+|os\s+)?(opcoes|carros|veiculos|modelos)|quais\s+(sao\s+|voces\s+tem\s+|vcs\s+tem\s+)?(as\s+|os\s+|todas\s+|todos\s+)?(opcoes|carros|veiculos|modelos)|o que (voces |vcs )?tem|catalogo|estoque|(mais|outras|outros)\s+(opcoes|carros|veiculos|modelos)/;
+export const pediuLista = (texto: string) => LISTA.test(normalizar(texto));
+
+/** Lista completa do estoque (a IA não escolhe quais mostrar): uma linha por carro, com preço e km quando houver. */
+export const listaDeVeiculos = (veiculos: VeiculoIa[]) =>
+  `Temos ${veiculos.length} veículos disponíveis:\n` +
+  veiculos.map((v) => "- " + descreverVeiculo(v)).join("\n");
+
 /** Mensagens para o modelo: sistema com persona e contexto, exemplos de ensino e as últimas 12 da conversa. */
 export function montarMensagens(e: EntradaContexto) {
   const vars = variaveis(e.loja, e.config.nomeAgente, e.nomeLead);
@@ -609,7 +620,18 @@ export function montarMensagens(e: EntradaContexto) {
     .slice(-4)
     .map((m) => m.content)
     .join(" ");
-  const veiculos = ranquear(recente, e.veiculos, descreverVeiculo, 6);
+  // O estoque relevante vem do que o LEAD disse (não do que a IA acabou de listar, que se auto-reforçava).
+  const doLeadRecente = e.conversa
+    .filter((m) => m.role === "user")
+    .slice(-3)
+    .map((m) => m.content)
+    .join(" ");
+  const pedeLista = pediuLista(
+    e.conversa.filter((m) => m.role === "user").at(-1)?.content ?? "",
+  );
+  const veiculos = pedeLista
+    ? e.veiculos.slice(0, 40)
+    : ranquear(doLeadRecente, e.veiculos, descreverVeiculo, 6);
   // Saudação/abertura só serve na primeira mensagem da IA (depois repetiria a apresentação).
   const jaConversou = e.conversa.some((m) => m.role === "assistant");
   const rapidas = ranquear(

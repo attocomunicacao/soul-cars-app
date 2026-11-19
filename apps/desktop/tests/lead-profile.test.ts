@@ -161,9 +161,10 @@ describe("ordem da qualificação", () => {
       "entrada",
       "melhor horário para a ligação",
     ]);
-    // os itens do financiamento vão juntos, na frase do usuário (mais CNH e entrada)
+    // uma pergunta por mensagem: primeiro o CPF (com o motivo, na frase do usuário)
+    expect(proximaPergunta(f)?.campos).toEqual(["cpf"]);
     expect(proximaPergunta(f)?.frase).toBe(
-      "Consigo fazer uma análise de crédito pra você: preciso do seu CPF e data de nascimento. Você possui CNH? Quanto você dispõe de entrada?",
+      "Consigo fazer uma análise de crédito pra você. Para começar, qual é o seu CPF?",
     );
 
     c = [

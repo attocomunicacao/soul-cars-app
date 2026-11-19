@@ -18,7 +18,11 @@ import {
 import {
   FINANCIAMENTO_ANTERIOR,
   LOJA_PADRAO,
+  PERSONA_PADRAO,
   REGRAS_DE_ENCAMINHAMENTO,
+  listaDeVeiculos,
+  montarMensagens,
+  pediuLista,
   veiculoMencionado,
   type MensagemIa,
 } from "../src/shared/pre-service";
@@ -196,13 +200,20 @@ describe("pedidos de dados no financiamento", () => {
     expect(f.pedidos.cpf).toBe(1); // só a dúvida contou
     expect(f.cpf).toBe("52998224725");
   });
-  it("a frase concorda com o que falta", () => {
-    const base = { ...financiando, cnh: "sim" as const, entrada: "R$ 5.000" };
-    expect(proximaPergunta({ ...base, cpf: "x" })?.frase).toBe(
-      "Consigo fazer uma análise de crédito pra você: preciso da sua data de nascimento.",
-    );
-    expect(proximaPergunta({ ...base, nascimento: "x" })?.frase).toBe(
-      "Consigo fazer uma análise de crédito pra você: preciso do seu CPF.",
+  it("pergunta uma coisa de cada vez, na ordem CPF, nascimento, CNH e entrada", () => {
+    const campos = (f: FichaLead) => proximaPergunta(f)?.campos;
+    const frase = (f: FichaLead) => proximaPergunta(f)?.frase;
+    expect(campos(financiando)).toEqual(["cpf"]);
+    const c1 = { ...financiando, cpf: "x", pedidos: { cpf: 1 } };
+    expect(campos(c1)).toEqual(["nascimento"]);
+    expect(frase(c1)).toBe("Qual é a sua data de nascimento?");
+    const c2 = { ...c1, nascimento: "x" };
+    expect(frase(c2)).toBe("Você possui CNH?");
+    const c3 = { ...c2, cnh: "sim" as const };
+    expect(frase(c3)).toBe("Quanto você dispõe de entrada?");
+    // depois da primeira pergunta, o CPF não repete a explicação
+    expect(frase({ ...financiando, pedidos: { cpf: 1 } })).toBe(
+      "Qual é o seu CPF?",
     );
   });
 });
@@ -325,5 +336,91 @@ describe("data de nascimento sempre mascarada", () => {
     );
     expect(mascarar("passo aí dia 20/11/2026")).toBe("passo aí dia 20/11/2026");
     expect(mascarar("dia 20/11/26")).toBe("dia 20/11/26"); // 2 dígitos só no contexto
+  });
+});
+
+describe("data de nascimento escrita de outros jeitos", () => {
+  const pergunta = "Qual é a sua data de nascimento?";
+  it("entende por extenso, com espaços e sem barras logo depois da pergunta", () => {
+    const n = (t: string) => extrairDados(t, pergunta, AGORA).nascimento;
+    expect(n("15 de março de 1990")).toBe("15/03/1990");
+    expect(n("15 03 1990")).toBe("15/03/1990");
+    expect(n("15031990")).toBe("15/03/1990");
+    expect(extrairDados("15031990", "Qual a região?", AGORA).nascimento).toBe(
+      "",
+    );
+  });
+  it("mascara essas formas quando há contexto de nascimento", () => {
+    const m = mascararConversa([
+      ia(pergunta),
+      cli("15 de março de 1990"),
+      ia(pergunta),
+      cli("15031990"),
+    ]);
+    expect(m[1].content).toBe("[data de nascimento informada]");
+    expect(m[3].content).toBe("[data de nascimento informada]");
+  });
+});
+
+describe("lista completa e repetição", () => {
+  const veiculos = [
+    "Hyundai Tucson",
+    "Jeep Renegade",
+    "Nissan Kicks",
+    "Hyundai ix35",
+    "Hyundai Veloster",
+    "Toyota Yaris",
+  ].map((nome, i) => {
+    const [marca, ...resto] = nome.split(" ");
+    return {
+      id: String(i),
+      marca,
+      modelo: resto.join(" "),
+      placa: `A${i}`,
+      preco: `${50 + i}.900`,
+    };
+  });
+  it("'quais são todas as opções' pede a lista completa", () => {
+    expect(pediuLista("Quais são todas as opções?")).toBe(true);
+    expect(pediuLista("Quais carros vocês têm?")).toBe(true);
+    expect(pediuLista("O que vocês têm?")).toBe(true);
+    expect(pediuLista("Tem mais opções?")).toBe(true);
+    expect(pediuLista("Quanto custa o Renegade?")).toBe(false);
+    const lista = listaDeVeiculos(veiculos);
+    expect(lista).toContain("Temos 6 veículos disponíveis:");
+    for (const v of veiculos) expect(lista).toContain(`${v.marca} ${v.modelo}`);
+  });
+  it("o estoque do prompt vem do que o cliente disse, não do que a IA listou", () => {
+    const sistema = montarMensagens({
+      persona: PERSONA_PADRAO,
+      loja: LOJA_PADRAO,
+      config: { nomeAgente: "Sofia" } as never,
+      veiculos,
+      respostas: [],
+      exemplos: [],
+      reais: [],
+      conversa: [
+        ia(
+          "Temos Hyundai Tucson, Jeep Renegade e Nissan Kicks. Qual carro você tem interesse?",
+        ),
+        cli("Quais são todas as opções?"),
+      ],
+      nomeLead: "Ana",
+    }).mensagens[0].content;
+    for (const v of veiculos)
+      expect(sistema).toContain(`${v.marca} ${v.modelo}`);
+  });
+  it("sem a ficha, a IA não promete ligação no meio da pergunta", () => {
+    const frase = "Qual carro você tem interesse?";
+    expect(
+      anexarPergunta(
+        "Temos o Renegade por R$ 66.900. Um consultor vai te ligar para alinhar os detalhes.",
+        frase,
+      ),
+    ).toBe(`Temos o Renegade por R$ 66.900.\n\n${frase}`);
+    // mas "o consultor confirma na ligação" (dado que a IA não tem) continua valendo
+    expect(
+      anexarPergunta("A quilometragem o consultor confirma na ligação.", frase),
+    ).toContain("confirma na ligação");
   });
 });

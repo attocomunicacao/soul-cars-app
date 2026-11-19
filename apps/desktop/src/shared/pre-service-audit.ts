@@ -21,6 +21,7 @@ export type SinalAuditoria =
   | "financiamento-sem-dados"
   | "transferiu-sem-coletar"
   | "ofereceu-visita"
+  | "resposta-repetida"
   | "perguntou-dado-ja-informado"
   | "perguntou-regiao-sem-carro"
   | "erro";
@@ -41,6 +42,7 @@ export const ROTULO_SINAL: Record<SinalAuditoria, string> = {
     "Cliente falou de financiamento e a IA não pediu os dados que faltavam",
   "transferiu-sem-coletar":
     "Transferiu antes de coletar os dados (região, pagamento, horário…)",
+  "resposta-repetida": "Repetiu a mesma resposta da mensagem anterior",
   "ofereceu-visita":
     "Ofereceu agendar visita (o consultor combina depois da ligação)",
   "perguntou-regiao-sem-carro":
@@ -142,13 +144,26 @@ export function avaliarTurno(e: EntradaAvaliacao): SinalAuditoria[] {
 
   if (!e.texto.trim() && e.recebidas.length) sinais.push("sem-resposta");
 
+  // Promessa de consultor nas frases afirmativas (a pergunta do horário, "um consultor vai te ligar… qual o
+  // melhor dia?", faz parte do roteiro e não conta).
+  const afirmacoes = e.texto
+    .split(/(?<=[.!?])\s+|\n+/)
+    .filter((s) => s && !s.includes("?"));
   if (
-    PROMETE_EQUIPE.test(t) &&
     !e.transferir &&
     !e.encerrar &&
-    !e.texto.includes("?")
+    !perguntouCampo(e.texto, "horario") &&
+    afirmacoes.some((s) => PROMETE_EQUIPE.test(normalizar(s)))
   )
     sinais.push("prometeu-consultor-sem-transferir");
+
+  // Mesma resposta que a IA acabou de mandar (não deveria ser enviada duas vezes seguidas).
+  if (
+    e.texto.trim() &&
+    e.anteriores.length &&
+    normalizar(e.anteriores[e.anteriores.length - 1]) === normalizar(e.texto)
+  )
+    sinais.push("resposta-repetida");
 
   const precos = new Set(e.veiculos.map((v) => soDigitos(v.preco)));
   // Valor que o próprio cliente digitou (ex.: a entrada) não é preço de carro citado pela IA.

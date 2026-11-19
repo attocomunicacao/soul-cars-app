@@ -34,6 +34,8 @@ import {
   preencher,
   respostaDeAbertura,
   veiculoMencionado,
+  listaDeVeiculos,
+  pediuLista,
   FINANCIAMENTO_ANTERIOR,
   voltouParaIa,
   variaveis,
@@ -524,7 +526,16 @@ async function responder(conversa: MensagemIa[], lead: Lead) {
   const transferir = lido.transferir || (forcar && !lido.encerrar);
   // Quem pergunta é o sistema (sempre o item certo, na ordem): o texto do modelo fica só com a resposta.
   let texto = lido.texto;
+  // Pediu "todas as opções": a lista completa vem do estoque (o modelo escolhia só alguns).
+  const pediuTodos =
+    pediuLista(
+      conversa.filter((m) => m.role === "user").at(-1)?.content ?? "",
+    ) &&
+    veiculos.length > 0 &&
+    (plano?.fotos.length ?? 0) === 0;
   if (f && transferir) texto = fecharTransferencia(texto, f);
+  else if (pediuTodos && !lido.encerrar)
+    texto = listaDeVeiculos(veiculos) + (proxima ? `\n\n${proxima.frase}` : "");
   else if (proxima && !lido.encerrar && (plano?.fotos.length ?? 0) === 0)
     texto = anexarPergunta(texto, proxima.frase, proxima.campos);
   return {
@@ -821,13 +832,20 @@ export async function rodar() {
       }
       let r: RespostaIa;
       try {
-        r = await responder(novas.length ? mascaradas : conversa, {
-          veiculos: estoque,
-          nome: st.nome,
-          etiquetas,
-          fotosEnviadas: st.fotosEnviadas,
-          ficha: st.ficha,
-        });
+        r = await responder(
+          novas.length
+            ? mascaradas.filter(
+                (_, i) => horaDa(msgs[i]) > (st.fichaDesde ?? 0),
+              )
+            : conversa,
+          {
+            veiculos: estoque,
+            nome: st.nome,
+            etiquetas,
+            fotosEnviadas: st.fotosEnviadas,
+            ficha: st.ficha,
+          },
+        );
       } catch (erro) {
         auditarTurno({
           ...base,
@@ -843,6 +861,20 @@ export async function rodar() {
           `${st.nome} pediu fotos do ${r.plano.veiculo.marca} ${r.plano.veiculo.modelo}, mas ele não tem fotos na pasta FOTOS`,
         );
       if (!r.texto) {
+        auditarTurno({ ...base, id: novoId(), desfecho: "descartado", r });
+        continue;
+      }
+      // Resposta idêntica à última da IA (ex.: o cliente mandou a mesma mensagem duas vezes): não repete.
+      const ultimaDaIa = st.historico
+        .filter((m) => m.role === "assistant")
+        .at(-1);
+      if (
+        ultimaDaIa &&
+        !r.transferir &&
+        (r.plano?.fotos.length ?? 0) === 0 &&
+        normalizar(ultimaDaIa.content) === normalizar(r.texto)
+      ) {
+        registrar("crm", `${st.nome}: resposta repetida omitida`);
         auditarTurno({ ...base, id: novoId(), desfecho: "descartado", r });
         continue;
       }
