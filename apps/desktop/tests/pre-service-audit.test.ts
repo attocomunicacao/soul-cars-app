@@ -136,7 +136,7 @@ describe("simulação e promessas sem transferir", () => {
     expect(
       avaliarTurno({
         ...base,
-        texto: "Prefere uma ligação para o consultor fazer essa simulação?",
+        texto: "Vou pedir para o consultor fazer essa simulação.",
       }),
     ).toContain("prometeu-consultor-sem-transferir");
   });

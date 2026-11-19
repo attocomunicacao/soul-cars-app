@@ -386,7 +386,9 @@ describe("compatibilidade, prompt, máscara e nota", () => {
       motivo: "o cliente pediu para falar com a equipe",
     });
     expect(nota).toContain("Lead: Ana");
-    expect(nota).toContain("Não informado: região, forma de pagamento");
+    expect(nota).toContain(
+      "Não informado: carro de interesse, região, forma de pagamento",
+    );
     expect(nota).toContain("Motivo da transferência: o cliente pediu");
   });
 });

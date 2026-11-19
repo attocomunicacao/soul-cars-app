@@ -22,6 +22,7 @@ export type SinalAuditoria =
   | "transferiu-sem-coletar"
   | "ofereceu-visita"
   | "perguntou-dado-ja-informado"
+  | "perguntou-regiao-sem-carro"
   | "erro";
 
 /** Texto curto de cada sinal, para a tela. */
@@ -42,6 +43,8 @@ export const ROTULO_SINAL: Record<SinalAuditoria, string> = {
     "Transferiu antes de coletar os dados (região, pagamento, horário…)",
   "ofereceu-visita":
     "Ofereceu agendar visita (o consultor combina depois da ligação)",
+  "perguntou-regiao-sem-carro":
+    "Perguntou a região antes de confirmar o carro de interesse",
   "perguntou-dado-ja-informado":
     "Perguntou de novo algo que o cliente já respondeu",
   erro: "Erro ao responder ou entregar",
@@ -139,7 +142,12 @@ export function avaliarTurno(e: EntradaAvaliacao): SinalAuditoria[] {
 
   if (!e.texto.trim() && e.recebidas.length) sinais.push("sem-resposta");
 
-  if (PROMETE_EQUIPE.test(t) && !e.transferir && !e.encerrar)
+  if (
+    PROMETE_EQUIPE.test(t) &&
+    !e.transferir &&
+    !e.encerrar &&
+    !e.texto.includes("?")
+  )
     sinais.push("prometeu-consultor-sem-transferir");
 
   const precos = new Set(e.veiculos.map((v) => soDigitos(v.preco)));
@@ -195,13 +203,18 @@ export function avaliarTurno(e: EntradaAvaliacao): SinalAuditoria[] {
 
   // A IA perguntou de novo algo que a ficha já tem (CPF, entrada, região…)? Só conta frase com "?".
   const jaSabia = e.coleta?.informados ?? [];
-  if (jaSabia.length) {
-    const perguntas = e.texto
-      .split(/(?<=[.!?])\s+|\n+/)
-      .filter((s) => s.includes("?"));
-    if (perguntas.some((p) => jaSabia.some((c) => perguntouCampo(p, c))))
-      sinais.push("perguntou-dado-ja-informado");
-  }
+  const perguntas = e.texto
+    .split(/(?<=[.!?])\s+|\n+/)
+    .filter((s) => s.includes("?"));
+  if (perguntas.some((p) => jaSabia.some((c) => perguntouCampo(p, c))))
+    sinais.push("perguntou-dado-ja-informado");
+  // O carro de interesse vem antes da região.
+  if (
+    e.coleta &&
+    !jaSabia.includes("veiculo") &&
+    perguntas.some((p) => perguntouCampo(p, "regiao"))
+  )
+    sinais.push("perguntou-regiao-sem-carro");
 
   if (SIMULAR.test(t) && !e.transferir) sinais.push("ofereceu-simulacao");
 

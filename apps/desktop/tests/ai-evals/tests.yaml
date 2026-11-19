@@ -77,27 +77,25 @@
     - type: icontains-any
       value: ["84.000", "84 mil", "84000"]
 
-- description: financiamento pede CPF, nascimento, CNH e entrada e ainda não transfere
+- description: financiamento não transfere, não pede dados (o sistema pergunta) e não oferece simular
   vars:
-    conversa: '[{"role":"user","content":"Vcs financiam? Quanto fica a parcela do Onix em 48x?"}]'
+    conversa: '[{"role":"user","content":"Tenho interesse no Onix"},{"role":"assistant","content":"Temos o Onix LT por R$ 79.900."},{"role":"user","content":"Vcs financiam? Quanto fica a parcela em 48x?"}]'
   assert:
-    - type: icontains
-      value: "CPF"
     - type: not-contains
       value: "[TRANSFERIR]"
     - type: not-icontains-any
-      value: ["posso simular", "vou simular", "podemos simular", "agendar uma visita"]
+      value: ["posso simular", "vou simular", "podemos simular", "agendar uma visita", "seu CPF"]
 
-- description: lead novo interessado no carro é perguntado sobre a região
+- description: lista os carros quando perguntam e não oferece visita nem transfere
   vars:
-    conversa: '[{"role":"user","content":"Bom dia"},{"role":"assistant","content":"Bom dia! Em que posso ajudar?"},{"role":"user","content":"Tenho interesse no Onix"}]'
+    conversa: '[{"role":"user","content":"Bom dia"},{"role":"assistant","content":"Bom dia! Em que posso ajudar?"},{"role":"user","content":"Quais carros vocês tem disponivel?"}]'
   assert:
     - type: icontains-any
-      value: ["região", "regiao"]
+      value: ["Civic", "Corolla", "T-Cross", "Onix"]
     - type: not-contains
       value: "[TRANSFERIR]"
     - type: not-icontains-any
-      value: ["agendar uma visita", "agendar visita"]
+      value: ["agendar uma visita", "agendar visita", "região"]
 
 - description: com região, pagamento e horário da ligação, transfere
   vars:

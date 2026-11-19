@@ -12,6 +12,7 @@ export type Pagamento = "a vista" | "financiado" | "cartao" | "troca";
 
 /** Itens que a IA tenta descobrir, na ordem em que pergunta. */
 export type Campo =
+  | "veiculo"
   | "regiao"
   | "pagamento"
   | "troca"
@@ -167,10 +168,11 @@ function acharEntrada(texto: string, perguntouEntrada: boolean): string {
     (perguntouEntrada && /^\W*(nao|nada|zero|nenhum|nenhuma)\W*$/.test(t))
   )
     return "sem entrada";
-  // "Somente o carro na troca": o veículo é a entrada, em dinheiro não há nada.
+  // "Somente o carro/o Gol na troca": o veículo é a entrada, em dinheiro não há nada (sem número na frase).
   if (
     (perguntouEntrada || /entrada/.test(t)) &&
-    /\b(somente|so|apenas)\s+(o\s+)?(carro|veiculo|usado|automovel)\b/.test(t)
+    /\b(somente|so|apenas)\s+(o|a|um|uma)\b/.test(t) &&
+    !/\d/.test(t.replace(/\b(19|20)\d{2}\b/g, ""))
   )
     return "sem entrada (só o veículo na troca)";
   const antes =
@@ -196,6 +198,8 @@ function acharEntrada(texto: string, perguntouEntrada: boolean): string {
 // ------------------------------------------------------------------ perguntas da IA
 /** Como reconhecer, numa mensagem da IA, que ela perguntou cada item. */
 const PERGUNTA: Record<Campo, RegExp> = {
+  veiculo:
+    /qual (desses )?(carro|veiculo)|(carro|veiculo) (voce )?(tem )?interesse/,
   regiao: /regiao|bairro|cidade|onde voce (mora|esta|fica)/,
   pagamento:
     /(a vista|financ)[^.?!]*(cartao|troca)|como voce pretende|forma de pagamento/,
@@ -230,6 +234,12 @@ function acharRegiao(texto: string, anterior: string): string {
       t,
     );
   if (dito) return dito[1].trim();
+  // "Falo aqui da Zona Norte", "aqui de Osasco": o cliente conta de onde fala.
+  const daqui =
+    /\b(?:(?:falo|escrevo|chamando)\s+)?aqui\s+(?:da|do|de|em|na|no)\s+([^,.!?\n]{2,30})/i.exec(
+      t,
+    );
+  if (daqui && palavrasDe(daqui[1]) <= 4) return daqui[1].trim();
   if (
     perguntou(anterior, "regiao") &&
     t &&
@@ -286,6 +296,18 @@ function acharPagamento(texto: string): Pagamento[] {
   return achados;
 }
 
+/** Veículo dado na troca: só o modelo/ano ("Gol 2015"), não a frase inteira. */
+function acharTroca(texto: string, perguntouTroca: boolean): string {
+  const t = texto.trim();
+  if (perguntouTroca && !/\?/.test(t)) return t.slice(0, 60);
+  if (!/troc/i.test(t)) return "";
+  const dito =
+    /(?:tenho|dou|daria|dar|meu|minha|com)\s+(?:um|uma|o|a)?\s*([^.,;!?]{3,40}?)\s+(?:na|de|pra|para)\s+(?:a\s+)?troca/i.exec(
+      t,
+    );
+  return (dito ? dito[1] : t).trim().slice(0, 60);
+}
+
 /** Dados que uma mensagem do cliente traz. `perguntaAnterior` = última mensagem da IA/equipe. */
 export function extrairDados(
   texto: string,
@@ -293,12 +315,7 @@ export function extrairDados(
   agora = new Date(),
 ) {
   const t = sem(texto);
-  const troca =
-    perguntou(perguntaAnterior, "troca") && !/\?/.test(texto)
-      ? texto.trim().slice(0, 100)
-      : /troc/.test(t)
-        ? texto.trim().slice(0, 100)
-        : "";
+  const troca = acharTroca(texto, perguntou(perguntaAnterior, "troca"));
   const cpf = acharCpf(texto);
   return {
     cpf,
@@ -391,6 +408,8 @@ export const coletaAtiva = (f: FichaLead) =>
 /** Itens que o consultor precisa e ainda não temos, na ordem de pergunta (inclui os já dispensados). */
 export function ausentes(f: FichaLead): Campo[] {
   const falta: Campo[] = [];
+  // O carro de interesse vem antes de qualquer outra pergunta.
+  if (!f.veiculo) falta.push("veiculo");
   // Se o cliente já falou em financiar, os dados do financiamento são o assunto: vêm primeiro.
   if (financiado(f)) {
     if (!f.cpf) falta.push("cpf");
@@ -413,6 +432,7 @@ export const pendentes = (f: FichaLead): Campo[] =>
     : [];
 
 const ROTULO: Record<Campo, string> = {
+  veiculo: "carro de interesse",
   regiao: "região",
   pagamento: "forma de pagamento",
   troca: "modelo e ano do veículo na troca",
@@ -428,6 +448,8 @@ export const rotulos = (campos: Campo[]) => campos.map((c) => ROTULO[c]);
 export const informados = (f: FichaLead): Campo[] =>
   CAMPOS.filter((c) => {
     switch (c) {
+      case "veiculo":
+        return !!f.veiculo;
       case "regiao":
         return !!f.regiao;
       case "pagamento":
@@ -521,6 +543,7 @@ export function proximaPergunta(
     return { campos: grupo, frase: fraseDoFinanciamento(f, grupo) };
   }
   const frases: Partial<Record<Campo, string>> = {
+    veiculo: "Qual carro você tem interesse?",
     regiao: "Para te atender melhor, em qual região você está?",
     pagamento:
       "Como você pretende adquirir o veículo: à vista, financiado, cartão ou com veículo na troca?",
@@ -542,7 +565,7 @@ export function avisoDeColeta(
   const prox = proximaPergunta(f);
   if (!prox)
     return `\n\nATENÇÃO (qualificação): já temos todos os dados do cliente. Agradeça em 1 frase, diga que um consultor vai ligar${f.horarioLigacao ? ` (${f.horarioLigacao})` : ""} e inclua [TRANSFERIR]. Não faça mais perguntas e não ofereça visita.`;
-  return `\n\nATENÇÃO (qualificação): o cliente ainda está sendo atendido pela IA. Responda a dúvida dele em no máximo 1 ou 2 frases, SEM fazer perguntas: o sistema acrescenta sozinho a próxima pergunta ("${prox.frase}"). Não repita essa pergunta. NÃO inclua [TRANSFERIR] agora. NÃO ofereça nem agende visita: o consultor liga primeiro e combina a visita depois.`;
+  return `\n\nATENÇÃO (qualificação): o cliente ainda está sendo atendido pela IA. Responda a dúvida dele em no máximo 1 ou 2 frases, SEM fazer perguntas: o sistema acrescenta sozinho a próxima pergunta. Não escreva pedidos de dados nem de documentos. NÃO inclua [TRANSFERIR] agora. NÃO ofereça nem agende visita: o consultor liga primeiro e combina a visita depois.`;
 }
 
 const PAGAMENTO_ROTULO: Record<Pagamento, string> = {
@@ -631,20 +654,23 @@ export function mascarar(
       ? "[CPF informado]"
       : m,
   );
-  if (datas)
-    t = t.replace(DATA_RE, (m) =>
-      acharNascimento(m, new Date()) ? "[data de nascimento informada]" : m,
-    );
+  // Datas de nascimento plausíveis (maior de 18 anos): com ano de 4 dígitos sempre; com 2 dígitos só no contexto.
+  t = t.replace(DATA_RE, (m, _d, _m2, ano: string) =>
+    (datas || ano.length === 4) && acharNascimento(m, new Date())
+      ? "[data de nascimento informada]"
+      : m,
+  );
   return t;
 }
 
 /** Máscara numa conversa: datas só são mascaradas quando a pergunta anterior ou o texto falam de nascimento. */
 export function mascararConversa(conversa: MensagemIa[]): MensagemIa[] {
-  let anterior = "";
+  // O contexto é a última mensagem da IA (não a do cliente): o cliente pode mandar CPF e data em mensagens seguidas.
+  let ultimaIa = "";
   return conversa.map((m) => {
-    const datas = /nasc/.test(sem(anterior)) || /nasc/.test(sem(m.content));
-    const cpfQualquer = perguntou(anterior, "cpf");
-    anterior = m.content;
+    if (m.role === "assistant") ultimaIa = m.content;
+    const datas = /nasc/.test(sem(ultimaIa)) || /nasc/.test(sem(m.content));
+    const cpfQualquer = perguntou(ultimaIa, "cpf");
     return { ...m, content: mascarar(m.content, datas, cpfQualquer) };
   });
 }
@@ -677,11 +703,34 @@ export const perguntouQualificacao = (anterior: string) =>
  * Junta a resposta do modelo com a próxima pergunta da qualificação: tira as frases com "?" que o modelo
  * tenha escrito (quem pergunta é o sistema, sempre na ordem certa) e acrescenta a pergunta.
  */
-export function anexarPergunta(texto: string, frase: string): string {
+export function anexarPergunta(
+  texto: string,
+  frase: string,
+  campos: Campo[] = [],
+): string {
+  // Frases da pergunta do sistema: o modelo costuma copiá-las ("Não consegui validar esse CPF.").
+  const dela = frase
+    .split(/(?<=[.!?])\s+/)
+    .map((x) =>
+      sem(x)
+        .replace(/[^a-z0-9 ]/g, " ")
+        .replace(/ +/g, " ")
+        .trim(),
+    )
+    .filter(Boolean);
   const resposta = texto
     .split(/(?<=[.!?])\s+|\n+/)
-    .map((s) => s.trim())
-    .filter((s) => s && !s.includes("?"))
+    .map((x) => x.trim())
+    .filter((x) => {
+      if (!x || x.includes("?")) return false;
+      const norma = sem(x)
+        .replace(/[^a-z0-9 ]/g, " ")
+        .replace(/ +/g, " ")
+        .trim();
+      if (dela.some((d) => d.includes(norma) || norma.includes(d)))
+        return false;
+      return !campos.some((c) => perguntou(x, c)); // não repete o pedido dos mesmos itens
+    })
     .join(" ");
   return resposta ? `${resposta}\n\n${frase}` : frase;
 }

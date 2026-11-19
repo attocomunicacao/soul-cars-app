@@ -206,3 +206,124 @@ describe("pedidos de dados no financiamento", () => {
     );
   });
 });
+
+describe("conversa real do teste de 19:35", () => {
+  const veiculos = [
+    {
+      id: "1",
+      marca: "Toyota",
+      modelo: "Yaris Hatch",
+      placa: "AAA1A11",
+      preco: "70.000",
+    },
+    {
+      id: "2",
+      marca: "Jeep",
+      modelo: "Renegade",
+      placa: "BBB2B22",
+      preco: "66.900",
+    },
+    {
+      id: "3",
+      marca: "Hyundai",
+      modelo: "Tucson",
+      placa: "CCC3C33",
+      preco: "52.900",
+    },
+  ];
+  const lista =
+    "Temos 11 veículos disponíveis, como Hyundai Tucson, Jeep Renegade e Toyota Yaris.";
+
+  it("sem carro confirmado a IA pergunta o carro, nunca a região", () => {
+    const f = fichaDaConversa(
+      [
+        cli("Olá!"),
+        ia("Olá! Como posso ajudar?"),
+        cli("Quais carros vocês tem disponivel?"),
+      ],
+      FICHA_VAZIA,
+      AGORA,
+    );
+    expect(proximaPergunta(f)?.campos).toEqual(["veiculo"]);
+    expect(proximaPergunta(f)?.frase).toBe("Qual carro você tem interesse?");
+  });
+
+  it("'Yaris, falo da Zona Norte' dá o carro e a região na mesma mensagem", () => {
+    const msg = "Tenho interesse no Yaris. Falo aqui da Zona Norte";
+    const carro = veiculoMencionado(
+      veiculos,
+      msg,
+      `${lista} Qual carro você tem interesse?`,
+      "",
+    );
+    expect(carro?.modelo).toBe("Yaris Hatch");
+    const f = fichaDaConversa(
+      [ia(`${lista} Qual carro você tem interesse?`), cli(msg)],
+      { ...FICHA_VAZIA, veiculo: "Toyota Yaris Hatch", mensagensCliente: 3 },
+      AGORA,
+    );
+    expect(f.regiao).toBe("Zona Norte");
+    expect(proximaPergunta(f)?.frase).toContain(
+      "como você pretende adquirir".replace("como", "Como"),
+    );
+  });
+
+  it("troca só com modelo/ano e entrada 'somente o Gol'", () => {
+    const x = extrairDados(
+      "Vou financiar e tenho um gol 2015 na troca.",
+      "",
+      AGORA,
+    );
+    expect(x.troca).toBe("gol 2015");
+    expect(x.pagamento).toEqual(["financiado", "troca"]);
+    expect(
+      extrairDados("Tenho CNH sim. A entrada é somente o GOL 2015", "", AGORA)
+        .entrada,
+    ).toBe("sem entrada (só o veículo na troca)");
+    expect(
+      extrairDados("Tenho CNH sim. A entrada é somente o GOL 2015", "", AGORA)
+        .cnh,
+    ).toBe("sim");
+  });
+
+  it("o modelo não duplica a frase do sistema", () => {
+    const frase =
+      "Não consegui validar esse CPF. Pode conferir e me enviar de novo?";
+    expect(anexarPergunta("Não consegui validar esse CPF.", frase)).toBe(frase);
+    expect(
+      anexarPergunta(
+        "Entendido, vamos analisar o financiamento e a troca do seu Gol 2015. Consigo fazer uma análise de crédito pra você: preciso do seu CPF e data de nascimento.",
+        "Consigo fazer uma análise de crédito pra você: preciso do seu CPF e data de nascimento. Você possui CNH? Quanto você dispõe de entrada?",
+        ["cpf", "nascimento", "cnh", "entrada"],
+      ),
+    ).toBe(
+      "Entendido, vamos analisar o financiamento e a troca do seu Gol 2015.\n\nConsigo fazer uma análise de crédito pra você: preciso do seu CPF e data de nascimento. Você possui CNH? Quanto você dispõe de entrada?",
+    );
+  });
+
+  it("a data de nascimento é mascarada mesmo em mensagens seguidas do cliente", () => {
+    const m = mascararConversa([
+      ia(
+        "Consigo fazer uma análise de crédito pra você: preciso do seu CPF e data de nascimento.",
+      ),
+      cli("829.948.293-48"),
+      cli("12/12/2000"),
+      ia("Não consegui validar esse CPF. Pode conferir e me enviar de novo?"),
+      cli("passo aí dia 20/11/2026"),
+    ]);
+    expect(m[1].content).toBe("[CPF informado]");
+    expect(m[2].content).toBe("[data de nascimento informada]");
+    expect(m[4].content).toBe("passo aí dia 20/11/2026");
+  });
+});
+
+describe("data de nascimento sempre mascarada", () => {
+  it("com ano de 4 dígitos plausível mascara mesmo sem contexto; data de visita não", () => {
+    expect(mascarar("12/12/2000")).toBe("[data de nascimento informada]");
+    expect(mascarar("nasci em 03/05/1985")).toBe(
+      "nasci em [data de nascimento informada]",
+    );
+    expect(mascarar("passo aí dia 20/11/2026")).toBe("passo aí dia 20/11/2026");
+    expect(mascarar("dia 20/11/26")).toBe("dia 20/11/26"); // 2 dígitos só no contexto
+  });
+});

@@ -380,10 +380,9 @@ export const veiculoCitado = (veiculos: VeiculoIa[], texto: string) =>
   decidir(pontuar(veiculos, texto));
 
 /**
- * Carro que o cliente citou nesta mensagem, para a ficha. Mais rígido que `veiculoCitado`: ignora a
- * resposta a uma pergunta da qualificação ("Somente o carro na troca" não é o Sorento), só troca o carro
- * da ficha por uma palavra EXATA do modelo (ou preço), e a aproximação (erro de digitação) só preenche
- * quando a ficha ainda não tem carro.
+ * Carro que o cliente citou nesta mensagem, para a ficha. Mais rígido que `veiculoCitado`: uma palavra
+ * EXATA do modelo (ou preço) sempre vale e pode trocar o carro da ficha; a aproximação (erro de digitação)
+ * só preenche quando a ficha ainda não tem carro e a mensagem não responde a uma pergunta da qualificação.
  */
 export function veiculoMencionado(
   veiculos: VeiculoIa[],
@@ -391,7 +390,6 @@ export function veiculoMencionado(
   perguntaAnterior: string,
   carroDaFicha: string,
 ): VeiculoIa | null {
-  if (perguntouQualificacao(perguntaAnterior)) return null;
   const ditas = new Set(palavras(texto));
   const exato = veiculos
     .map((v) => ({
@@ -405,7 +403,9 @@ export function veiculoMencionado(
     .sort((a, b) => b.s - a.s);
   if (exato.length && (exato.length === 1 || exato[0].s > exato[1].s))
     return exato[0].v;
-  if (carroDaFicha) return null;
+  // A aproximação (erro de digitação) só preenche carro vazio e nunca em resposta a uma pergunta da qualificação
+  // ("Somente o carro na troca" não é o Sorento).
+  if (carroDaFicha || perguntouQualificacao(perguntaAnterior)) return null;
   const escolha = veiculoCitado(veiculos, texto);
   return escolha.tipo === "um" ? escolha.veiculo : null;
 }

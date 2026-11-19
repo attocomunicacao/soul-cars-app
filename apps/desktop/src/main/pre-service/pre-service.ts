@@ -437,6 +437,8 @@ type Lead = {
   etiquetas: string[];
   fotosEnviadas: Record<string, number>;
   ficha?: FichaLead;
+  /** Estoque já carregado pelo chamador (evita ler o CSV e as pastas duas vezes por rodada). */
+  veiculos?: VeiculoIa[];
 };
 
 async function responder(conversa: MensagemIa[], lead: Lead) {
@@ -465,7 +467,7 @@ async function responder(conversa: MensagemIa[], lead: Lead) {
         veiculos: [] as VeiculoIa[],
       },
     };
-  const veiculos = veiculosDisponiveis();
+  const veiculos = lead.veiculos ?? veiculosDisponiveis();
   const plano = planoDeFotos({
     conversa,
     veiculos,
@@ -509,16 +511,22 @@ async function responder(conversa: MensagemIa[], lead: Lead) {
     bloquearTransferencia: !!f && !podeTransferir(f, { pediuHumano: humano }),
   });
   // Qualificação completa, cliente que recusa ou que pede alguém: a transferência não depende de o modelo lembrar da tag.
+  const proxima =
+    f && !f.entregue && coletaAtiva(f) ? proximaPergunta(f) : null;
+  // O modelo prometeu "um consultor vai ligar" e não há mais nada a perguntar: transfere de verdade.
+  const prometeu =
+    /consultor (vai|ira|entrara|continua)/.test(normalizar(lido.texto)) &&
+    !proxima;
   const forcar =
-    !!f && !f.entregue && (coletaCompleta(f) || f.recusou || humano);
+    !!f &&
+    !f.entregue &&
+    (coletaCompleta(f) || f.recusou || humano || prometeu);
   const transferir = lido.transferir || (forcar && !lido.encerrar);
   // Quem pergunta é o sistema (sempre o item certo, na ordem): o texto do modelo fica só com a resposta.
   let texto = lido.texto;
-  const proxima =
-    f && !f.entregue && coletaAtiva(f) ? proximaPergunta(f) : null;
   if (f && transferir) texto = fecharTransferencia(texto, f);
   else if (proxima && !lido.encerrar && (plano?.fotos.length ?? 0) === 0)
-    texto = anexarPergunta(texto, proxima.frase);
+    texto = anexarPergunta(texto, proxima.frase, proxima.campos);
   return {
     ...lido,
     texto,
@@ -794,29 +802,32 @@ export async function rodar() {
           .slice(-2)
           .map((m) => m.content),
       };
+      // O carro é detectado antes de responder: a mesma mensagem que cita o carro já avança a pergunta.
+      const estoque = veiculosDisponiveis();
+      for (const m of novas) {
+        const i = msgs.indexOf(m);
+        const anteriorIa = msgs
+          .slice(0, i)
+          .reverse()
+          .find((x) => !doContato(x));
+        const carro = veiculoMencionado(
+          estoque,
+          textoDa(m),
+          anteriorIa ? textoDa(anteriorIa) : "",
+          st.ficha?.veiculo ?? "",
+        );
+        if (carro && st.ficha)
+          st.ficha.veiculo = carro.marca + " " + carro.modelo;
+      }
       let r: RespostaIa;
       try {
         r = await responder(novas.length ? mascaradas : conversa, {
+          veiculos: estoque,
           nome: st.nome,
           etiquetas,
           fotosEnviadas: st.fotosEnviadas,
           ficha: st.ficha,
         });
-        for (const m of novas) {
-          const i = msgs.indexOf(m);
-          const anteriorIa = msgs
-            .slice(0, i)
-            .reverse()
-            .find((x) => !doContato(x));
-          const carro = veiculoMencionado(
-            r.auditoria.veiculos,
-            textoDa(m),
-            anteriorIa ? textoDa(anteriorIa) : "",
-            st.ficha?.veiculo ?? "",
-          );
-          if (carro && st.ficha)
-            st.ficha.veiculo = carro.marca + " " + carro.modelo;
-        }
       } catch (erro) {
         auditarTurno({
           ...base,
