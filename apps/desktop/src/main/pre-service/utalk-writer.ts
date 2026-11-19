@@ -118,6 +118,17 @@ export function clienteEscrita(buscar: Buscar, token: string, orgId: string) {
           skipReassign: true,
         },
       }),
+    /** Nota interna no chat (`isPrivate`): só a equipe vê, o cliente não recebe nada. */
+    notaPrivada: (chatId: string, texto: string) =>
+      chamar("POST", "/v1/messages/", {
+        corpo: {
+          chatId,
+          message: texto,
+          isPrivate: true,
+          automated: true,
+          skipReassign: true,
+        },
+      }),
     /** Envia uma foto no chat (multipart no mesmo endpoint das mensagens). */
     enviarArquivo: async (chatId: string, nome: string, bytes: Uint8Array) => {
       const ext = nome.split(".").pop()?.toLowerCase();

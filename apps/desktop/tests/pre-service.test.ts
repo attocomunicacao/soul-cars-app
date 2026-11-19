@@ -10,6 +10,7 @@ import {
   fotosNumeradas,
   interpretarResposta,
   montarMensagens,
+  voltouParaIa,
   CONFIG_PADRAO,
   LOJA_PADRAO,
   PERSONA_PADRAO,
@@ -353,5 +354,23 @@ describe("conversa real: 'Jeep Renegade' e depois 'Me encaminha as fotos'", () =
     });
     expect(mensagens[0].content).toMatch(/RENEGADE/);
     expect(mensagens[0].content).toMatch(/CRUZE/);
+  });
+});
+
+describe("voltouParaIa", () => {
+  it("lead com a equipe e etiqueta retirada volta quando a etiqueta reaparece", () => {
+    expect(voltouParaIa({ status: "humano" })).toBe(true);
+    expect(voltouParaIa({ status: "humano", gatilhoRetirado: true })).toBe(
+      true,
+    );
+  });
+  it("não volta se a IA nunca conseguiu tirar a etiqueta", () => {
+    expect(voltouParaIa({ status: "humano", gatilhoRetirado: false })).toBe(
+      false,
+    );
+  });
+  it("encerrado (pediu para parar) e ativo não voltam por aqui", () => {
+    expect(voltouParaIa({ status: "encerrado" })).toBe(false);
+    expect(voltouParaIa({ status: "ativo" })).toBe(false);
   });
 });

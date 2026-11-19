@@ -8,6 +8,7 @@ import {
   LOJA_PADRAO,
   RESPOSTAS_PADRAO,
 } from "../../src/shared/pre-service.ts";
+import { fichaDaConversa } from "../../src/shared/lead-profile.ts";
 
 /** Estoque fictício (nunca dados reais da loja). */
 const ESTOQUE = [
@@ -17,6 +18,7 @@ const ESTOQUE = [
     modelo: "Civic EXL 2.0 2019",
     placa: "ABC1D23",
     preco: "R$ 109.900",
+    km: "84.000",
   },
   {
     id: "t2",
@@ -57,6 +59,7 @@ export default async function ({ vars }) {
     reais: [],
     conversa,
     nomeLead: vars.nome ?? "Carlos",
+    ficha: fichaDaConversa(conversa),
   });
   return mensagens;
 }

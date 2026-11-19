@@ -54,6 +54,7 @@ type Painel = {
     mensagens: number;
     ultima: { role: string; content: string; em: number } | null;
     ultimaIaEm: number | null;
+    resumo: string | null;
   }[];
   registros: { em: string; tipo: string; texto: string }[];
   laco: {
@@ -261,6 +262,12 @@ function Visao({ p, agir }: { p: Painel; agir: Agir }) {
                         {c.ultima.role === "user" ? "Lead: " : "IA: "}
                         {c.ultima.content.slice(0, 120)}
                       </p>
+                    )}
+                    {c.resumo && (
+                      <details>
+                        <summary className="hint">Ficha do lead</summary>
+                        <pre className="auditoria-bruto">{c.resumo}</pre>
+                      </details>
                     )}
                   </div>
                   <span className="actions">

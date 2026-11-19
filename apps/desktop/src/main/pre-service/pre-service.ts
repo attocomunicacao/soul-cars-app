@@ -17,10 +17,11 @@ import { tokenUtalk } from "../crm/utalk";
 import { descobrirOrganizacao, type Buscar } from "../crm/utalk-api";
 import { ehAtivo, lerCsv } from "../inventory/folder-sync";
 import { conversasDaMemoria } from "../soul-ai/soul-ai";
-import { pastaFotos } from "../studio/files";
+import { arquivoNaRaiz, pastaFotos } from "../studio/files";
 import {
   CONFIG_PADRAO,
   LOJA_PADRAO,
+  PERSONAS_ANTERIORES,
   PERSONA_PADRAO,
   RESPOSTAS_PADRAO,
   doContato,
@@ -32,6 +33,11 @@ import {
   planoDeFotos,
   preencher,
   respostaDeAbertura,
+  veiculoMencionado,
+  listaDeVeiculos,
+  pediuLista,
+  FINANCIAMENTO_ANTERIOR,
+  voltouParaIa,
   variaveis,
   type ConfigIa,
   type ExemploIa,
@@ -41,6 +47,29 @@ import {
   type RespostaRapida,
   type VeiculoIa,
 } from "../../shared/pre-service";
+import { lerKmEValor } from "../../shared/des-md";
+import {
+  FICHA_VAZIA,
+  anexarPergunta,
+  coletaAtiva,
+  ausentes,
+  coletaCompleta,
+  MAX_PEDIDOS,
+  fecharTransferencia,
+  informados,
+  proximaPergunta,
+  fichaCompativel,
+  fichaDaConversa,
+  mascarar,
+  mascararConversa,
+  motivoDaTransferencia,
+  pediuHumano,
+  pendentes,
+  podeTransferir,
+  resumoParaSdr,
+  rotulos,
+  type FichaLead,
+} from "../../shared/lead-profile";
 import {
   avaliarTurno,
   mascararTelefone,
@@ -69,6 +98,12 @@ type EstadoChat = {
   vistoAte: number;
   ultimaIaEm: number | null;
   fotosEnviadas: Record<string, number>;
+  /** A IA conseguiu tirar a etiqueta de gatilho ao transferir? (`false` = ela ainda está no lead) */
+  gatilhoRetirado?: boolean;
+  /** O que a IA já sabe do lead (CPF cifrado). */
+  ficha?: FichaLead;
+  /** Só as mensagens depois deste instante contam para a ficha (começa um novo ciclo ao devolver o lead à IA). */
+  fichaDesde?: number;
 };
 export type Rascunho = {
   id: string;
@@ -111,11 +146,25 @@ function carregar(): Estado {
   }
   estado = {
     config: { ...CONFIG_PADRAO, ...lido.config },
-    loja: { ...LOJA_PADRAO, ...lido.loja },
-    persona: lido.persona ?? PERSONA_PADRAO,
+    loja: {
+      ...LOJA_PADRAO,
+      ...lido.loja,
+      ...(lido.loja?.financiamento === FINANCIAMENTO_ANTERIOR
+        ? { financiamento: LOJA_PADRAO.financiamento }
+        : {}),
+    },
+    persona:
+      !lido.persona || PERSONAS_ANTERIORES.includes(lido.persona)
+        ? PERSONA_PADRAO
+        : lido.persona,
     respostas: lido.respostas ?? structuredClone(RESPOSTAS_PADRAO),
     exemplos: lido.exemplos ?? [],
-    chats: lido.chats ?? {},
+    chats: Object.fromEntries(
+      Object.entries(lido.chats ?? {}).map(([id, c]) => [
+        id,
+        c.ficha ? { ...c, ficha: fichaCompativel(c.ficha) } : c,
+      ]),
+    ),
     rascunhos: lido.rascunhos ?? [],
     registros: lido.registros ?? [],
   };
@@ -135,6 +184,31 @@ function registrar(tipo: string, texto: string) {
 const novoId = () =>
   Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
+// ------------------------------------------------------------ ficha do lead
+/** Guarda CPF e nascimento cifrados (safeStorage); sem criptografia no sistema, só marca como informado. */
+function cifrar(valor: string): string {
+  return safeStorage.isEncryptionAvailable()
+    ? "enc:" + safeStorage.encryptString(valor).toString("base64")
+    : "informado";
+}
+/** Valor em claro a partir do que está guardado ("" se não der para decifrar). */
+function lerSegredo(guardado: string): string {
+  if (!guardado.startsWith("enc:")) return "";
+  try {
+    return safeStorage.decryptString(Buffer.from(guardado.slice(4), "base64"));
+  } catch {
+    return "";
+  }
+}
+/** Atualiza a ficha com a conversa e cifra o CPF e o nascimento recém-lidos (nunca são gravados em claro). */
+function atualizarFicha(base: FichaLead | undefined, conversa: MensagemIa[]) {
+  const f = fichaDaConversa(conversa, base ?? FICHA_VAZIA);
+  if (/^[0-9]{11}$/.test(f.cpf)) f.cpf = cifrar(f.cpf);
+  if (/^[0-9]{2}[/][0-9]{2}[/][0-9]{4}$/.test(f.nascimento))
+    f.nascimento = cifrar(f.nascimento);
+  return f;
+}
+
 // ------------------------------------------------------------ auditoria
 const ARQUIVO_AUDITORIA = () =>
   path.join(caminhos.userData(), "pre-atendimento-auditoria.jsonl");
@@ -152,6 +226,7 @@ function auditarTurno(a: {
   desfecho: Desfecho;
   r?: RespostaIa;
   erro?: string;
+  ficha?: FichaLead;
 }) {
   try {
     const { r } = a;
@@ -166,6 +241,17 @@ function auditarTurno(a: {
             veiculos: r.auditoria.veiculos,
             anteriores: a.anteriores,
             fotosPlanejadas: r.plano?.fotos.length ?? 0,
+            coleta: a.ficha && {
+              financiado: a.ficha.pagamento.includes("financiado"),
+              pendentes: pendentes(a.ficha),
+              informados: informados(a.ficha),
+              dispensados: a.ficha.recusou
+                ? []
+                : ausentes(a.ficha).filter(
+                    (c) => (a.ficha?.pedidos[c] ?? 0) >= MAX_PEDIDOS,
+                  ),
+              podeTransferir: podeTransferir(a.ficha),
+            },
           })
         : [];
     if (a.erro) sinais.push("erro");
@@ -200,6 +286,7 @@ function auditarTurno(a: {
       },
       estoque: r?.auditoria.veiculos.length ?? 0,
       desfecho: a.desfecho,
+      ...(a.ficha ? { faltando: rotulos(pendentes(a.ficha)) } : {}),
       ...(a.erro ? { erro: a.erro } : {}),
       sinais,
     });
@@ -260,20 +347,38 @@ export function veiculosDisponiveis(): VeiculoIa[] {
         const n = Number(
           String(v.salePrice ?? v.price ?? "").replace(",", "."),
         );
+        const id = String(v.idVehicle ?? "");
+        const des = desMdDo(id);
         return {
-          id: String(v.idVehicle ?? ""),
+          id,
           marca: String(v.brand ?? "").trim(),
           modelo: String(v.model ?? "").trim(),
           placa: String(v.plate ?? "").toUpperCase(),
+          // O valor do DES.md (o anunciado) vale mais que o do BNDV, que muitas vezes vem zerado.
           preco:
-            Number.isFinite(n) && n > 0
+            des.valor ||
+            (Number.isFinite(n) && n > 0
               ? Math.round(n).toLocaleString("pt-BR")
-              : "",
+              : ""),
+          km: des.km || String(v.km ?? "").trim(),
         };
       })
       // Regra da loja: só fica disponível (catálogo e IA) quem está em estoque no BNDV E tem fotos na pasta.
       .filter((v) => v.id && fotosDo(v.id).length > 0)
   );
+}
+
+/** Quilometragem e valor do DES.md da pasta do veículo ("" quando não há DES.md ou o campo). */
+function desMdDo(id: string): { km: string; valor: string } {
+  try {
+    const pasta = pastaDoVeiculo(id);
+    const arq = pasta && arquivoNaRaiz(pasta, "DES.md");
+    return arq
+      ? lerKmEValor(fs.readFileSync(arq, "utf8"))
+      : { km: "", valor: "" };
+  } catch {
+    return { km: "", valor: "" };
+  }
 }
 
 function pastaDoVeiculo(id: string): string | null {
@@ -340,6 +445,9 @@ type Lead = {
   nome: string;
   etiquetas: string[];
   fotosEnviadas: Record<string, number>;
+  ficha?: FichaLead;
+  /** Estoque já carregado pelo chamador (evita ler o CSV e as pastas duas vezes por rodada). */
+  veiculos?: VeiculoIa[];
 };
 
 async function responder(conversa: MensagemIa[], lead: Lead) {
@@ -368,7 +476,7 @@ async function responder(conversa: MensagemIa[], lead: Lead) {
         veiculos: [] as VeiculoIa[],
       },
     };
-  const veiculos = veiculosDisponiveis();
+  const veiculos = lead.veiculos ?? veiculosDisponiveis();
   const plano = planoDeFotos({
     conversa,
     veiculos,
@@ -388,6 +496,7 @@ async function responder(conversa: MensagemIa[], lead: Lead) {
     conversa,
     nomeLead: lead.nome,
     notaFotos: plano?.nota,
+    ficha: lead.ficha,
   });
   const inicio = Date.now();
   const uso: UsoModelo = {
@@ -403,8 +512,51 @@ async function responder(conversa: MensagemIa[], lead: Lead) {
     (t) => registrar("reserva", t),
     uso,
   );
+  const f = lead.ficha;
+  const humano = pediuHumano(
+    conversa.filter((m) => m.role === "user").at(-1)?.content ?? "",
+  );
+  const lido = interpretarResposta(bruto, conversa, {
+    bloquearTransferencia: !!f && !podeTransferir(f, { pediuHumano: humano }),
+  });
+  // Qualificação completa, cliente que recusa ou que pede alguém: a transferência não depende de o modelo lembrar da tag.
+  const proxima =
+    f && !f.entregue && coletaAtiva(f) ? proximaPergunta(f) : null;
+  // O modelo prometeu "um consultor vai ligar" e não há mais nada a perguntar: transfere de verdade.
+  const prometeu =
+    /consultor (vai|ira|entrara|continua)/.test(normalizar(lido.texto)) &&
+    !proxima;
+  const forcar =
+    !!f &&
+    !f.entregue &&
+    (coletaCompleta(f) || f.recusou || humano || prometeu);
+  const transferir = lido.transferir || (forcar && !lido.encerrar);
+  // Quem pergunta é o sistema (sempre o item certo, na ordem): o texto do modelo fica só com a resposta.
+  let texto = lido.texto;
+  // Pediu "todas as opções": a lista completa vem do estoque (o modelo escolhia só alguns).
+  const pediuTodos =
+    pediuLista(
+      conversa.filter((m) => m.role === "user").at(-1)?.content ?? "",
+    ) &&
+    veiculos.length > 0 &&
+    (plano?.fotos.length ?? 0) === 0;
+  if (f && transferir) texto = fecharTransferencia(texto, f);
+  else if (pediuTodos && !lido.encerrar)
+    texto = listaDeVeiculos(veiculos) + (proxima ? `\n\n${proxima.frase}` : "");
+  else if (proxima && !lido.encerrar && (plano?.fotos.length ?? 0) === 0)
+    texto = anexarPergunta(
+      texto,
+      proxima.frase,
+      proxima.campos,
+      // Modelo calado e o cliente só deu o dado (sem perguntar nada): confirma com "Anotado!".
+      !(
+        conversa.filter((m) => m.role === "user").at(-1)?.content ?? ""
+      ).includes("?"),
+    );
   return {
-    ...interpretarResposta(bruto, conversa),
+    ...lido,
+    texto,
+    transferir,
     plano,
     usados,
     auditoria: { bruto, uso, latenciaMs: Date.now() - inicio, veiculos },
@@ -418,10 +570,11 @@ export async function simular(a: {
   etiquetas?: string[];
   enviadas?: Record<string, number>;
 }) {
-  const r = await responder(a.conversa, {
+  const r = await responder(mascararConversa(a.conversa), {
     nome: a.nome || "Cliente",
     etiquetas: a.etiquetas ?? [],
     fotosEnviadas: a.enviadas ?? {},
+    ficha: fichaDaConversa(a.conversa),
   });
   auditarTurno({
     id: novoId(),
@@ -432,13 +585,14 @@ export async function simular(a: {
     recebidas: a.conversa
       .filter((m) => m.role === "user")
       .slice(-1)
-      .map((m) => m.content),
+      .map((m) => mascarar(m.content, true)),
     anteriores: a.conversa
       .filter((m) => m.role === "assistant")
       .slice(-2)
       .map((m) => m.content),
     desfecho: "simulado",
     r,
+    ficha: fichaDaConversa(a.conversa),
   });
   return {
     texto: r.texto,
@@ -488,15 +642,47 @@ async function tirarEtiqueta(
   if (erros.length === 2) throw erros[0];
 }
 
+/** Nota do cliente: sempre que a IA transfere, vai ao SDR em nota privada no chat (e fica no painel, sem CPF). */
+async function entregarResumo(c: ClienteEscrita, st: EstadoChat) {
+  const f = (st.ficha ??= FICHA_VAZIA);
+  const ultimo = st.historico.filter((m) => m.role === "user").at(-1)?.content;
+  const nota = resumoParaSdr(f, {
+    nome: st.nome,
+    motivo: motivoDaTransferencia(f, {
+      pediuHumano: pediuHumano(ultimo ?? ""),
+    }),
+    cpfPlano: lerSegredo(f.cpf) || undefined,
+    nascimentoPlano: lerSegredo(f.nascimento) || undefined,
+  });
+  try {
+    await c.notaPrivada(st.chatId, nota);
+    registrar(
+      "crm",
+      st.nome + ": nota do cliente enviada ao SDR (nota privada)",
+    );
+  } catch (erro) {
+    registrar(
+      "erro",
+      st.nome +
+        ": nota privada não criada — " +
+        (erro as Error).message.slice(0, 120),
+    );
+  }
+  f.entregue = true;
+}
+
 /** Envia o texto, depois as fotos em ordem, e aplica transferência/encerramento nas etiquetas do contato. */
 async function entregar(r: Rascunho) {
   const e = carregar();
   const c = await cliente();
   const st = e.chats[r.chatId];
   if (!st) throw new Error("Lead não encontrado.");
-  // Nunca transfere na primeira mensagem da IA: o lead precisa ter conversado antes.
+  // Não transfere na primeira mensagem da IA (o lead precisa ter conversado antes), salvo se ele mesmo pediu para falar com alguém.
+  const ultimoDoLead = st.historico.filter((m) => m.role === "user").at(-1);
   const transferir =
-    r.transferir && st.historico.some((m) => m.role === "assistant");
+    r.transferir &&
+    (st.historico.some((m) => m.role === "assistant") ||
+      pediuHumano(ultimoDoLead?.content ?? ""));
   // Texto primeiro: as imagens demoram mais no uTalk e chegariam na frente.
   await c.enviar(r.chatId, r.texto);
   let enviadas = 0;
@@ -530,7 +716,13 @@ async function entregar(r: Rascunho) {
       await c
         .porEtiqueta(await contatoDo(c, st), e.config.etiquetaTransferenciaId)
         .catch(falha);
-    await tirarEtiqueta(c, st, e.config.etiquetaGatilhoId).catch(falha);
+    st.gatilhoRetirado = await tirarEtiqueta(c, st, e.config.etiquetaGatilhoId)
+      .then(() => true)
+      .catch((erro) => {
+        falha(erro);
+        return false;
+      });
+    if (transferir) await entregarResumo(c, st);
     st.status = r.encerrar ? "encerrado" : "humano";
   }
   registrar("envio", `→ ${st.nome}: ${r.texto}`);
@@ -565,6 +757,17 @@ export async function rodar() {
         fotosEnviadas: {},
       });
       if (chat.contact?.id) st.contatoId = chat.contact.id;
+      // Etiqueta de gatilho de volta num lead entregue à equipe = a equipe devolveu à IA.
+      if (voltouParaIa(st)) {
+        st.status = "ativo";
+        st.vistoAte = Date.now(); // só responde o que chegar daqui em diante
+        st.ficha = undefined; // novo ciclo: a ficha do atendimento anterior não vale
+        st.fichaDesde = Date.now();
+        registrar(
+          "crm",
+          `${st.nome}: voltou para a IA (etiqueta de gatilho recolocada)`,
+        );
+      }
       if (
         st.status !== "ativo" ||
         e.rascunhos.some((d) => d.chatId === chat.id)
@@ -585,8 +788,30 @@ export async function rodar() {
           }))
         : [];
       if (novas.length) st.vistoAte = horaDa(novas[novas.length - 1]);
+      // O CPF e a data de nascimento ficam só na ficha (cifrada): o modelo, o histórico e a auditoria veem a versão mascarada.
+      const doCiclo = msgs.filter((m) => horaDa(m) > (st.fichaDesde ?? 0));
+      st.ficha = atualizarFicha(
+        st.ficha,
+        novas.length
+          ? doCiclo.map((m) => ({
+              role: doContato(m) ? ("user" as const) : ("assistant" as const),
+              content: textoDa(m),
+            }))
+          : [],
+      );
+      const mascaradas = mascararConversa(
+        msgs.map((m) => ({
+          role: doContato(m) ? ("user" as const) : ("assistant" as const),
+          content: textoDa(m),
+        })),
+      );
+      const doCliente = novas.map((m) => mascaradas[msgs.indexOf(m)].content);
       for (const m of novas)
-        st.historico.push({ role: "user", content: textoDa(m), em: horaDa(m) });
+        st.historico.push({
+          role: "user",
+          content: mascaradas[msgs.indexOf(m)].content,
+          em: horaDa(m),
+        });
 
       const etiquetas = (chat.contact?.tags ?? [])
         .map((t) => t.name ?? t.tag?.name ?? "")
@@ -596,19 +821,46 @@ export async function rodar() {
         chatId: chat.id,
         nome: st.nome,
         telefone: st.telefone,
-        recebidas: novas.map(textoDa),
+        recebidas: doCliente,
+        ficha: st.ficha,
         anteriores: st.historico
           .filter((m) => m.role === "assistant")
           .slice(-2)
           .map((m) => m.content),
       };
+      // O carro é detectado antes de responder: a mesma mensagem que cita o carro já avança a pergunta.
+      const estoque = veiculosDisponiveis();
+      for (const m of novas) {
+        const i = msgs.indexOf(m);
+        const anteriorIa = msgs
+          .slice(0, i)
+          .reverse()
+          .find((x) => !doContato(x));
+        const carro = veiculoMencionado(
+          estoque,
+          textoDa(m),
+          anteriorIa ? textoDa(anteriorIa) : "",
+          st.ficha?.veiculo ?? "",
+        );
+        if (carro && st.ficha)
+          st.ficha.veiculo = carro.marca + " " + carro.modelo;
+      }
       let r: RespostaIa;
       try {
-        r = await responder(conversa, {
-          nome: st.nome,
-          etiquetas,
-          fotosEnviadas: st.fotosEnviadas,
-        });
+        r = await responder(
+          novas.length
+            ? mascaradas.filter(
+                (_, i) => horaDa(msgs[i]) > (st.fichaDesde ?? 0),
+              )
+            : conversa,
+          {
+            veiculos: estoque,
+            nome: st.nome,
+            etiquetas,
+            fotosEnviadas: st.fotosEnviadas,
+            ficha: st.ficha,
+          },
+        );
       } catch (erro) {
         auditarTurno({
           ...base,
@@ -627,11 +879,25 @@ export async function rodar() {
         auditarTurno({ ...base, id: novoId(), desfecho: "descartado", r });
         continue;
       }
+      // Resposta idêntica à última da IA (ex.: o cliente mandou a mesma mensagem duas vezes): não repete.
+      const ultimaDaIa = st.historico
+        .filter((m) => m.role === "assistant")
+        .at(-1);
+      if (
+        ultimaDaIa &&
+        !r.transferir &&
+        (r.plano?.fotos.length ?? 0) === 0 &&
+        normalizar(ultimaDaIa.content) === normalizar(r.texto)
+      ) {
+        registrar("crm", `${st.nome}: resposta repetida omitida`);
+        auditarTurno({ ...base, id: novoId(), desfecho: "descartado", r });
+        continue;
+      }
       const rascunho: Rascunho = {
         id: novoId(),
         chatId: chat.id,
         nome: st.nome,
-        pergunta: novas.map(textoDa).join("\n"),
+        pergunta: doCliente.join("\n"),
         texto: r.texto,
         transferir: r.transferir,
         encerrar: r.encerrar,
@@ -721,6 +987,16 @@ export function painel() {
         mensagens: c.historico.length,
         ultima: c.historico.at(-1) ?? null,
         ultimaIaEm: c.ultimaIaEm,
+        // Nota do cliente para o painel (CPF e nascimento nunca aparecem aqui).
+        resumo: c.ficha
+          ? resumoParaSdr(c.ficha, {
+              nome: c.nome,
+              motivo:
+                c.status === "ativo"
+                  ? undefined
+                  : motivoDaTransferencia(c.ficha),
+            })
+          : null,
       }))
       .sort((a, b) => (b.ultima?.em ?? 0) - (a.ultima?.em ?? 0)),
     registros: e.registros.slice(0, 80),
@@ -847,6 +1123,8 @@ export async function reativar(chatId: string) {
       () => {},
     );
   st.status = "ativo";
+  st.ficha = undefined; // novo ciclo de atendimento
+  st.fichaDesde = Date.now();
   registrar("crm", `${st.nome}: devolvido para a IA`);
   return painel();
 }
