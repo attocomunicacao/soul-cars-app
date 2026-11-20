@@ -2,6 +2,14 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.0.23]
+
+- **Laboratório da IA mais rápido e igual ao atendimento real**: os testes passam a usar os exemplos reais da equipe (como o atendimento com "usar histórico do CRM" ligado) e mostram, em cada resposta, quem respondeu, quantos tokens gastou e quanto tempo levou. Antes de rodar, a tela estima quantas respostas e tokens a seleção vai gastar
+- **Ciclo rápido** no Laboratório: **Conjunto rápido** (29 cenários dos pontos críticos), **Rodar só as falhas** (repete só o que falhou ou teve nota até 3) e **Cenários da auditoria** (os erros reais do atendimento viram testes, anonimizados e guardados só neste computador)
+- **Limite do Groq grátis**: a mensagem agora diz qual limite acabou (tokens por dia, pedidos por dia ou por minuto) e em quanto tempo libera. No limite diário o Laboratório para e guarda o que já rodou, sem trocar de modelo sozinho. A tela avisa que o Laboratório usa a mesma cota do atendimento ao vivo
+- Pré-atendimento IA: quando o modelo devolve uma resposta vazia (aconteceu com "Salve."), o app tenta de novo em vez de deixar o cliente sem resposta
+- **Analisar histórico** não trava mais o app: a análise de centenas de milhares de mensagens leva poucos segundos, com o mesmo resultado
+
 ## [1.0.22]
 
 - **Laboratório de testes da IA** (Pré-atendimento IA › aba Laboratório): roda mais de 900 cenários (frases, perguntas e situações de clientes, inclusive conversas de vários turnos) pelo mesmo caminho do atendimento real, com o modelo configurado, e mostra a resposta da IA com alertas automáticos. Você dá nota de 1 a 5, marca o tipo de erro e exporta um relatório com as notas. Nada é enviado ao uTalk
