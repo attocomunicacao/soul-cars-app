@@ -109,6 +109,14 @@ Regras puras (sem Electron, testáveis) ficam em `src/shared/` ou em arquivos do
 
 Uma branch por funcionalidade a partir da `main` atualizada (`feat/…`, `fix/…`, `test/…`, `docs/…`) → commit em português → push → PR → CI → merge. Release: `git tag vX.Y.Z && git push origin vX.Y.Z` (o workflow `release.yml` gera app, patch, launcher e `manifest.json`). Para abrir uma tarefa em chat novo, use a skill `/tarefa`.
 
+## Comandos do dia a dia
+
+Rodar da raiz do monorepo:
+
+- `npm run dev` — app desktop em modo desenvolvimento (electron-vite); `npm run dev:launcher` para o launcher.
+- Um teste só (Vitest): `npx vitest run apps/desktop/tests/navigation.test.ts` ou `npm test -w apps/desktop -- -t "nome do teste"`.
+- Um teste do motor Python: `cd apps/engine && uv run --all-groups python -m unittest tests.test_<nome>`.
+
 ## Validação
 
 Antes do commit: `npm run lint && npm run typecheck && npm test` (e `npm run build`; o CI também roda `npm run format:check` — use `npm run format`).
