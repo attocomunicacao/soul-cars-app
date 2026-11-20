@@ -10,7 +10,7 @@ App desktop privado da Atto Comunicação para a revenda SOUL Cars: estoque e ve
 - Ignorar `node_modules/`, `out/`, `dist/`, `apps/engine/.venv/`, `apps/engine/tessdata/`, `*.lock`, `package-lock.json`, fontes/binários em `public/creative-editor/assets/`.
 - Protótipos antigos ficam em `../_legado/` (fora do git): não ler nem portar sem pedido explícito.
 - Ler `docs/` só quando a tarefa tocar o assunto: visual → `DESIGN.md`; arquitetura → `docs/architecture/`; dados/backup → `docs/guides/data-and-backup.md`; CRM/uTalk → `docs/crm/`; vídeo → `docs/video/`; IA/testes da IA → `docs/ai/lab.md`; Instagram → `docs/guides/instagram.md`; releases → `docs/architecture/launcher-and-updates.md`.
-- Vários docs (`docs/development/vibe-coding-guide.md`, `handoff-context.md`, `architecture-and-migration.md`) ainda citam nomes antigos em português (`ipc.ts`, `esquema.ts`, `Ficha.tsx`, `criativo/`…). **O mapa deste arquivo prevalece**; confira o caminho real antes de seguir um doc.
+- Vários docs (`docs/development/vibe-coding-guide.md`, `docs/development/handoff-context.md`, `docs/architecture/architecture-and-migration.md`) ainda citam nomes antigos em português (`ipc.ts`, `esquema.ts`, `Ficha.tsx`, `criativo/`…). **O mapa deste arquivo prevalece**; confira o caminho real antes de seguir um doc.
 
 ## Stack
 
@@ -52,7 +52,7 @@ Caminhos relativos a `apps/desktop/src/`.
 | Ficha do veículo (Studio) | `renderer/src/pages/vehicle/VehiclePage.tsx` (abas Ficha → Produção → Criativos → Pronto para anunciar → Publicação → Instagram) |
 | CRLV / DOC.md | `pages/vehicle/sheet/CrlvDocument.tsx`; engine `documents/crlv.py`, `ocr.py` |
 | Ficha técnica da web | `lib/web-specs-cache.ts`; engine `specs/web_lookup.py`, `carros_na_web.py`, `ficha_completa.py` |
-| DES.md e blocos de anúncio | `lib/description-generator.ts`, `shared/publication.ts`, fixture `apps/desktop/tests/fixtures/DES.md` |
+| DES.md e blocos de anúncio | `lib/description-generator.ts`, `shared/des-md.ts`, `shared/publication.ts`, fixture `apps/desktop/tests/fixtures/DES.md` |
 | Produção (fotos, recorte, vídeo) | `pages/vehicle/production/*`, `lib/production-status.ts`, `lib/vehicle-files.ts`, `main/studio/files.ts`, `main/studio/models.ts`; engine `media/*`, `video/*` |
 | Editor de criativos | `pages/vehicle/creatives/Creatives.tsx`; `renderer/public/creative-editor/` (`layout4.*`, `layout6.*`, `shadow.js`, `original-floor.js`, `workbench.*`, `app-bridge.js`, `flow-bridge.js`) |
 | Pronto para anunciar / pausa | `shared/ad-readiness.ts`, `pages/vehicle/ready-to-advertise/*`, `pages/inventory/AdPauseAlerts.tsx`, `shared/ad-ai-prompt.ts` |
@@ -67,8 +67,8 @@ Caminhos relativos a `apps/desktop/src/`.
 | Soul IA (memória, desempenho) | `pages/leads/*`, `main/soul-ai/*` (banco próprio `soul-ia.db`), engine `spreadsheets/soul_ai_sheet.py` |
 | Meta Ads (Campanhas) | `pages/meta-ads/MetaAdsPage.tsx`, `shared/meta-ads.ts`, `main/meta/graph-api.ts`, `meta.ts` |
 | Funil Meta → CRM | `pages/funnel/FunnelPage.tsx`, `shared/funnel.ts`, `main/funnel/funnel.ts` |
-| Pré-atendimento IA | `pages/pre-service/PreServicePage.tsx`, `shared/pre-service.ts`, `shared/pre-service-pipeline.ts` (pós-processamento), `shared/pre-service-guard.ts` (anti-duplicação), `main/pre-service/pre-service.ts`, `llm.ts`, `utalk-writer.ts`; evals em `apps/desktop/tests/ai-evals/` |
-| Laboratório de testes da IA | `pages/pre-service/lab/LabTab.tsx`, `renderer/src/lib/lab-client.ts`, `main/lab/{runner,lab,history-analysis,audit-scenarios}.ts`, `shared/lab.ts`, `shared/lab-corpus.ts` (`CONJUNTO_RAPIDO`); lista em `docs/ai/lab-cenarios.md`; skills `/ia-ciclo` (erros pontuais), `/ia-lab` e `/ia-corpus` |
+| Pré-atendimento IA | `pages/pre-service/PreServicePage.tsx`, `shared/pre-service.ts`, `shared/pre-service-pipeline.ts` (pós-processamento), `shared/pre-service-guard.ts` (anti-duplicação), `shared/pre-service-audit.ts` + `main/pre-service/audit.ts` (auditoria), `shared/lead-profile.ts`, `main/pre-service/pre-service.ts`, `llm.ts`, `utalk-writer.ts`; evals em `apps/desktop/tests/ai-evals/` |
+| Laboratório de testes da IA | `pages/pre-service/lab/LabTab.tsx`, `renderer/src/lib/lab-client.ts`, `main/lab/{runner,lab,history-analysis,audit-scenarios,cli,cli-args}.ts` (`npm run lab:cli`), `shared/lab.ts`, `shared/lab-corpus.ts` (`CONJUNTO_RAPIDO`); lista em `docs/ai/lab-cenarios.md`; skills `/ia-ciclo` (erros pontuais), `/ia-lab` e `/ia-corpus` |
 | Finanças | `pages/finance/FinancePage.tsx`, `lib/finance.ts`, `main/finance/finance.ts`; engine `spreadsheets/finance_sheet.py` |
 | Configurações e conexões | `pages/settings/*`, `main/crm/soul-app-import.ts` |
 | Launcher | `apps/launcher/src/{main,preload,renderer,shared}`; contrato em `shared/api.ts`, manifesto em `shared/manifest.ts` |
@@ -89,7 +89,7 @@ Regras puras (sem Electron, testáveis) ficam em `src/shared/` ou em arquivos do
 - **Pastas e arquivos com nome em inglês** (padrão americano). Identificadores, comentários, mensagens ao usuário, commits e PRs em português.
 - Todo arquivo de código começa com um cabeçalho explicando a responsabilidade dele; funções exportadas têm comentário do que fazem.
 - Preserve as duas interfaces principais: Estoque primeiro e Studio segundo.
-- O repositório não guarda nenhum arquivo de veículo. Dados reais ficam na raiz de dados escolhida no app (fora do projeto); `dados-loja/` e `legado/` continuam no `.gitignore`. Nunca versione mídia, documentos, bancos, CSVs, sessões ou dados reais; prints e testes usam dados fictícios.
+- O repositório não guarda nenhum arquivo de veículo. Dados reais ficam na raiz de dados escolhida no app (fora do projeto); `dados-loja/` e `_legado/` continuam no `.gitignore` (`_legado/` fica fora do repositório, um nível acima). Nunca versione mídia, documentos, bancos, CSVs, sessões ou dados reais; prints e testes usam dados fictícios.
 - Não coloque caminhos pessoais, documentos reais, senhas ou tokens no código.
 - Electron main controla disco, banco e processos; renderer usa a ponte preload.
 - Migrações de banco distribuídas são imutáveis; acrescente uma nova versão (vale para `soul.db` e `soul-ia.db`).
