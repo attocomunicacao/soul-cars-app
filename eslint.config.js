@@ -40,7 +40,6 @@ export default tseslint.config(
       "**/node_modules/**",
       "**/.tmp/**",
       ".restructure/**",
-      "legado/**",
       "dados-loja/**",
       "apps/engine/**",
       // Editor de criativos: JavaScript próprio, fora do TypeScript.

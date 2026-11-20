@@ -8,7 +8,6 @@ App desktop privado da Atto Comunicação para a revenda SOUL Cars: estoque e ve
 
 - Não varrer o repositório; ir direto aos arquivos do mapa abaixo e aos testes do mesmo domínio.
 - Ignorar `node_modules/`, `out/`, `dist/`, `apps/engine/.venv/`, `apps/engine/tessdata/`, `*.lock`, `package-lock.json`, fontes/binários em `public/creative-editor/assets/`.
-- Protótipos antigos ficam em `../_legado/` (fora do git): não ler nem portar sem pedido explícito.
 - Ler `docs/` só quando a tarefa tocar o assunto: visual → `DESIGN.md`; arquitetura → `docs/architecture/`; dados/backup → `docs/guides/data-and-backup.md`; CRM/uTalk → `docs/crm/`; vídeo → `docs/video/`; IA/testes da IA → `docs/ai/lab.md`; Instagram → `docs/guides/instagram.md`; releases → `docs/architecture/launcher-and-updates.md`.
 - Vários docs (`docs/development/vibe-coding-guide.md`, `handoff-context.md`, `architecture-and-migration.md`) ainda citam nomes antigos em português (`ipc.ts`, `esquema.ts`, `Ficha.tsx`, `criativo/`…). **O mapa deste arquivo prevalece**; confira o caminho real antes de seguir um doc.
 
@@ -89,7 +88,7 @@ Regras puras (sem Electron, testáveis) ficam em `src/shared/` ou em arquivos do
 - **Pastas e arquivos com nome em inglês** (padrão americano). Identificadores, comentários, mensagens ao usuário, commits e PRs em português.
 - Todo arquivo de código começa com um cabeçalho explicando a responsabilidade dele; funções exportadas têm comentário do que fazem.
 - Preserve as duas interfaces principais: Estoque primeiro e Studio segundo.
-- O repositório não guarda nenhum arquivo de veículo. Dados reais ficam na raiz de dados escolhida no app (fora do projeto); `dados-loja/` e `legado/` continuam no `.gitignore`. Nunca versione mídia, documentos, bancos, CSVs, sessões ou dados reais; prints e testes usam dados fictícios.
+- O repositório não guarda nenhum arquivo de veículo. Dados reais ficam na raiz de dados escolhida no app (fora do projeto); `dados-loja/` fica dentro da raiz do projeto e continua no `.gitignore`. Nunca versione mídia, documentos, bancos, CSVs, sessões ou dados reais; prints e testes usam dados fictícios.
 - Não coloque caminhos pessoais, documentos reais, senhas ou tokens no código.
 - Electron main controla disco, banco e processos; renderer usa a ponte preload.
 - Migrações de banco distribuídas são imutáveis; acrescente uma nova versão (vale para `soul.db` e `soul-ia.db`).

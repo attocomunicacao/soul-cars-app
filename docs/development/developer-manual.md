@@ -28,7 +28,7 @@ Requisitos: Windows x64, Node 22.16+, Git, uv, Tesseract (com `por`) e FFmpeg. O
 | `engine` | Motor Python e `engine/tests` | `uv.lock` versionado |
 | `testes` | Vitest (`*.test.ts`) e testes `.mjs` do núcleo | `fixtures/` com `DES.md` e página simulada do Instagram |
 | `scripts` | `.cmd` de instalação e `smoke*.cjs` | Smokes usam Electron real |
-| `dados-loja`, `legado` | **Locais, fora do Git** | Dados da loja e projetos antigos |
+| `dados-loja` | **Local, fora do Git** | Dados da loja |
 
 ## 3. O fluxo do dado, ponta a ponta
 
@@ -124,7 +124,7 @@ Os smokes criam estoque e banco temporários; não fazem login no BNDV, não cha
 
 ## 8. Repositório privado (GitHub)
 
-Repositório **privado** sob a conta da Atto Comunicação. Versione código, recursos, fontes e licenças, `engine`, lockfiles, testes e documentação. Não versione `dados-loja/`, `legado/`, bancos, CSVs, documentos, fotos, sessões ou chaves. Antes de cada push: `git status --short` e `git diff --cached --stat`. Passo a passo em [06 · GitHub](github-workflow.md). O CI (`.github/workflows/ci.yml`, em `windows-latest`) tem três jobs: **app** (ESLint, tipos, formatação, Vitest, build e `npm audit --audit-level=high`), **motor** (testes Python com FFmpeg, só os grupos `documentos` e `textos`) e **smoke** (os dois smokes em Electron real, depois do job app). O Dependabot (`.github/dependabot.yml`) sugere atualizações de npm, uv e GitHub Actions. O ESLint roda com `--max-warnings 0`: nenhum aviso é aceito.
+Repositório **privado** sob a conta da Atto Comunicação. Versione código, recursos, fontes e licenças, `engine`, lockfiles, testes e documentação. Não versione `dados-loja/`, bancos, CSVs, documentos, fotos, sessões ou chaves. Antes de cada push: `git status --short` e `git diff --cached --stat`. Passo a passo em [06 · GitHub](github-workflow.md). O CI (`.github/workflows/ci.yml`, em `windows-latest`) tem três jobs: **app** (ESLint, tipos, formatação, Vitest, build e `npm audit --audit-level=high`), **motor** (testes Python com FFmpeg, só os grupos `documentos` e `textos`) e **smoke** (os dois smokes em Electron real, depois do job app). O Dependabot (`.github/dependabot.yml`) sugere atualizações de npm, uv e GitHub Actions. O ESLint roda com `--max-warnings 0`: nenhum aviso é aceito.
 
 ## 9. Roadmap de manutenção técnica
 
