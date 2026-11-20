@@ -48,7 +48,30 @@ const PRESETS_FUNIL = PERIODOS_FUNIL.map(([v]) => v);
 
 /** Extensões que o Windows executaria ao "abrir" o arquivo. */
 export const EXTENSOES_EXECUTAVEIS =
-  /\.(exe|com|bat|cmd|msi|msp|ps1|psm1|vbs|vbe|js|jse|wsf|wsh|lnk|scr|pif|reg|hta|cpl|dll|jar)$/i;
+  /\.(exe|com|bat|cmd|msi|msp|ps1|ps1xml|psm1|psd1|vbs|vbe|vb|js|jse|wsf|wsh|wsc|lnk|url|scr|pif|reg|hta|cpl|dll|jar|jnlp|application|appref-ms|gadget|msc|msu|scf|inf|settingcontent-ms|library-ms|search-ms)$/i;
+
+/**
+ * Diz se o host é deste computador ou da rede local: localhost, loopback, faixas privadas
+ * (10.x, 172.16-31.x, 192.168.x), link-local, IPv6 local, nomes sem ponto e `.local`/`.lan`.
+ */
+export function hostEhLocal(host: string): boolean {
+  const h = host.toLowerCase().replace(/^\[|\]$/g, "");
+  if (h === "localhost" || h === "::1") return true;
+  if (/^(fc|fd)[0-9a-f]{0,2}:/.test(h) || /^fe80:/.test(h)) return true;
+  const ip = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(h);
+  if (ip) {
+    const [a, b] = [Number(ip[1]), Number(ip[2])];
+    return (
+      a === 127 ||
+      a === 10 ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 169 && b === 254)
+    );
+  }
+  if (h.includes(":")) return false;
+  return !h.includes(".") || /\.(local|lan|home\.arpa)$/.test(h);
+}
 
 export type Contexto = {
   /** Raízes onde o app pode ler/gravar: dados da loja e dados internos. */
@@ -83,6 +106,10 @@ const urlLocal: Regra<string> = (v, campo) => {
   }
   if (!["http:", "https:"].includes(u.protocol))
     throw new Error(`${campo}: use http:// ou https://.`);
+  if (!hostEhLocal(u.hostname))
+    throw new Error(
+      `${campo}: use o endereço deste computador ou da rede local (ex.: http://localhost:11434).`,
+    );
   return t;
 };
 
