@@ -165,13 +165,19 @@ export function Gaveta({
   children: ReactNode;
 }) {
   const gaveta = useRef<HTMLElement>(null);
-  // Só na abertura e no fechamento: um `fechar` novo a cada render não pode mexer no foco.
-  useEffect(() => {
-    const anterior = document.activeElement;
-    return () => {
+  // Quem tinha o foco ao abrir é guardado já na primeira renderização: o `autoFocus` do botão de
+  // fechar roda na montagem, antes de qualquer efeito, e `document.activeElement` já seria ele.
+  const quemAbriu = useRef<Element | null | undefined>(undefined);
+  if (quemAbriu.current === undefined)
+    quemAbriu.current = document.activeElement;
+  // Só no fechamento: um `fechar` novo a cada render não pode mexer no foco.
+  useEffect(
+    () => () => {
+      const anterior = quemAbriu.current;
       if (anterior instanceof HTMLElement) anterior.focus();
-    };
-  }, []);
+    },
+    [],
+  );
   useEffect(() => {
     const tecla = (e: KeyboardEvent) => {
       if (e.key === "Escape") return fechar();
