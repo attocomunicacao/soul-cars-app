@@ -24,6 +24,7 @@ import os from "node:os";
 import path from "node:path";
 import { app } from "electron";
 import * as caminhos from "../core/paths";
+import { registrar } from "../core/diagnostics";
 import { pastaDeModelos } from "./models";
 
 export type Emitir = (canal: string, carga: unknown) => void;
@@ -203,8 +204,11 @@ function garantirProcesso(emitir: Emitir) {
     },
   });
   const ativo = processo;
-  ativo.stderr.on("data", () => {
-    /* stdout é reservado ao protocolo JSON. */
+  // stdout é reservado ao protocolo JSON; o que o motor escreve no stderr vai para o app.log.
+  ativo.stderr.setEncoding("utf8");
+  ativo.stderr.on("data", (texto: string) => {
+    for (const linha of texto.split(/\r?\n/))
+      if (linha.trim()) registrar(`motor: ${linha.trim().slice(0, 300)}`);
   });
   ativo.on("error", (erro) => falharMotor(erro.message));
   ativo.on("exit", () => {
@@ -223,16 +227,22 @@ function garantirProcesso(emitir: Emitir) {
       const linha = buffer.slice(0, corte).trim();
       buffer = buffer.slice(corte + 1);
       if (!linha) continue;
+      // Saída de um processo que já foi substituído (timeout, reinício) não pode virar
+      // resposta da chamada seguinte.
+      if (processo !== ativo) continue;
+      let resposta: Record<string, unknown>;
       try {
-        const resposta = JSON.parse(linha) as Record<string, unknown>;
-        if ("progress" in resposta) {
-          emitir("engine:progresso", resposta.progress);
-          continue;
-        }
-        pendente?.(resposta);
+        resposta = JSON.parse(linha) as Record<string, unknown>;
       } catch {
-        /* linha que não é JSON: o motor imprimiu algo solto */
+        // Linha que não é JSON: o motor imprimiu algo solto. Fica no log para diagnóstico.
+        registrar(`motor: linha fora do protocolo: ${linha.slice(0, 200)}`);
+        continue;
       }
+      if ("progress" in resposta) {
+        emitir("engine:progresso", resposta.progress);
+        continue;
+      }
+      pendente?.(resposta);
     }
   });
   return ativo;
