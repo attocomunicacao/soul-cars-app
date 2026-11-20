@@ -4,6 +4,8 @@ name: CI
 # motor Python e smokes em Electron real (Windows, igual à máquina da loja).
 on:
   push:
+    # Branches de trabalho são verificadas pelo pull request; sem isto cada push rodava duas vezes.
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -71,3 +73,19 @@ jobs:
       - run: npm run build -w apps/desktop
       - run: npm run smoke
       - run: npm run smoke:instagram
+
+  launcher-e2e:
+    name: Launcher (instalação de ponta a ponta)
+    runs-on: windows-latest
+    timeout-minutes: 25
+    needs: [apps]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      # O e2e instala o zip do app pelo Launcher e abre o executável instalado.
+      - run: npm run package:desktop
+      - run: npm run e2e:launcher

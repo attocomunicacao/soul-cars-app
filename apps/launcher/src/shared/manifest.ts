@@ -65,6 +65,10 @@ const ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
 /** Nome de executável seguro: sem barras nem "..", para não sair da pasta do app. */
 const EXECUTAVEL = /^[\w .-]+\.(exe|app|AppImage)$|^[\w.-]+$/;
 
+/** O regex aceita "." e ".." (a classe inclui o ponto): aqui eles são barrados. */
+export const executavelSeguro = (nome: string) =>
+  EXECUTAVEL.test(nome) && !nome.includes("..") && !/^\.+$/.test(nome);
+
 /** Erro de manifesto inválido (mensagem em português para mostrar ao usuário). */
 export class ManifestoInvalido extends Error {}
 
@@ -151,7 +155,7 @@ export function lerManifesto(
       (a.executable ?? {}) as Record<string, unknown>,
     )) {
       exigir(
-        typeof nome === "string" && EXECUTAVEL.test(nome),
+        typeof nome === "string" && executavelSeguro(nome),
         `apps[${i}].executable.${so}`,
       );
       executable[so] = nome;
