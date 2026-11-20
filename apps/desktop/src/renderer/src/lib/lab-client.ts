@@ -11,14 +11,25 @@ export type CenarioResumo = {
   categoria: string;
   titulo: string;
   turnos: number;
-  origem: "manual" | "gerado" | "historico";
+  origem: "manual" | "gerado" | "historico" | "auditoria";
 };
 export type CenariosLab = {
   base: number;
   total: number;
   categorias: string[];
   cenarios: CenarioResumo[];
+  /** Ids do conjunto rápido (pontos críticos, cabe no limite diário do Groq). */
+  rapido: string[];
+  /** O atendimento ao vivo está ligado (usa a mesma cota do Groq). */
+  atendimentoLigado: boolean;
   pasta: string;
+};
+/** Quem respondeu de fato e quantos tokens a chamada gastou. */
+export type UsoLab = {
+  provedor: string;
+  modelo: string;
+  reserva: boolean;
+  tokens?: number;
 };
 export type TurnoLab = {
   cliente: string;
@@ -30,6 +41,9 @@ export type TurnoLab = {
   fotos: number;
   sinais: SinalAuditoria[];
   latenciaMs: number;
+  uso?: UsoLab;
+  /** Exemplos reais da equipe que entraram no prompt. */
+  reais?: number;
 };
 export type ResultadoLab = {
   id: string;
@@ -46,6 +60,9 @@ export type ExecucaoLab = {
   modelo: string;
   repeticoes: number;
   resultados: ResultadoLab[];
+  tokens?: number;
+  interrompida?: string;
+  pedidos?: number;
 };
 export type ResumoExecucao = {
   id: string;
@@ -53,6 +70,9 @@ export type ResumoExecucao = {
   modelo: string;
   cenarios: number;
   comFalhas: number;
+  tokens: number;
+  chamadas: number;
+  interrompida?: string;
 };
 export type EntradaAvaliacao = {
   execucaoId: string;
@@ -81,6 +101,8 @@ export const lab = {
       analise: { conversas: number; mensagens: number };
       pasta: string;
     }>("lab_analisar_historico"),
+  cenariosDaAuditoria: () =>
+    invoke<{ cenarios: number; turnosLidos: number }>("lab_cenarios_auditoria"),
   abrirPasta: () => invoke<boolean>("lab_abrir_pasta"),
   sincronizarHistorico: () => invoke<unknown>("soulia_sincronizar", {}),
   cancelarSincronizacao: () => invoke<boolean>("soulia_cancelar"),

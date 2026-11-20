@@ -25,8 +25,8 @@ export type Cenario = {
   titulo: string;
   turnos: string[];
   esperado?: Esperado;
-  /** De onde veio: escrito à mão, gerado por variação ou anonimizado do histórico. */
-  origem?: "manual" | "gerado" | "historico";
+  /** De onde veio: escrito à mão, gerado por variação, anonimizado do histórico ou de um erro real. */
+  origem?: "manual" | "gerado" | "historico" | "auditoria";
 };
 
 /** Avaliação humana de uma resposta da IA no Laboratório (vira relatório para melhorar a IA). */

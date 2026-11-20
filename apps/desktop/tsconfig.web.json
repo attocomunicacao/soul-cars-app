@@ -51,6 +51,7 @@
     "tests/lab-runner.test.ts",
     "tests/lab-offline.test.ts",
     "tests/lab-history.test.ts",
-    "tests/lab-lista.test.ts"
+    "tests/lab-lista.test.ts",
+    "tests/lab-agil.test.ts"
   ]
 }

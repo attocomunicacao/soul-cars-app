@@ -3,6 +3,8 @@
  * pelo mesmo caminho do atendimento real, mostra a resposta da IA com os alertas automáticos
  * (repetição, CPF em claro, pergunta repetida…) e deixa o usuário dar nota e marcar o tipo de erro.
  * O relatório com as notas vai para o chat, para melhorar a IA. Nada é enviado ao uTalk.
+ * Ciclo rápido: conjunto rápido, só as falhas, erros reais da auditoria e estimativa de tokens (o
+ * plano grátis do Groq tem limite diário).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ETIQUETAS_ERRO, type EtiquetaErro } from "../../../../../shared/lab";
@@ -19,6 +21,13 @@ import {
 import type { Avaliacao } from "../../../../../shared/lab";
 
 type Progresso = { feito: number; total: number };
+
+/** Tokens por chamada quando ainda não há execução medida (prompt com persona, regras e contexto). */
+const TOKENS_POR_CHAMADA_PADRAO = 2500;
+/** Limite diário aproximado do plano grátis do Groq (confira no painel do Groq). */
+const LIMITE_DIARIO_TOKENS = 200_000;
+
+const milhar = (n: number) => n.toLocaleString("pt-BR");
 
 /** Chave de uma resposta avaliável dentro da execução. */
 const chave = (id: string, repeticao: number, turno: number) =>
@@ -94,15 +103,56 @@ export function LabTab({ aoErro }: { aoErro: (m: string) => void }) {
     }
   }
 
-  const rodar = () =>
+  /** Roda a categoria escolhida ou, se vier `ids`, só esses cenários. */
+  const rodar = (ids?: string[]) =>
     tarefa("rodar", async () => {
-      const e = await lab.rodar({
-        categoria: categoria || undefined,
-        repeticoes,
-      });
+      const e = await lab.rodar(
+        ids
+          ? { ids, repeticoes }
+          : { categoria: categoria || undefined, repeticoes },
+      );
       await abrir(e);
       setExecucoes(await lab.execucoes());
+      if (e.interrompida)
+        setAviso(
+          `${e.interrompida} (${e.resultados.length} de ${e.pedidos ?? e.resultados.length} rodados)`,
+        );
     });
+
+  /** Cenários da execução aberta com falha automática ou nota 3 ou menos. */
+  const idsComProblema = useMemo(() => {
+    if (!exec) return [];
+    const ruins = new Set(
+      [...notas.values()].filter((a) => a.nota <= 3).map((a) => a.cenarioId),
+    );
+    return [
+      ...new Set(
+        exec.resultados
+          .filter((r) => r.falhas.length || ruins.has(r.id))
+          .map((r) => r.id),
+      ),
+    ];
+  }, [exec, notas]);
+
+  /** Média de tokens por chamada nas execuções anteriores (ou o padrão, se nada foi medido). */
+  const tokensPorChamada = useMemo(() => {
+    const chamadas = execucoes.reduce((s, x) => s + (x.chamadas ?? 0), 0);
+    const tokens = execucoes.reduce((s, x) => s + (x.tokens ?? 0), 0);
+    return chamadas ? Math.round(tokens / chamadas) : TOKENS_POR_CHAMADA_PADRAO;
+  }, [execucoes]);
+
+  /** Estimativa de chamadas e tokens para uma lista de cenários (cada turno = 1 chamada). */
+  const estimar = (ids: Set<string> | null) => {
+    const lista = (cen?.cenarios ?? []).filter((c) =>
+      ids ? ids.has(c.id) : !categoria || c.categoria === categoria,
+    );
+    const chamadas = lista.reduce((s, c) => s + c.turnos, 0) * repeticoes;
+    return {
+      cenarios: lista.length,
+      chamadas,
+      tokens: chamadas * tokensPorChamada,
+    };
+  };
 
   const gerarRelatorio = () =>
     tarefa("relatorio", async () => {
@@ -116,6 +166,8 @@ export function LabTab({ aoErro }: { aoErro: (m: string) => void }) {
 
   if (!cen) return <p className="empty">Carregando…</p>;
   const comFalhas = exec?.resultados.filter((r) => r.falhas.length).length ?? 0;
+  const est = estimar(null);
+  const daAuditoria = cen.cenarios.filter((c) => c.categoria === "auditoria");
 
   return (
     <div className="panel">
@@ -168,6 +220,66 @@ export function LabTab({ aoErro }: { aoErro: (m: string) => void }) {
       </p>
       {aviso && <p className="hint">{aviso}</p>}
 
+      {cen.atendimentoLigado && (
+        <div role="alert" className="notice error">
+          <span>
+            O atendimento ao vivo está ligado e usa a mesma cota grátis do Groq
+            que o Laboratório. Testes longos podem esgotar a cota e deixar os
+            clientes sem resposta rápida.
+          </span>
+        </div>
+      )}
+
+      <h3>Ciclo rápido</h3>
+      <p className="hint">
+        Para corrigir os poucos pontos em que a IA erra: rode o conjunto rápido
+        ou os erros reais, ajuste e rode só as falhas de novo. Cada resposta usa
+        ~{milhar(tokensPorChamada)} tokens; o plano grátis do Groq dá ~
+        {milhar(LIMITE_DIARIO_TOKENS)} por dia.
+      </p>
+      <p>
+        <button
+          disabled={!!ocupado || !cen.rapido.length}
+          onClick={() => void rodar(cen.rapido)}
+          title={`~${milhar(estimar(new Set(cen.rapido)).tokens)} tokens`}
+        >
+          Conjunto rápido ({cen.rapido.length})
+        </button>{" "}
+        <button
+          disabled={!!ocupado}
+          onClick={() =>
+            tarefa("auditoria", async () => {
+              const r = await lab.cenariosDaAuditoria();
+              await carregar();
+              setAviso(
+                r.cenarios
+                  ? `${r.cenarios} cenários criados a partir de erros reais (categoria "auditoria"), anonimizados.`
+                  : "Nenhum erro com alerta na auditoria do atendimento.",
+              );
+            })
+          }
+        >
+          Cenários da auditoria
+        </button>{" "}
+        {daAuditoria.length > 0 && (
+          <button
+            disabled={!!ocupado}
+            onClick={() => void rodar(daAuditoria.map((c) => c.id))}
+          >
+            Rodar erros reais ({daAuditoria.length})
+          </button>
+        )}{" "}
+        {exec && idsComProblema.length > 0 && (
+          <button
+            disabled={!!ocupado}
+            onClick={() => void rodar(idsComProblema)}
+            title="Cenários desta execução com falha automática ou nota até 3"
+          >
+            Rodar só as falhas ({idsComProblema.length})
+          </button>
+        )}
+      </p>
+
       <h3>Executar cenários</h3>
       <p>
         <label>
@@ -204,6 +316,12 @@ export function LabTab({ aoErro }: { aoErro: (m: string) => void }) {
           <button onClick={() => void lab.cancelar()}>Parar</button>
         )}
       </p>
+      <p className="hint">
+        {est.cenarios} cenários × {repeticoes} ≈ {milhar(est.chamadas)} chamadas
+        (~{milhar(est.tokens)} tokens)
+        {est.tokens > LIMITE_DIARIO_TOKENS &&
+          " — passa do limite diário do Groq grátis: escolha uma categoria ou o conjunto rápido."}
+      </p>
       {progresso && (
         <progress
           max={progresso.total}
@@ -230,6 +348,8 @@ export function LabTab({ aoErro }: { aoErro: (m: string) => void }) {
                 <option key={x.id} value={x.id}>
                   {new Date(x.em).toLocaleString("pt-BR")} · {x.cenarios}{" "}
                   cenários · {x.comFalhas} com falha
+                  {x.tokens ? ` · ${milhar(x.tokens)} tokens` : ""}
+                  {x.interrompida ? " · interrompida" : ""}
                 </option>
               ))}
             </select>
@@ -248,8 +368,17 @@ export function LabTab({ aoErro }: { aoErro: (m: string) => void }) {
             </Selo>
           </h3>
           <p className="hint">
-            Modelo {exec.modelo} · {exec.resultados.length} execuções.
+            Modelo {exec.modelo} · {exec.resultados.length} execuções
+            {exec.tokens ? ` · ${milhar(exec.tokens)} tokens` : ""}.
           </p>
+          {exec.interrompida && (
+            <div role="alert" className="notice error">
+              <span>
+                {exec.interrompida} ({exec.resultados.length} de{" "}
+                {exec.pedidos ?? exec.resultados.length})
+              </span>
+            </div>
+          )}
           <p>
             <label>
               <input
@@ -358,6 +487,16 @@ function Resultado({
               {t.sinais.map((s) => ROTULO_SINAL[s] ?? s).join(" · ")}
             </p>
           )}
+          <p className="hint">
+            {[
+              t.uso && `${t.uso.provedor}${t.uso.reserva ? " (reserva)" : ""}`,
+              t.uso?.tokens && `${milhar(t.uso.tokens)} tokens`,
+              t.reais ? `${t.reais} exemplos reais` : null,
+              `${milhar(t.latenciaMs)} ms`,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
           <Nota
             execucaoId={execucaoId}
             cenarioId={r.id}

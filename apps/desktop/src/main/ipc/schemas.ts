@@ -423,6 +423,7 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
     lab_avaliacoes: { args: { execucaoId: opcional(texto({ max: 100 })) } },
     lab_relatorio: { args: { execucaoId: texto({ max: 100 }) } },
     lab_analisar_historico: vazio,
+    lab_cenarios_auditoria: vazio,
     lab_abrir_pasta: vazio,
     estoque_vitrine: vazio,
     financas_estado: vazio,

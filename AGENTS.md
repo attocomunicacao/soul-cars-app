@@ -68,7 +68,7 @@ Caminhos relativos a `apps/desktop/src/`.
 | Meta Ads (Campanhas) | `pages/meta-ads/MetaAdsPage.tsx`, `shared/meta-ads.ts`, `main/meta/graph-api.ts`, `meta.ts` |
 | Funil Meta → CRM | `pages/funnel/FunnelPage.tsx`, `shared/funnel.ts`, `main/funnel/funnel.ts` |
 | Pré-atendimento IA | `pages/pre-service/PreServicePage.tsx`, `shared/pre-service.ts`, `shared/pre-service-pipeline.ts` (pós-processamento), `shared/pre-service-guard.ts` (anti-duplicação), `main/pre-service/pre-service.ts`, `llm.ts`, `utalk-writer.ts`; evals em `apps/desktop/tests/ai-evals/` |
-| Laboratório de testes da IA | `pages/pre-service/lab/LabTab.tsx`, `renderer/src/lib/lab-client.ts`, `main/lab/{runner,lab,history-analysis}.ts`, `shared/lab.ts`, `shared/lab-corpus.ts`; lista em `docs/ai/lab-cenarios.md`; skills `/ia-lab` e `/ia-corpus` |
+| Laboratório de testes da IA | `pages/pre-service/lab/LabTab.tsx`, `renderer/src/lib/lab-client.ts`, `main/lab/{runner,lab,history-analysis,audit-scenarios}.ts`, `shared/lab.ts`, `shared/lab-corpus.ts` (`CONJUNTO_RAPIDO`); lista em `docs/ai/lab-cenarios.md`; skills `/ia-ciclo` (erros pontuais), `/ia-lab` e `/ia-corpus` |
 | Finanças | `pages/finance/FinancePage.tsx`, `lib/finance.ts`, `main/finance/finance.ts`; engine `spreadsheets/finance_sheet.py` |
 | Configurações e conexões | `pages/settings/*`, `main/crm/soul-app-import.ts` |
 | Launcher | `apps/launcher/src/{main,preload,renderer,shared}`; contrato em `shared/api.ts`, manifesto em `shared/manifest.ts` |

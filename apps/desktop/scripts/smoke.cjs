@@ -103,12 +103,14 @@ app.on("browser-window-created", (_e, w) => {
         Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(ano,'2016');
         ano.dispatchEvent(new Event('input',{bubbles:true}));
         await new Promise(r=>setTimeout(r,100));
-        window.confirm=()=>true;[...document.querySelectorAll('button')].find(b=>b.textContent==='Gerar e salvar DES.md').click();
-        await new Promise(r=>setTimeout(r,400));
-        [...document.querySelectorAll('nav button')].find(b=>b.textContent==='Publicação').click();
+        window.confirm=()=>true;const gerarDes=[...document.querySelectorAll('button')].find(b=>b.textContent==='Gerar e salvar DES.md');gerarDes.click();
+        // Espera o salvamento terminar (aviso "Concluído." e botão liberado) em vez de um tempo fixo: o CI pode ser lento.
         await new Promise(r=>setTimeout(r,100));
-        const copiar=[...document.querySelectorAll('button')].find(b=>b.textContent==='Copiar');
-        if(!copiar)throw Error('Blocos de publicação ausentes');copiar.click();
+        await esperar(()=>!gerarDes.disabled&&document.body.textContent.includes('Concluído.'),'DES.md não foi salvo');
+        [...document.querySelectorAll('nav button')].find(b=>b.textContent==='Publicação').click();
+        const botaoCopiar=()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Copiar');
+        await esperar(botaoCopiar,'Blocos de publicação ausentes');
+        botaoCopiar().click();
         await new Promise(r=>setTimeout(r,200));
         if(!document.querySelector('button.copiado')?.textContent.includes('Copiado'))throw Error('Confirmação de cópia ausente');
         const criativos=[...document.querySelectorAll('nav button')].find(b=>b.textContent==='Criativos');criativos.click();
