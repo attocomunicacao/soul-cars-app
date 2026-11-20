@@ -13,7 +13,9 @@ import {
   LOJA_PADRAO,
   RESPOSTAS_PADRAO,
   normalizar,
+  type ExemploIa,
   type LojaIa,
+  type ParReal,
   type MensagemIa,
   type RespostaRapida,
   type VeiculoIa,
@@ -35,6 +37,7 @@ import {
 } from "../../shared/pre-service-audit";
 import type { Cenario, Esperado } from "../../shared/lab";
 import { deveOmitir, posProcessar } from "../../shared/pre-service-pipeline";
+import type { UsoModelo } from "../pre-service/llm";
 
 export type { Cenario, Esperado } from "../../shared/lab";
 
@@ -49,6 +52,10 @@ export type TurnoLab = {
   fotos: number;
   sinais: SinalAuditoria[];
   latenciaMs: number;
+  /** Quem respondeu de fato (provedor, modelo, reserva) e quantos tokens a chamada gastou. */
+  uso?: UsoModelo;
+  /** Quantos exemplos reais da equipe (histórico do CRM) entraram no prompt deste turno. */
+  reais?: number;
 };
 
 export type ResultadoCenario = {
@@ -64,8 +71,15 @@ export type ResultadoCenario = {
 
 /** Dependências injetadas: modelo, estoque e textos da loja. */
 export type DepsLab = {
-  /** Devolve o texto bruto do modelo para as mensagens montadas. */
-  gerar: (mensagens: { role: string; content: string }[]) => Promise<string>;
+  /** Devolve o texto bruto do modelo para as mensagens montadas; preenche `uso` quando recebe. */
+  gerar: (
+    mensagens: { role: string; content: string }[],
+    uso?: UsoModelo,
+  ) => Promise<string>;
+  /** Exemplos reais da equipe (como no atendimento com "usar histórico do CRM" ligado). */
+  reais?: ParReal[];
+  /** Exemplos ensinados na tela "Ensinar". */
+  exemplos?: ExemploIa[];
   veiculos?: VeiculoIa[];
   persona?: string;
   loja?: LojaIa;
@@ -174,21 +188,22 @@ export async function rodarCenario(
         enviadas,
         maxFotos: 6,
       });
-      const { mensagens } = montarMensagens({
+      const { mensagens, usados } = montarMensagens({
         persona: deps.persona ?? PERSONA_PADRAO,
         loja,
         config: { nomeAgente: deps.nomeAgente ?? "Sofia" },
         veiculos,
         respostas: deps.respostas ?? RESPOSTAS_PADRAO,
-        exemplos: [],
-        reais: [],
+        exemplos: deps.exemplos ?? [],
+        reais: deps.reais ?? [],
         conversa: mascarada,
         nomeLead: "Cliente",
         notaFotos: plano?.nota,
         ficha,
       });
       const inicio = Date.now();
-      const bruto = await deps.gerar(mensagens);
+      const uso: UsoModelo = { provedor: "", modelo: "", reserva: false };
+      const bruto = await deps.gerar(mensagens, uso);
       const latenciaMs = Date.now() - inicio;
       const anteriores = mascarada
         .filter((m) => m.role === "assistant")
@@ -232,6 +247,8 @@ export async function rodarCenario(
         fotos,
         sinais,
         latenciaMs,
+        ...(uso.provedor ? { uso } : {}),
+        reais: usados.reais,
       });
       // Como no app: resposta omitida não entra no histórico; o resto vira a fala da IA.
       if (r.texto && !omitido) {
@@ -328,6 +345,8 @@ export async function rodarLote(
     repeticoes?: number;
     progresso?: (feito: number, total: number, r: ResultadoCenario) => void;
     cancelado?: () => boolean;
+    /** Interrompe o lote depois deste resultado (ex.: limite diário do Groq). */
+    pararSe?: (r: ResultadoCenario) => boolean;
   } = {},
 ): Promise<ResultadoCenario[]> {
   const reps = Math.max(1, opcoes.repeticoes ?? 1);
@@ -339,6 +358,7 @@ export async function rodarLote(
       const r = await rodarCenario(c, deps, i);
       saida.push(r);
       opcoes.progresso?.(saida.length, total, r);
+      if (opcoes.pararSe?.(r)) return saida;
     }
   return saida;
 }

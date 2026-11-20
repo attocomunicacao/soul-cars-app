@@ -324,6 +324,7 @@ const COMANDOS: Record<string, Comando> = {
     lab.listarAvaliacoes(a.execucaoId as string | undefined),
   lab_relatorio: (a) => lab.relatorioDaExecucao(String(a.execucaoId)),
   lab_analisar_historico: () => lab.analisarHistoricoLab(),
+  lab_cenarios_auditoria: () => lab.gerarCenariosDaAuditoria(),
   lab_abrir_pasta: () => lab.abrirPastaLab(),
   estoque_vitrine: () => vitrine(),
   // ---- Finanças (planilha mensal vinculada) ----

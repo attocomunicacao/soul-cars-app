@@ -57,18 +57,73 @@ export function anonimizar(texto: string): string {
     .trim();
 }
 
-/** Agrupa textos parecidos (Jaccard ≥ 0,7) e conta; devolve só os que aparecem `minimo` vezes ou mais. */
+const LIMIAR_GRUPO = 0.7;
+
+/**
+ * Agrupa textos parecidos (Jaccard ≥ 0,7 com o primeiro texto do grupo) e conta; devolve só os que
+ * aparecem `minimo` vezes ou mais. Cada texto entra no grupo MAIS ANTIGO que passa do limiar.
+ *
+ * Feito para o histórico inteiro (centenas de milhares de mensagens): textos idênticos são contados
+ * uma vez só, as palavras de cada texto são separadas uma vez, e um índice de "prefixo" (as palavras
+ * mais raras de cada grupo) limita a comparação aos grupos que podem passar do limiar — se dois
+ * conjuntos têm Jaccard ≥ t, eles compartilham ao menos uma palavra entre as primeiras
+ * |A| − ⌈t·|A|⌉ + 1 de cada um, na mesma ordem global. O resultado é o mesmo da comparação com todos.
+ */
 export function agrupar(
   textos: string[],
   minimo: number,
   limite: number,
 ): ItemFrequente[] {
-  const grupos: { texto: string; vezes: number; tk: number }[] = [];
-  for (const t of textos) {
-    if (tokens(t).length < 2) continue;
-    const g = grupos.find((x) => similaridade(x.texto, t) >= 0.7);
-    if (g) g.vezes++;
-    else grupos.push({ texto: t, vezes: 1, tk: tokens(t).length });
+  // 1. Textos únicos, na ordem da primeira aparição, com a contagem.
+  const contagem = new Map<string, number>();
+  for (const t of textos) contagem.set(t, (contagem.get(t) ?? 0) + 1);
+  const unicos: { texto: string; vezes: number; palavras: string[] }[] = [];
+  for (const [texto, vezes] of contagem) {
+    if (tokens(texto).length < 2) continue;
+    unicos.push({ texto, vezes, palavras: [...new Set(tokens(texto))] });
+  }
+
+  // 2. Ordem global das palavras: as mais raras primeiro (prefixos curtos e seletivos).
+  const frequencia = new Map<string, number>();
+  for (const u of unicos)
+    for (const p of u.palavras) frequencia.set(p, (frequencia.get(p) ?? 0) + 1);
+  const ordem = (a: string, b: string) =>
+    frequencia.get(a)! - frequencia.get(b)! || (a < b ? -1 : a > b ? 1 : 0);
+  const prefixo = (palavras: string[]) =>
+    palavras.length - Math.ceil(LIMIAR_GRUPO * palavras.length - 1e-9) + 1;
+
+  // 3. Agrupamento guloso com índice palavra-do-prefixo → grupos.
+  const grupos: { texto: string; vezes: number; conjunto: Set<string> }[] = [];
+  const indice = new Map<string, number[]>();
+  for (const u of unicos) {
+    const palavras = u.palavras.sort(ordem);
+    const conjunto = new Set(palavras);
+    let escolhido = -1;
+    const vistos = new Set<number>();
+    for (const p of palavras.slice(0, prefixo(palavras)))
+      for (const g of indice.get(p) ?? []) {
+        if (vistos.has(g) || (escolhido !== -1 && g >= escolhido)) continue;
+        vistos.add(g);
+        const outro = grupos[g].conjunto;
+        // Filtro de tamanho: Jaccard ≥ t exige t·|B| ≤ |A| ≤ |B|/t.
+        const menor = Math.min(outro.size, conjunto.size);
+        const maior = Math.max(outro.size, conjunto.size);
+        if (menor < LIMIAR_GRUPO * maior - 1e-9) continue;
+        let comum = 0;
+        for (const x of conjunto) if (outro.has(x)) comum++;
+        if (comum / (outro.size + conjunto.size - comum) >= LIMIAR_GRUPO)
+          escolhido = g;
+      }
+    if (escolhido !== -1) grupos[escolhido].vezes += u.vezes;
+    else {
+      const id = grupos.length;
+      grupos.push({ texto: u.texto, vezes: u.vezes, conjunto });
+      for (const p of palavras.slice(0, prefixo(palavras))) {
+        const lista = indice.get(p);
+        if (lista) lista.push(id);
+        else indice.set(p, [id]);
+      }
+    }
   }
   return grupos
     .filter((g) => g.vezes >= minimo)

@@ -33,6 +33,8 @@ const UNICAS: Semente[] = [
       "Alô",
       "Oi, tem alguém aí?",
       "Boa tarde, podem me ajudar?",
+      // Erro real (1.0.22): o modelo devolveu texto vazio para esta saudação.
+      "Salve.",
     ],
   },
   {
@@ -787,6 +789,49 @@ export function variacoes(): Cenario[] {
 export function corpusCompleto(): Cenario[] {
   return [...cenariosBase(), ...variacoes()];
 }
+
+/**
+ * Conjunto rápido: ~28 cenários do corpus que cobrem os pontos críticos (transferência, consultor
+ * prometido sem transferir, preço fora do estoque, financiamento e CPF, fotos, repetição, fluxo
+ * completo). Cabe no limite diário do plano grátis do Groq; rode depois de cada ajuste.
+ */
+export const CONJUNTO_RAPIDO: readonly string[] = [
+  // consultor prometido sem transferir / pedido de ligação
+  "pede-ligacao-01",
+  "horario-05",
+  "objecoes-e-pressao-05",
+  "condicao-do-carro-01",
+  "preco-negociacao-05",
+  // preço e estoque
+  "preco-negociacao-01",
+  "interesse-carro-02",
+  "fora-do-estoque-01",
+  // financiamento
+  "financiamento-01",
+  "financiamento-02",
+  "financiamento-04",
+  // repetição e fechamento
+  "repete-ignora-pergunta",
+  "repete-pergunta-preco",
+  // fotos e mensagem vazia
+  "fotos-video-01",
+  "fotos-video-03",
+  "mensagem-vazia-ou-midia-03",
+  // essenciais
+  "saudacao-01",
+  "saudacao-15",
+  "pede-humano-01",
+  "humano-no-meio",
+  "lista-estoque-01",
+  "link-anuncio-02",
+  "pergunta-robo-01",
+  "troca-02",
+  "contexto-pronome",
+  "fluxo-avista-completo",
+  "fluxo-dados-tudo-na-primeira",
+  "estado-recusa-cpf",
+  "encerra-sem-interesse",
+];
 
 /** Categorias presentes, na ordem em que aparecem. */
 export function categorias(lista: Cenario[] = corpusCompleto()): string[] {

@@ -9,12 +9,19 @@ import path from "node:path";
 import { shell } from "electron";
 import * as caminhos from "../core/paths";
 import { conversasDaMemoria } from "../soul-ai/soul-ai";
-import { contextoDoLab } from "../pre-service/pre-service";
 import {
+  atendimentoLigado,
+  auditoriaParaLab,
+  contextoDoLab,
+} from "../pre-service/pre-service";
+import { LIMITE_DIARIO_GROQ, type UsoModelo } from "../pre-service/llm";
+import {
+  CONJUNTO_RAPIDO,
   categorias,
   cenariosBase,
   corpusCompleto,
 } from "../../shared/lab-corpus";
+import { cenariosDaAuditoria } from "./audit-scenarios";
 import type { Avaliacao, Cenario, EtiquetaErro } from "../../shared/lab";
 import { ETIQUETAS_ERRO } from "../../shared/lab";
 import { rodarLote, type ResultadoCenario } from "./runner";
@@ -32,25 +39,43 @@ export type Execucao = {
   modelo: string;
   repeticoes: number;
   resultados: ResultadoCenario[];
+  /** Tokens gastos no total (quando o provedor informa). */
+  tokens?: number;
+  /** Por que a execução parou antes do fim (ex.: limite diário do Groq). */
+  interrompida?: string;
+  /** Quantos cenários foram pedidos (para mostrar "X de Y" quando parou antes). */
+  pedidos?: number;
 };
 
 const pasta = () => path.join(caminhos.raizDados(), "lab-ia");
 const pastaExecucoes = () => path.join(pasta(), "execucoes");
 const arquivoAvaliacoes = () => path.join(pasta(), "avaliacoes.jsonl");
 const arquivoHistorico = () => path.join(pasta(), "cenarios-historico.json");
+const arquivoAuditoria = () => path.join(pasta(), "cenarios-auditoria.json");
+
+/** Espera do Laboratório quando o Groq avisa limite por minuto (o lote é sequencial). */
+const ESPERA_LIMITE_MINUTO_MS = 20_000;
+const espera = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
+
+/** Lê uma lista de cenários gravada pelo Laboratório (vazia se ainda não existe). */
+function lerCenarios(arquivo: string): Cenario[] {
+  try {
+    return JSON.parse(fs.readFileSync(arquivo, "utf8")) as Cenario[];
+  } catch {
+    return [];
+  }
+}
 
 let cancelar = false;
 let rodando = false;
 
-/** Cenários do corpus (base e variações) mais os extraídos do histórico, se já analisado. */
+/** Cenários do corpus (base e variações) mais os do histórico e os de erros reais, se já gerados. */
 function todosOsCenarios(): Cenario[] {
-  let historico: Cenario[] = [];
-  try {
-    historico = JSON.parse(fs.readFileSync(arquivoHistorico(), "utf8"));
-  } catch {
-    /* ainda não analisado */
-  }
-  return [...corpusCompleto(), ...historico];
+  return [
+    ...corpusCompleto(),
+    ...lerCenarios(arquivoHistorico()),
+    ...lerCenarios(arquivoAuditoria()),
+  ];
 }
 
 /** Lista os cenários e as categorias para a tela. */
@@ -67,6 +92,8 @@ export function listarCenarios() {
       turnos: c.turnos.length,
       origem: c.origem ?? "manual",
     })),
+    rapido: CONJUNTO_RAPIDO.filter((id) => todos.some((c) => c.id === id)),
+    atendimentoLigado: atendimentoLigado(),
     pasta: pasta(),
   };
 }
@@ -89,23 +116,58 @@ export async function rodarLab(
     if (!lista.length) throw new Error("Nenhum cenário selecionado.");
     const ctx = contextoDoLab();
     const repeticoes = Math.min(5, Math.max(1, a.repeticoes ?? 1));
-    const resultados = await rodarLote(lista, ctx, {
-      repeticoes,
-      cancelado: () => cancelar,
-      progresso: (feito, total, r) =>
-        emitir("lab:progresso", {
-          feito,
-          total,
-          id: r.id,
-          falhas: r.falhas.length,
-        }),
-    });
+    // Limite por minuto do Groq: no Laboratório vale esperar e tentar de novo (até 3 vezes).
+    const gerar = async (
+      mensagens: { role: string; content: string }[],
+      uso?: UsoModelo,
+    ) => {
+      for (let tentativa = 0; ; tentativa++) {
+        try {
+          return await ctx.gerar(mensagens, uso);
+        } catch (e) {
+          if (!/limite por minuto/.test((e as Error).message) || tentativa >= 3)
+            throw e;
+          await espera(ESPERA_LIMITE_MINUTO_MS);
+        }
+      }
+    };
+    let interrompida: string | undefined;
+    const resultados = await rodarLote(
+      lista,
+      { ...ctx, gerar },
+      {
+        repeticoes,
+        cancelado: () => cancelar,
+        pararSe: (r) => {
+          if (!r.erro?.includes(LIMITE_DIARIO_GROQ)) return false;
+          const msg = r.erro.charAt(0).toUpperCase() + r.erro.slice(1);
+          interrompida = `${msg}. Rode o restante depois desse prazo.`;
+          return true;
+        },
+        progresso: (feito, total, r) =>
+          emitir("lab:progresso", {
+            feito,
+            total,
+            id: r.id,
+            falhas: r.falhas.length,
+          }),
+      },
+    );
     const execucao: Execucao = {
       id: new Date().toISOString().replace(/[:.]/g, "-"),
       em: new Date().toISOString(),
       modelo: ctx.modelo,
       repeticoes,
       resultados,
+      tokens: resultados
+        .flatMap((r) => r.turnos)
+        .reduce((s, t) => s + (t.uso?.tokens ?? 0), 0),
+      pedidos: lista.length * repeticoes,
+      ...(interrompida
+        ? { interrompida }
+        : cancelar
+          ? { interrompida: "Cancelada pelo usuário." }
+          : {}),
     };
     fs.mkdirSync(pastaExecucoes(), { recursive: true });
     fs.writeFileSync(
@@ -149,6 +211,11 @@ export function listarExecucoes() {
           modelo: e.modelo,
           cenarios: e.resultados.length,
           comFalhas: e.resultados.filter((r) => r.falhas.length).length,
+          tokens: e.tokens ?? 0,
+          chamadas: e.resultados
+            .flatMap((r) => r.turnos)
+            .filter((t) => t.uso?.tokens).length,
+          interrompida: e.interrompida,
         };
       });
   } catch {
@@ -272,6 +339,18 @@ export function analisarHistoricoLab() {
     JSON.stringify(cenariosDoHistorico(analise)),
   );
   return { analise, pasta: pasta() };
+}
+
+/**
+ * Transforma os erros reais da auditoria do atendimento (turnos com sinal) em cenários anonimizados
+ * da categoria "auditoria" e grava em `<raizDados>/lab-ia/cenarios-auditoria.json` (fora do git).
+ */
+export function gerarCenariosDaAuditoria() {
+  const { turnos, historicos } = auditoriaParaLab();
+  const cenarios = cenariosDaAuditoria(turnos, historicos);
+  fs.mkdirSync(pasta(), { recursive: true });
+  fs.writeFileSync(arquivoAuditoria(), JSON.stringify(cenarios));
+  return { cenarios: cenarios.length, turnosLidos: turnos.length };
 }
 
 /** Abre a pasta do laboratório no Explorer. */

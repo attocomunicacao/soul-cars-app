@@ -5,7 +5,7 @@ description: Melhora a IA do Pré-atendimento a partir do Laboratório de testes
 
 # /ia-lab — do relatório de avaliações ao ajuste da IA
 
-Objetivo: transformar notas e alertas do Laboratório em correções pequenas, testadas e sem regressão. Não leia o repositório inteiro.
+Objetivo: transformar notas e alertas do Laboratório em correções pequenas, testadas e sem regressão. Não leia o repositório inteiro. Para erros pontuais (uma conversa colada, alertas da auditoria), use o ciclo curto de `/ia-ciclo`. O plano grátis do Groq dá ~80 respostas por dia: valide com **Rodar só as falhas** e o **Conjunto rápido**, não com o corpus inteiro.
 
 ## Onde está cada peça
 
@@ -19,6 +19,8 @@ Objetivo: transformar notas e alertas do Laboratório em correções pequenas, t
 | Executor do Laboratório (multi-turno, com estado) | `apps/desktop/src/main/lab/runner.ts` |
 | Corpus de cenários | `apps/desktop/src/shared/lab-corpus.ts` (lista em `docs/ai/lab-cenarios.md`) |
 | Análise do histórico do uTalk (anonimizada) | `apps/desktop/src/main/lab/history-analysis.ts` |
+| Erros reais da auditoria → cenários (anonimizados) | `apps/desktop/src/main/lab/audit-scenarios.ts` |
+| Conjunto rápido | `CONJUNTO_RAPIDO` em `apps/desktop/src/shared/lab-corpus.ts` |
 | Tela | `renderer/src/pages/pre-service/lab/LabTab.tsx` |
 
 ## Passos

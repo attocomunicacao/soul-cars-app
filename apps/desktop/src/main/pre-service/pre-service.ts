@@ -526,21 +526,41 @@ async function responder(conversa: MensagemIa[], lead: Lead) {
   };
 }
 
+/** O atendimento ao vivo está ligado? (o Laboratório avisa que divide a cota do Groq). */
+export const atendimentoLigado = () => carregar().config.ligado;
+
 /**
- * Contexto do Laboratório de testes: a mesma persona, loja, respostas rápidas, estoque e modelo do
- * atendimento real. O laboratório nunca envia nada ao uTalk; só pede respostas ao modelo.
+ * Turnos da auditoria e histórico de cada chat, para o Laboratório transformar erros reais em
+ * cenários (anonimizados lá, em `main/lab/audit-scenarios.ts`). Só leitura.
+ */
+export function auditoriaParaLab() {
+  return {
+    turnos: lerTurnos(ARQUIVO_AUDITORIA(), 1000),
+    historicos: Object.fromEntries(
+      Object.entries(carregar().chats).map(([id, c]) => [id, c.historico]),
+    ),
+  };
+}
+
+/**
+ * Contexto do Laboratório de testes: a mesma persona, loja, respostas rápidas, estoque, exemplos
+ * (ensinados e reais da equipe, como no atendimento) e modelo do atendimento real. Sem a reserva
+ * Ollama: uma execução não mistura dois modelos sem avisar. Nunca envia nada ao uTalk.
  */
 export function contextoDoLab() {
   const e = carregar();
+  const cfg = { ...e.config, reservaOllama: false };
   return {
     persona: e.persona,
     loja: e.loja,
     respostas: e.respostas,
     nomeAgente: e.config.nomeAgente,
     veiculos: veiculosDisponiveis(),
+    exemplos: e.exemplos,
+    reais: e.config.usarHistoricoCrm ? paresReais() : [],
     modelo: `${e.config.provedor}:${e.config.provedor === "groq" ? e.config.modeloGroq : e.config.modeloOllama}`,
-    gerar: (mensagens: { role: string; content: string }[]) =>
-      gerar(buscar, mensagens, e.config, chaveGroq()),
+    gerar: (mensagens: { role: string; content: string }[], uso?: UsoModelo) =>
+      gerar(buscar, mensagens, cfg, chaveGroq(), () => {}, uso),
   };
 }
 
