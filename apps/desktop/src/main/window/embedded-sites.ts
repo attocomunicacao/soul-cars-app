@@ -1,16 +1,16 @@
 /**
- * Sites embutidos na janela principal: CRM (Umbler uTalk), BNDV e Meta Ads.
+ * Sites embutidos na janela principal: CRM (Umbler uTalk) e Meta Ads.
  *
  * Em vez de abrir uma janela à parte, uma vista (`WebContentsView`) é colocada sobre a
  * área de conteúdo da janela, no retângulo que a interface informa. Cada site tem sessão
- * própria e persistente, então o login permanece. O BNDV usa a mesma sessão
- * (`persist:bndv`) do botão Atualizar BNDV: entrar aqui vale para a atualização.
+ * própria e persistente, então o login permanece.
  * As páginas são remotas: sem Node, sem preload e em sandbox.
  */
 import { BrowserWindow, WebContentsView, shell } from "electron";
 import * as caminhos from "../core/paths";
+import { urlDoGerenciadorMeta } from "./meta-url";
 
-export type IdEmbutida = "crm" | "bndv" | "meta";
+export type IdEmbutida = "crm" | "meta";
 
 export type Retangulo = {
   x: number;
@@ -28,14 +28,9 @@ const SITES: Record<
     sessao: "persist:utalk",
     hosts: /(^|\.)(umbler|google|microsoft|microsoftonline)\.com$/i,
   },
-  bndv: {
-    url: () => caminhos.URL_BNDV,
-    sessao: "persist:bndv",
-    hosts: /(^|\.)(bndv\.com\.br|google\.com|microsoftonline\.com)$/i,
-  },
   meta: {
-    url: () =>
-      "https://adsmanager.facebook.com/adsmanager/manage/all?nav_source=comet&nav_entry_point=comet_bookmark&campaign_id=415838275119884&placement=bkmk_admgr&extra_1=campaign&act=340363905178843",
+    // A conta vem da configuração do usuário (a mesma do painel Campanhas); nenhum ID fica no código.
+    url: () => urlDoGerenciadorMeta(caminhos.lerConfig().metaConta as string),
     sessao: "persist:meta",
     hosts: /(^|\.)(facebook|meta|instagram|fbsbx)\.com$/i,
   },

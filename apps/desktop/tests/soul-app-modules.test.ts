@@ -213,6 +213,35 @@ describe("CRM · Leads", () => {
     expect(chamadas).toBe(3);
   });
 
+  it("429 espera o tempo que o servidor pediu (Retry-After), não um valor fixo", async () => {
+    const esperas: number[] = [];
+    let chamadas = 0;
+    const cli = new ClienteUmbler(
+      async () =>
+        ++chamadas === 1
+          ? new Response("", { status: 429, headers: { "Retry-After": "7" } })
+          : new Response("{}", { status: 200 }),
+      "x",
+      async (ms) => void esperas.push(ms),
+    );
+    await cli.get("/v1/tags/");
+    expect(esperas).toEqual([7000]);
+  });
+
+  it("erro da API não reproduz o corpo da resposta (pode ter dados de cliente)", async () => {
+    const cli = new ClienteUmbler(
+      async () =>
+        new Response("Contato João 11999998888 joao@gmail.com não achado", {
+          status: 500,
+        }),
+      "x",
+      async () => {},
+    );
+    const erro = await cli.get("/v1/chats/").catch((e: Error) => e);
+    expect((erro as Error).message).toContain("500");
+    expect((erro as Error).message).not.toMatch(/João|11999998888|joao@gmail/);
+  });
+
   it("token recusado vira mensagem clara", async () => {
     const cli = new ClienteUmbler(
       async () => new Response("", { status: 401 }),
@@ -422,15 +451,36 @@ describe("Meta Ads", () => {
 
   it("Graph API: segue a paginação e traduz token vencido", async () => {
     const paginas: Record<string, unknown> = {
-      "https://x/1": { data: [{ a: 1 }], paging: { next: "https://x/2" } },
-      "https://x/2": { data: [{ a: 2 }] },
+      "https://graph.facebook.com/1": {
+        data: [{ a: 1 }],
+        paging: { next: "https://graph.facebook.com/2" },
+      },
+      "https://graph.facebook.com/2": { data: [{ a: 2 }] },
     };
     const ok = await graphGet(
       async (u) => new Response(JSON.stringify(paginas[u])),
-      "https://x/1",
+      "https://graph.facebook.com/1",
       "t",
     );
     expect(ok).toEqual([{ a: 1 }, { a: 2 }]);
+    // O token nunca segue para um endereço que não é da Meta, mesmo se a resposta mandar.
+    const chamadas: string[] = [];
+    await expect(
+      graphGet(
+        async (u) => {
+          chamadas.push(u);
+          return new Response(
+            JSON.stringify({
+              data: [],
+              paging: { next: "https://evil.example.com/steal" },
+            }),
+          );
+        },
+        "https://graph.facebook.com/1",
+        "t",
+      ),
+    ).rejects.toThrow(/endereço inesperado/);
+    expect(chamadas).toEqual(["https://graph.facebook.com/1"]);
     await expect(
       graphGet(
         async () =>

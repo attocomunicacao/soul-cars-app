@@ -29,6 +29,8 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run format:check
+      # Documentação: links relativos dos .md e AGENTS.md idêntico ao CLAUDE.md.
+      - run: npm run docs:check
       - run: npm test
       - run: npm run build
       # Só falha em vulnerabilidade alta ou crítica (avisos moderados conhecidos vêm do electron-builder).
@@ -46,6 +48,9 @@ jobs:
           cache-dependency-glob: apps/engine/uv.lock
       # Só os grupos que os testes usam; recorte e transcrição (modelos grandes) ficam de fora.
       - run: uv sync --group documentos --group planilha
+        working-directory: apps/engine
+      # Lint do motor (conjunto mínimo de regras do ruff, configurado no pyproject.toml).
+      - run: uvx ruff@0.17.6 check .
         working-directory: apps/engine
       # O FFmpeg faz rodarem os testes da versão leve do vídeo.
       - run: choco install ffmpeg -y --no-progress
@@ -72,7 +77,19 @@ jobs:
         working-directory: apps/engine
       - run: npm run build -w apps/desktop
       - run: npm run smoke
-      - run: npm run smoke:instagram
+      # Segurança, cofre, motor e gaveta (smoke:security) e páginas + acessibilidade (smoke:pages),
+      # com perfil e dados temporários.
+      - run: npm run smoke:security
+      # Acessibilidade (axe, WCAG AA) em modo estrito, nos dois temas: qualquer violação reprova.
+      - run: npm run smoke:pages
+        env:
+          SOUL_AXE_ESTRITO: "1"
+      - run: npm run smoke:pages
+        env:
+          SOUL_AXE_ESTRITO: "1"
+          SOUL_TEMA: dark
+      # Política de segurança de conteúdo: o relatório funciona sob ela e o que é de fora é barrado.
+      - run: npm run smoke:csp
 
   launcher-e2e:
     name: Launcher (instalação de ponta a ponta)

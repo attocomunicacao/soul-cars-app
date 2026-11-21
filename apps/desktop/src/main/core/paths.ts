@@ -17,6 +17,7 @@
  */
 import { app } from "electron";
 import fs from "node:fs";
+import { gravarAtomico } from "./atomic-write";
 import { lerConfigJson } from "./config-json";
 import path from "node:path";
 
@@ -58,8 +59,8 @@ export function lerConfig(): Config {
 
 export function gravarConfig(patch: Config) {
   const atual = { ...lerConfig(), ...patch };
-  fs.mkdirSync(userData(), { recursive: true });
-  fs.writeFileSync(ARQUIVO_CONFIG(), JSON.stringify(atual, null, 2), "utf8");
+  // Atômico: o config.json guarda a raiz de dados e os segredos cifrados; um arquivo cortado perderia tudo.
+  gravarAtomico(ARQUIVO_CONFIG(), JSON.stringify(atual, null, 2));
   cache = atual;
   return atual;
 }
@@ -68,7 +69,7 @@ export function gravarConfig(patch: Config) {
  * Raiz dos dados visíveis (ESTOQUE/ e dados/).
  *
  * Na primeira execução, se existir uma pasta de dados já usada (`dados-loja`
- * dentro do projeto, ou a do app Python antigo), ela é adotada — assim as
+ * dentro do projeto), ela é adotada — assim as
  * pastas e o balanço já criados continuam valendo.
  */
 export function raizDados(): string {
@@ -78,8 +79,6 @@ export function raizDados(): string {
   const candidatos = [
     path.resolve(base, "dados-loja"),
     path.resolve(base, "..", "dados-loja"),
-    path.resolve(base, "legado", "estoque-python"),
-    path.resolve(base, "..", "soul-cars-estoque"),
   ];
   const herdada = candidatos.find((c) =>
     fs.existsSync(path.join(c, "ESTOQUE")),

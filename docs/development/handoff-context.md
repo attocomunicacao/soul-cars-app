@@ -18,9 +18,9 @@ Motion atual: [SOUL Motion — motor interno de animações](../video/soul-motio
 
 Mudança posterior à revisão inicial: [novo motor de legendas editoriais](../video/editorial-captions.md), em `apps/engine/video/composition.py` e `legendas.py`. Para esse módulo, o documento 17 prevalece sobre a descrição e os hashes da leitura inicial.
 
-Referência: código local em 23/10/2026. Este documento descreve a árvore de trabalho, incluindo alterações ainda não commitadas. A revisão foi ampliada com a leitura dos corpos do código autoral, testes, scripts, configurações e fixtures textuais listados no [registro de cobertura](../architecture/reading-coverage.md). Dependências, binários, modelos, dados reais e payloads gerados ficam fora desse recorte. Leitura não equivale a execução dos testes nem certifica ausência de defeitos.
+Referência: código local em 23/10/2026. Este documento descreve a árvore de trabalho, incluindo alterações ainda não commitadas. A revisão foi ampliada com a leitura dos corpos do código autoral, testes, scripts, configurações e fixtures textuais listados no registro de cobertura (documento removido; use `git ls-files`). Dependências, binários, modelos, dados reais e payloads gerados ficam fora desse recorte. Leitura não equivale a execução dos testes nem certifica ausência de defeitos.
 
-Leia também [Contratos e detalhes de implementação](../architecture/implementation-details.md): identidade e persistência, regras de arquivos/fotos, limites IPC, cálculos BNDV/CRM, finanças, editor/3D, vídeo, testes e CI. Para localizar fontes, use o [inventário atualizado](../architecture/code-inventory.md). Os hashes da cobertura permitem identificar mudanças posteriores a esta revisão.
+Leia também [Contratos e detalhes de implementação](../architecture/implementation-details.md): identidade e persistência, regras de arquivos/fotos, limites IPC, cálculos BNDV/CRM, finanças, editor/3D, vídeo, testes e CI. Para localizar fontes, use o inventário atualizado (documento removido; use `git ls-files`). Os hashes da cobertura permitem identificar mudanças posteriores a esta revisão.
 
 ## 1. Produto e limites
 
@@ -261,12 +261,12 @@ Não afirmar que passaram sem executar na revisão em questão. Nesta tarefa de 
 ## 16. Como retomar com pouco contexto
 
 1. Ler este guia e `AGENTS.md`; conferir árvore/diff atuais.
-2. Consultar [inventário](../architecture/code-inventory.md) e abrir o módulo solicitado.
+2. Consultar inventário (documento removido; use `git ls-files`) e abrir o módulo solicitado.
 3. Seguir a cadeia completa: componente → lib → IPC/esquema → domínio → banco/disco/Python.
 4. Ler testes do mesmo domínio antes de modificar regras.
 5. Fazer alteração, executar verificações proporcionais e atualizar o trecho deste guia afetado.
 
-Documentação complementar: [índice](../README.md), [visão geral anterior](ai-assistant-overview.md), [arquitetura](../architecture/architecture-and-migration.md), [dados/backup](../guides/data-and-backup.md), [motor](../architecture/python-engine.md), [Instagram](../guides/instagram.md), [CRM](../crm/crm-data-and-reports.md) e [Soul IA](../crm/soul-ai.md). Para o contrato uTalk, consultar `13-api-utalk-biblioteca.md` por assunto, sem carregar toda a biblioteca em cada chat.
+Documentação complementar: [índice](../README.md), [visão geral anterior](ai-assistant-overview.md), [arquitetura](../architecture/architecture-and-migration.md), [dados/backup](../guides/data-and-backup.md), [motor](../architecture/python-engine.md), [CRM](../crm/crm-data-and-reports.md) e [Soul IA](../crm/soul-ai.md). Para o contrato uTalk, consultar `13-api-utalk-biblioteca.md` por assunto, sem carregar toda a biblioteca em cada chat.
 # Atualização das tarjas (23/10/2026)
 
 Consultar [21-layout-e-movimento-das-tarjas.md](../video/banner-layout-and-motion.md): padding uniforme de 32 px, largura máxima de 936 px, alturas pelo texto, espaçamento de 8 px e flutuação contínua sincronizada. Mantém as legendas brancas em Lato e as entradas/saídas suaves existentes.

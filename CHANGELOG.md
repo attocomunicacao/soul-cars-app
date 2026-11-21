@@ -2,6 +2,21 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.2.0]
+
+Mais segurança e acabamento, e um app mais enxuto.
+
+- **Tema escuro**: o app segue o tema do Windows na primeira vez, e Configurações › **Aparência** deixa escolher Claro ou Escuro (a escolha fica guardada). O editor de criativos continua claro.
+- **Configurações voltam a abrir** quando uma página embutida (Atendimento, Gerenciador) está aberta; antes o botão não mostrava nada.
+- **Mais legível e acessível**: textos de apoio mais escuros (contraste mínimo de acessibilidade), tabelas com rolagem alcançáveis pelo teclado, campos com rótulo e a barra de progresso do vídeo agora estilizada.
+- **Mais leve e rápido de abrir**: o código da interface foi comprimido (cerca de 59% menor).
+- **Privacidade da IA**: só o primeiro nome do cliente vai ao modelo externo (Groq); telefones, e-mails, CEP e endereços são mascarados antes do envio e as mensagens de erro de integrações não repetem mais telefone nem CPF.
+- **Segurança**: a janela principal ganhou política de conteúdo (CSP) que só executa o código do próprio app; os comandos do motor de fotos e vídeo validam cada parâmetro e só aceitam arquivos das pastas do app; o token do Meta nunca é enviado para endereço que não seja da Meta; os modelos de IA baixados são verificados por hash.
+- **Mais confiável**: as configurações e o estado do Pré-atendimento são gravados de forma atômica (uma queda de energia não corrompe o arquivo); as integrações com uTalk e Meta repetem automaticamente quando o servidor pede para esperar, sem reenviar mensagens por engano.
+- **Conta do Meta Ads** do Gerenciador vem das suas Configurações (a mesma do painel Campanhas), em vez de fixa no código.
+- **Memória da Soul IA** passou para Configurações, com Sincronizar, Exportar, Abrir pasta e Esquecer (o painel antigo de Leads e a página de Finanças, que estavam ocultos desde a 1.0.3, foram removidos).
+- **Removido**: a publicação no Instagram e as telas de relatório de anúncios que já não apareciam no app desde a 1.0.9. Seus dados e arquivos não são tocados. A entrada de arquivos por pasta sincronizada continua funcionando como antes.
+
 ## [1.1.0]
 
 Versão de revisão: mais segurança e estabilidade, sem mudar o que o app faz no dia a dia.

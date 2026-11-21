@@ -614,7 +614,12 @@ function FunilCompleto({
       <div className="panel">
         <h2>Por produto</h2>
         {porProduto.length ? (
-          <div className="tabela-rolavel">
+          <div
+            className="tabela-rolavel"
+            tabIndex={0}
+            role="region"
+            aria-label="Tabela rolável"
+          >
             <table>
               <thead>
                 <tr>
@@ -674,7 +679,12 @@ function FunilCompleto({
       <div className="panel">
         <h2>Por campanha</h2>
         {campanhas.length ? (
-          <div className="tabela-rolavel">
+          <div
+            className="tabela-rolavel"
+            tabIndex={0}
+            role="region"
+            aria-label="Tabela rolável"
+          >
             <table>
               <thead>
                 <tr>
@@ -773,7 +783,12 @@ function LeadsDoFunil({
         valor={etapa}
         aoMudar={setEtapa}
       />
-      <div className="tabela-rolavel">
+      <div
+        className="tabela-rolavel"
+        tabIndex={0}
+        role="region"
+        aria-label="Tabela rolável"
+      >
         <table>
           <thead>
             <tr>

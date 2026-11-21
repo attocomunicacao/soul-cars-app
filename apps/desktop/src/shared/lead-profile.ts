@@ -97,6 +97,24 @@ const sem = (s: string) =>
 const CPF_RE = /(?<!\d)(\d{3})[.\s]?(\d{3})[.\s]?(\d{3})[-.\s]?(\d{2})(?!\d)/g;
 const DATA_RE = /(?<!\d)(\d{1,2})[/.-](\d{1,2})[/.-](\d{4}|\d{2})(?!\d)/g;
 
+// Contato e endereço: saem mascarados antes de o texto ir ao modelo (a ficha do lead não usa nenhum deles).
+const EMAIL_RE = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
+/** Celular: (DDD) 9 xxxx-xxxx, com ou sem +55, pontuação e espaços. Não pega número colado a outros dígitos. */
+const CELULAR_RE =
+  /(?<![\d.,])(?:\+?55[\s.-]?)?(?:\(\d{2}\)[\s.-]?|\d{2}[\s.-]?)?9[\s.-]?\d{4}[\s.-]?\d{4}(?![\d])/g;
+/** Fixo: precisa do DDD ou de hífen entre os dois blocos, para não pegar "2019 2020" nem preços. */
+const FIXO_RE =
+  /(?<![\d.,])(?:\+?55[\s.-]?)?(?:(?:\(\d{2}\)[\s.-]?|\d{2}[\s.-])[2-5]\d{3}[\s.-]?\d{4}|[2-5]\d{3}-\d{4})(?![\d])/g;
+const CEP_RE = /(?<!\d)\d{5}-\d{3}(?!\d)|(?<=\bcep\s*:?\s*)\d{8}(?!\d)/gi;
+const TIPO_DE_VIA = String.raw`(?:rua|r\.|avenida|av\.?|alameda|travessa|tv\.|rodovia|estrada|pra[cç]a)`;
+/** Via + número: "Rua das Flores, 123", "Av. Paulista, nº 1578", "Travessa Alegria nº 12". Bairro e região não entram. */
+const ENDERECO_RE = new RegExp(
+  String.raw`\b${TIPO_DE_VIA}\s+(?:[^,\n]{1,60},\s*(?:n[º°o.]*\s*)?\d{1,5}|[^,\n]{1,60}?\s+n[º°o.]*\s*\d{1,5})\b`,
+  "gi",
+);
+/** Dois anos seguidos ("2019 2020", "2019-2020") parecem fixo, mas são ano de fabricação e modelo. */
+const DOIS_ANOS_RE = /^(?:19|20)\d{2}[\s.-](?:19|20)\d{2}$/;
+
 /** Confere os dois dígitos verificadores do CPF (11 dígitos, não todos iguais). */
 export function cpfValido(digitos: string): boolean {
   if (!/^\d{11}$/.test(digitos) || /^(\d)\1{10}$/.test(digitos)) return false;
@@ -682,7 +700,10 @@ export function resumoParaSdr(
 }
 
 // ------------------------------------------------------------------ máscara
-/** Troca CPF por "[CPF informado]" e, se `datas`, datas por "[data de nascimento informada]". */
+/**
+ * Troca CPF por "[CPF informado]" e, se `datas`, datas por "[data de nascimento informada]".
+ * Sempre troca também e-mail, telefone, CEP e endereço com número (veja `mascararContato`).
+ */
 export function mascarar(
   texto: string,
   datas = false,
@@ -711,7 +732,19 @@ export function mascarar(
           ? "[data de nascimento informada]"
           : m,
       );
-  return t;
+  return mascararContato(t);
+}
+
+/** Troca e-mail, telefone, CEP e endereço (via + número) pelos marcadores "[… informado]". */
+function mascararContato(texto: string): string {
+  return texto
+    .replace(EMAIL_RE, "[e-mail informado]")
+    .replace(CEP_RE, "[CEP informado]")
+    .replace(ENDERECO_RE, "[endereço informado]")
+    .replace(CELULAR_RE, "[telefone informado]")
+    .replace(FIXO_RE, (m) =>
+      DOIS_ANOS_RE.test(m.trim()) ? m : "[telefone informado]",
+    );
 }
 
 /** Máscara numa conversa: datas só são mascaradas quando a pergunta anterior ou o texto falam de nascimento. */

@@ -5,6 +5,7 @@
  * que escreve no CRM, e só é chamado pelo laço de atendimento ou por ação explícita na tela.
  * Sem Electron: o `fetch` é injetado para os testes.
  */
+import { buscarComRetentativa, mensagemDeErroHttp } from "../core/http-retry";
 import { BASE_UTALK, type Buscar } from "../crm/utalk-api";
 
 type Consulta = Record<string, string | number | string[] | undefined>;
@@ -57,23 +58,32 @@ export function clienteEscrita(buscar: Buscar, token: string, orgId: string) {
       for (const x of Array.isArray(v) ? v : [v])
         url.searchParams.append(k, String(x));
     }
-    const r = await buscar(url.toString(), {
-      method: metodo,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
+    // Leitura repete também em falha de rede e 502/503/504. Escrita só repete em 429: se o pedido
+    // tivesse chegado, repetir mandaria a mesma mensagem ao cliente duas vezes.
+    const r = await buscarComRetentativa(
+      buscar,
+      url.toString(),
+      {
+        method: metodo,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: corpo
+          ? JSON.stringify({ organizationId: orgId, ...corpo })
+          : undefined,
       },
-      body: corpo
-        ? JSON.stringify({ organizationId: orgId, ...corpo })
-        : undefined,
-      signal: AbortSignal.timeout(30_000),
-    });
-    const texto = await r.text();
+      {
+        timeoutMs: 30_000,
+        tentativasTransitorias: metodo === "GET" ? 2 : 0,
+      },
+    );
     if (!r.ok)
       throw new Error(
-        `uTalk ${metodo} ${caminho} → ${r.status}: ${texto.slice(0, 300)}`,
+        await mensagemDeErroHttp(r, `uTalk ${metodo} ${caminho}`),
       );
+    const texto = await r.text();
     return texto ? (JSON.parse(texto) as unknown) : null;
   }
 
@@ -144,17 +154,18 @@ export function clienteEscrita(buscar: Buscar, token: string, orgId: string) {
       form.append("Automated", "true");
       form.append("SkipReassign", "true");
       form.append("File", new Blob([Buffer.from(bytes)], { type: tipo }), nome);
-      const r = await buscar(BASE_UTALK + "/v1/messages/", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: form,
-        signal: AbortSignal.timeout(60_000),
-      });
-      const texto = await r.text();
+      const r = await buscarComRetentativa(
+        buscar,
+        BASE_UTALK + "/v1/messages/",
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: form,
+        },
+        { timeoutMs: 60_000 },
+      );
       if (!r.ok)
-        throw new Error(
-          `uTalk envio de foto → ${r.status}: ${texto.slice(0, 300)}`,
-        );
+        throw new Error(await mensagemDeErroHttp(r, "uTalk envio de foto"));
     },
     porEtiqueta: (contatoId: string, etiquetaId: string) =>
       chamar("POST", `/v1/contacts/${contatoId}/tags/`, {

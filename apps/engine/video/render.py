@@ -2,6 +2,7 @@
 
 Uso: python render.py <pasta_do_veiculo> "<veículo>" "<motor/câmbio>" "<preço>"
 """
+import atexit
 import json
 import os
 import re
@@ -160,29 +161,29 @@ def tarja_png(text: str, spec, out: Path, glow_out: Path | None = None) -> tuple
     pad = PADDING_TARJA
     text = " ".join(text.split()) or "—"
     font = ImageFont.truetype(str(FONT), size)
-    l, t, r, b = font.getbbox(text)
-    while (r - l) + 2 * pad > LARGURA_MAX_TARJA and size > 42:
+    esq, t, r, b = font.getbbox(text)
+    while (r - esq) + 2 * pad > LARGURA_MAX_TARJA and size > 42:
         size = max(42, size - 2)
         font = ImageFont.truetype(str(FONT), size)
-        l, t, r, b = font.getbbox(text)
+        esq, t, r, b = font.getbbox(text)
     # Mesmo nomes excepcionais respeitam o limite, sem comprimir as letras.
-    if r - l + 2 * pad > LARGURA_MAX_TARJA:
+    if r - esq + 2 * pad > LARGURA_MAX_TARJA:
         while text and font.getbbox(text.rstrip() + "…")[2] - font.getbbox(text.rstrip() + "…")[0] + 2 * pad > LARGURA_MAX_TARJA:
             text = text[:-1]
         text = text.rstrip() + "…"
     # Usa a tinta real dos glifos: acentos e descendentes também ficam centralizados.
     mascara = font.getmask(text)
     tinta = mascara.getbbox()
-    l, t, r, b = font.getbbox(text)
+    esq, t, r, b = font.getbbox(text)
     il, it, ir, ib = tinta
     tw, th = ir - il, ib - it
     img = Image.new("RGBA", (tw + 2 * pad, th + 2 * pad), bg + (255,))
     d = ImageDraw.Draw(img)
-    d.text((pad - l - il, pad - t - it), text, font=font, fill=fg + (255,))
+    d.text((pad - esq - il, pad - t - it), text, font=font, fill=fg + (255,))
     img.save(out)
     if glow_out is not None:
         letras = Image.new("L", img.size, 0)
-        ImageDraw.Draw(letras).text((pad - l - il, pad - t - it), text, font=font, fill=255)
+        ImageDraw.Draw(letras).text((pad - esq - il, pad - t - it), text, font=font, fill=255)
         brilho = Image.new("RGBA", img.size, (255, 255, 255, 0))
         brilho.putalpha(letras.filter(ImageFilter.GaussianBlur(5)).point(lambda v: round(v * 0.55)))
         brilho.save(glow_out)
@@ -221,7 +222,8 @@ def fix_words(words: list, veiculo: str, correcoes: list) -> list:
             and re.fullmatch(r"\d+", merged[-1]["w"])
         )
         if merged and (so_pontuacao or decimal):
-            merged[-1]["w"] += w["w"]; merged[-1]["e"] = w["e"]
+            merged[-1]["w"] += w["w"]
+            merged[-1]["e"] = w["e"]
         else:
             merged.append(dict(w))
     # nome do veículo: palavra parecida (ex.: "Onyx") vira a grafia digitada ("Onix")
@@ -274,6 +276,26 @@ def localizar_video(root: Path) -> Path:
     return videos[0]
 
 
+def limpar_trabalho(work: Path, manter_transcricao: bool = False) -> None:
+    """Apaga a pasta de trabalho `.soul_tmp` (vídeos intermediários, áudio, tarjas, fontes).
+
+    Em falha ou numa nova geração (`manter_transcricao=True`) guarda só `*_words.json`: a
+    transcrição leva minutos e é reaproveitada pelo cache. No sucesso apaga tudo.
+    """
+    if not work.exists():
+        return
+    if not manter_transcricao:
+        shutil.rmtree(work, ignore_errors=True)
+        return
+    for item in work.iterdir():
+        if item.is_file() and item.name.endswith("_words.json"):
+            continue
+        if item.is_dir():
+            shutil.rmtree(item, ignore_errors=True)
+        else:
+            item.unlink(missing_ok=True)
+
+
 def main(folder: str, veiculo: str, motor: str, preco: str) -> None:
     t0 = time.time()
     root = Path(folder)
@@ -289,6 +311,10 @@ def main(folder: str, veiculo: str, motor: str, preco: str) -> None:
     out = root / f"VIDEO_{model}.mp4"
     work = root / ".soul_tmp"
     work.mkdir(exist_ok=True)
+    # Sobras de uma geração cancelada ou que falhou saem agora (a transcrição em cache fica) e, se esta
+    # também falhar, saem ao encerrar o processo. No sucesso a pasta inteira é apagada mais abaixo.
+    limpar_trabalho(work, manter_transcricao=True)
+    atexit.register(limpar_trabalho, work, True)
 
     progresso(1, "Lendo o vídeo bruto")
     dur = probe_duration(video)

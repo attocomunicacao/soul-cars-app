@@ -14,13 +14,13 @@ import { Icon } from "../../app/icons";
 import { invoke, listen } from "../../lib/desktop-bridge";
 import { LabTab } from "./lab/LabTab";
 import { type Painel } from "./shared";
-import { Visao } from "./Visao";
-import { Auditoria } from "./Auditoria";
-import { Aprovacao } from "./Aprovacao";
-import { Ensinar } from "./Ensinar";
-import { Respostas } from "./Respostas";
-import { Loja } from "./Loja";
-import { Configuracoes } from "./Configuracoes";
+import { OverviewTab } from "./OverviewTab";
+import { AuditTab } from "./AuditTab";
+import { ApprovalTab } from "./ApprovalTab";
+import { TeachTab } from "./TeachTab";
+import { RepliesTab } from "./RepliesTab";
+import { StoreTab } from "./StoreTab";
+import { SettingsTab } from "./SettingsTab";
 
 type Aba =
   | "visao"
@@ -151,14 +151,16 @@ export function PreServicePage({
         <Segmentado rotulo="Seção" opcoes={ABAS} valor={aba} aoMudar={setAba} />
       </div>
 
-      {aba === "visao" && <Visao p={p} agir={agir} />}
-      {aba === "aprovacao" && <Aprovacao p={p} agir={agir} ocupado={ocupado} />}
-      {aba === "auditoria" && <Auditoria p={p} aoErro={aoErro} />}
-      {aba === "ensinar" && <Ensinar p={p} agir={agir} aoErro={aoErro} />}
+      {aba === "visao" && <OverviewTab p={p} agir={agir} />}
+      {aba === "aprovacao" && (
+        <ApprovalTab p={p} agir={agir} ocupado={ocupado} />
+      )}
+      {aba === "auditoria" && <AuditTab p={p} aoErro={aoErro} />}
+      {aba === "ensinar" && <TeachTab p={p} agir={agir} aoErro={aoErro} />}
       {aba === "laboratorio" && <LabTab aoErro={aoErro} />}
-      {aba === "respostas" && <Respostas p={p} agir={agir} />}
-      {aba === "loja" && <Loja p={p} agir={agir} />}
-      {aba === "config" && <Configuracoes p={p} agir={agir} aoErro={aoErro} />}
+      {aba === "respostas" && <RepliesTab p={p} agir={agir} />}
+      {aba === "loja" && <StoreTab p={p} agir={agir} />}
+      {aba === "config" && <SettingsTab p={p} agir={agir} aoErro={aoErro} />}
     </section>
   );
 }

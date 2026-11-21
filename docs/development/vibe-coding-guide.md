@@ -18,7 +18,6 @@
 | Caminhos | main/caminhos.ts |
 | BNDV e financeiro | main/estoque/* |
 | Lucro mensal e setas do relatório | main/estoque/relatorio.ts |
-| Instagram e retomada de publicação | Instagram.tsx, main/studio/instagram.ts, instagram-browser.ts e instagram-plano.ts; veja docs/guides/instagram.md |
 | Automação | apps/engine/* e main/studio/motor.ts |
 | Pronto para anunciar, registro e lembrete de pausa | compartilhado/anuncio.ts, Anunciar.tsx, AvisosAnuncio.tsx, main/estoque/vendas.ts |
 | Versão leve do vídeo para anúncio | apps/engine/video/light_export.py, main/studio/motor.ts e Producao.tsx |

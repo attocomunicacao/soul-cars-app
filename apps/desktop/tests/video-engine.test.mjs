@@ -11,6 +11,18 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 // "um vídeo por vez" e o cancelamento sem Python, ffmpeg nem Electron.
 const raiz = fs.mkdtempSync(path.join(os.tmpdir(), "soul-video-motor-"));
 fs.writeFileSync(path.join(raiz, "main.py"), "");
+// O Python vem sempre do ambiente do motor (<userData>/engine-venv): um arquivo de mentira basta,
+// porque o `spawn` é falso. A interface nunca informa o executável.
+const venv = path.join(
+  raiz,
+  "engine-venv",
+  process.platform === "win32" ? "Scripts" : "bin",
+);
+fs.mkdirSync(venv, { recursive: true });
+fs.writeFileSync(
+  path.join(venv, process.platform === "win32" ? "python.exe" : "python"),
+  "",
+);
 Object.defineProperty(process, "resourcesPath", {
   value: raiz,
   configurable: true,
@@ -47,8 +59,7 @@ import {
 } from "../src/main/studio/engine-bridge";
 
 const emitir = () => {};
-const iniciarLeve = () =>
-  gerarVideoLeve({ pasta: "pasta", python: "python-falso" }, emitir);
+const iniciarLeve = () => gerarVideoLeve({ pasta: "pasta" }, emitir);
 const ultimo = () => filhos.at(-1);
 const taskkills = () => filhos.filter((f) => f.comando === "taskkill");
 
@@ -81,7 +92,6 @@ describe("vídeo no motor", () => {
           veiculo: "v",
           motor: "m",
           preco: "r",
-          python: "python-falso",
         },
         emitir,
       ),
