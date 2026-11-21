@@ -60,7 +60,7 @@ As bibliotecas **não são redistribuídas** no instalador nem no repositório: 
 | pytesseract | 0.3.13 | Apache-2.0 | direta (documentos) |
 | pyyaml | 6.0.3 | MIT | indireta |
 | referencing | 0.37.0 | MIT | indireta |
-| rembg | 2.0.84 | MIT | direta (recorte) |
+| rembg | 2.0.87 | MIT | direta (recorte) |
 | requests | 2.34.2 | Apache-2.0 | indireta |
 | rpds-py | 2026.6.3 | MIT | indireta |
 | scikit-image | 0.26.0 | BSD-3-Clause | indireta |
