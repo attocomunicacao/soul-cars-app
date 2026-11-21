@@ -6,32 +6,63 @@
  *
  *  - "estoque"  → lista de veículos, vitrine e relatório completo (página inicial)
  *  - "studio"   → ficha de um veículo (aberta a partir do estoque; não aparece no menu)
- *  - "crm" / "bndv" / "meta" → sites embutidos (WebContentsView no processo principal)
- *  - "leads"    → painel do CRM e memória da Soul IA
- *  - "financas" → planilha financeira do mês
+ *  - "crm" / "meta" → sites embutidos (WebContentsView no processo principal)
+ *  - "leadsCrm" / "metaPainel" / "funil" → painéis de dados (Leads, Campanhas, Meta → CRM)
+ *  - "preAtendimento" → a IA que atende pelo WhatsApp os leads com a etiqueta de gatilho
  */
+import type { NomeIcone } from "./icons";
 
 /** Identificador de cada página do app. */
 export type Pagina =
-  "estoque" | "studio" | "crm" | "leads" | "bndv" | "meta" | "financas";
+  | "estoque"
+  | "studio"
+  | "crm"
+  | "meta"
+  | "leadsCrm"
+  | "metaPainel"
+  | "funil"
+  | "preAtendimento";
 
-/** Item do menu lateral: página de destino e rótulo exibido. */
-export type ItemMenu = { pagina: Pagina; rotulo: string };
+/**
+ * Item do menu lateral: página de destino, rótulo, ícone (ver app/icons.tsx) e o grupo
+ * (título acima dos itens; sem grupo = topo do menu).
+ */
+export type ItemMenu = {
+  pagina: Pagina;
+  rotulo: string;
+  icone: NomeIcone;
+  grupo?: string;
+};
 
-/** Itens do menu lateral, na ordem em que aparecem. */
+/**
+ * Itens do menu lateral, na ordem em que aparecem. Desde a 1.0.9 os rótulos não têm
+ * numeração. Na 1.0.12 entraram os painéis do Soul APP: cada área tem o painel de dados
+ * (Leads, Campanhas, Funil) e, ao lado, o site embutido para operar (uTalk, Gerenciador).
+ */
 export const MENU: readonly ItemMenu[] = [
-  { pagina: "estoque", rotulo: "01 · Estoque" },
-  { pagina: "crm", rotulo: "02 · CRM" },
-  { pagina: "leads", rotulo: "03 · Leads e Soul IA" },
-  { pagina: "bndv", rotulo: "04 · BNDV" },
-  { pagina: "meta", rotulo: "05 · Meta ADS" },
-  { pagina: "financas", rotulo: "06 · Finanças" },
+  { pagina: "estoque", rotulo: "Estoque", icone: "estoque" },
+  { pagina: "leadsCrm", rotulo: "Leads", icone: "leads", grupo: "CRM" },
+  { pagina: "crm", rotulo: "Atendimento", icone: "crm", grupo: "CRM" },
+  {
+    pagina: "preAtendimento",
+    rotulo: "Pré-atendimento IA",
+    icone: "ia",
+    grupo: "CRM",
+  },
+  {
+    pagina: "metaPainel",
+    rotulo: "Campanhas",
+    icone: "campanhas",
+    grupo: "Meta Ads",
+  },
+  { pagina: "meta", rotulo: "Gerenciador", icone: "meta", grupo: "Meta Ads" },
+  { pagina: "funil", rotulo: "Meta → CRM", icone: "funil", grupo: "Funil" },
 ];
 
 /** Páginas que mostram um site externo embutido (ocupam a área inteira). */
-export const PAGINAS_EMBUTIDAS = ["crm", "bndv", "meta"] as const;
+export const PAGINAS_EMBUTIDAS = ["crm", "meta"] as const;
 
-/** Verdadeiro quando a página é um site embutido (CRM, BNDV ou Meta Ads). */
+/** Verdadeiro quando a página é um site embutido (CRM ou Meta Ads). */
 export function ehEmbutida(
   pagina: Pagina,
 ): pagina is (typeof PAGINAS_EMBUTIDAS)[number] {

@@ -7,8 +7,14 @@ import {
   alturaDaMensagem,
   comAvisoDeAltura,
 } from "../src/renderer/src/lib/report-frame";
+import { CORPO_DO_SCRIPT_DE_ALTURA } from "../src/shared/report-script";
 
 describe("altura do relatório completo", () => {
+  it("injeta exatamente o script compartilhado, cujo hash a CSP libera (csp.test.ts confere a outra ponta)", () => {
+    const html = comAvisoDeAltura("<html><body>x</body></html>");
+    expect(html).toContain(`<script>${CORPO_DO_SCRIPT_DE_ALTURA}</script>`);
+  });
+
   it("coloca o aviso de altura antes de </body>, uma vez só", () => {
     const html = "<html><body><h1>Oi</h1></body></html>";
     const r = comAvisoDeAltura(html);

@@ -1,6 +1,6 @@
 # GitHub
 
-Publique **soul-cars-app** como repositório **privado** da Atto Comunicação. Tudo o que é da loja (`dados-loja/`) e os projetos anteriores (`legado/`) ficam dentro da pasta, mas são ignorados pelo `.gitignore` e nunca vão para o GitHub.
+Publique **soul-cars-app** como repositório **privado** da Atto Comunicação. Tudo o que é da loja (`dados-loja/`) fica dentro da pasta, mas é ignorado pelo `.gitignore` e nunca vão para o GitHub.
 
 ```bat
 cd /d "CAMINHO\soul-cars-app"

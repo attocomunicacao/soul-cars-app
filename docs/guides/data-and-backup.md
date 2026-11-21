@@ -27,3 +27,7 @@ O app faz quick_check e backup diário com VACUUM INTO. Fotos/configuração nã
 Feche o app antes de restaurar. Copie toda a pasta atual por segurança; restaure o banco como soul.db; guarde WAL/SHM antigos junto com a cópia anterior, sem misturar versões. Reabra e confira. Teste esquemas desconhecidos primeiro numa cópia.
 
 Não versione bancos, CSVs, documentos, fotos, sessão ou chaves. O .gitignore protege locais padrão; revise o conteúdo antes de commitar.
+
+## Dados do Laboratório da IA
+
+`<raizDados>/lab-ia/` guarda execuções, avaliações (`avaliacoes.jsonl`), relatórios e a análise anonimizada do histórico do uTalk. Fica fora do git. O backup automático cobre só o `soul.db`; `pre-atendimento.json`, `pre-atendimento-auditoria.jsonl`, `soul-ia.db` e `lab-ia/` não têm backup automático: copie-os se precisar.

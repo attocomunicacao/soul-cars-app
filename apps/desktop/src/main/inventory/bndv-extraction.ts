@@ -227,6 +227,7 @@ async function capturarToken(
       partition: "persist:bndv",
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: true,
     },
   });
 

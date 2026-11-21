@@ -12,8 +12,9 @@ import {
   salvarFoto,
   localizarFotosVitrine,
   FOTOS_VITRINE,
-  type Slot,
+  ehSlot,
 } from "../../../lib/vehicle-files";
+import { lerAjustes } from "../../../lib/creative-settings";
 import {
   fuelLabel,
   formatNumber,
@@ -25,19 +26,14 @@ export function Creatives({
   veiculo: v,
   onChange,
   onBack,
-  prepararInstagram = false,
-  onInstagramPronto,
 }: {
   veiculo: Veiculo;
   onChange: (v: Veiculo) => void;
   onBack: () => void;
-  prepararInstagram?: boolean;
-  onInstagramPronto?: () => void;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const atual = useRef(v);
   atual.current = v;
-  const exportadosInstagram = useRef(new Set<string>());
   const [aviso, setAviso] = useState("");
   const post = (data: unknown) =>
     frame.current?.contentWindow?.postMessage(
@@ -90,17 +86,21 @@ export function Creatives({
             },
           });
           if (v.pasta) await importarFotosPadrao(v.id, v.pasta);
+          const ajustesLidos = lerAjustes(v.ajustes);
           post({
             type: "soul:photos",
             photos: await carregarFotos(v.id),
-            ajustes: v.ajustes ? JSON.parse(v.ajustes) : null,
+            ajustes: ajustesLidos.ajustes,
           });
+          if (ajustesLidos.corrompido)
+            setAviso(
+              "Os ajustes salvos deste veículo estavam corrompidos e foram ignorados. Ajuste de novo e eles serão regravados.",
+            );
           if (v.pasta)
             post({
               type: "soul:vitrine-photos",
               photos: await carregarFotosVitrine(v.pasta),
             });
-          if (prepararInstagram) post({ type: "soul:instagram-export" });
           break;
         }
         case "soul:ajustes": {
@@ -113,8 +113,9 @@ export function Creatives({
           onBack();
           break;
         case "soul:photo":
-          if (data.file instanceof File)
-            await salvarFoto(v.id, data.slot as Slot, data.file);
+          if (!(data.file instanceof File) || !ehSlot(data.slot))
+            throw new Error("Foto inválida.");
+          await salvarFoto(v.id, data.slot, data.file);
           break;
         case "soul:vitrine-crop":
           await vitrine();
@@ -150,25 +151,12 @@ export function Creatives({
             message: `Salvo em ${caminho}`,
           });
           setAviso(`Salvo em ${caminho}`);
-          if (
-            prepararInstagram &&
-            /-(carrossel-[123]|trafego-pago)\.png$/i.test(data.name)
-          ) {
-            exportadosInstagram.current.add(data.name);
-            if (exportadosInstagram.current.size === 4) onInstagramPronto?.();
-          }
           if (v.status === "rascunho") {
             await atualizarVeiculo(v.id, { status: "criativos" });
             onChange({ ...atual.current, status: "criativos" });
           }
           break;
         }
-        case "soul:instagram-export-error":
-          setAviso(
-            data.message ||
-              "Não foi possível gerar os criativos do Instagram. Confira os campos e as fotos.",
-          );
-          break;
       }
     } catch (e) {
       setAviso(String(e));

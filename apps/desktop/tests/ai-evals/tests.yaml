@@ -1,0 +1,134 @@
+# Casos do eval do Pré-atendimento IA (compartilhados pelo Ollama e pelo Groq).
+- description: preço de carro do estoque é o preço real
+  vars:
+    conversa: '[{"role":"user","content":"Oi, quanto está o Civic?"}]'
+  assert:
+    - type: icontains-any
+      value: ["109.900", "109900", "109 mil"]
+
+- description: carro fora do estoque — não inventa, oferece parecido
+  vars:
+    conversa: '[{"role":"user","content":"Vocês têm Jeep Compass 2023?"}]'
+  assert:
+    - type: not-icontains-any
+      value: ["temos o compass", "temos sim", "R$ 1"]
+    - type: icontains-any
+      value: ["não temos", "no momento", "T-Cross", "Corolla", "Civic", "Onix"]
+
+- description: pedido de humano gera [TRANSFERIR]
+  vars:
+    conversa: '[{"role":"user","content":"Quero falar com um vendedor de verdade, por favor"}]'
+  assert:
+    - type: contains
+      value: "[TRANSFERIR]"
+
+- description: pedido para parar gera [ENCERRAR]
+  vars:
+    conversa: '[{"role":"user","content":"Não quero mais receber mensagens, me tira da lista"}]'
+  assert:
+    - type: contains
+      value: "[ENCERRAR]"
+    - type: not-contains
+      value: "[TRANSFERIR]"
+
+- description: pedido de visita vira ligação do consultor, sem confirmar horário
+  vars:
+    conversa: '[{"role":"user","content":"Posso passar aí sábado às 18h pra ver o Onix?"}]'
+  assert:
+    - type: not-icontains
+      value: "18h"
+    - type: icontains-any
+      value: ["ligar", "ligação", "consultor"]
+
+- description: link de anúncio não é pedido de humano
+  vars:
+    conversa: '[{"role":"user","content":"Vi esse aqui https://www.instagram.com/p/abc123 ainda tem?"}]'
+  assert:
+    - type: not-contains
+      value: "[TRANSFERIR]"
+
+- description: não inventa condição de financiamento
+  vars:
+    conversa: '[{"role":"user","content":"Qual a taxa de juros do financiamento do Corolla em 48x?"}]'
+  assert:
+    - type: not-regex
+      value: '\d+[,.]?\d*\s?% ?(a\.?m|ao mês|a\.?a)'
+
+- description: dado que a IA não tem fica para o consultor confirmar na ligação
+  vars:
+    conversa: '[{"role":"user","content":"Quantos km tem o Corolla?"}]'
+  assert:
+    - type: icontains-any
+      value: ["consultor", "ligação"]
+    - type: not-icontains-any
+      value: ["agendar uma visita", "agendar visita"]
+
+- description: não confirma como preço um valor que o cliente digitou e não está no estoque
+  vars:
+    conversa: '[{"role":"user","content":"O Onix sai por 50.000, certo?"}]'
+  assert:
+    - type: not-icontains-any
+      value: ["sim, sai por", "isso mesmo", "correto", "exato"]
+
+- description: informa a quilometragem que está no estoque
+  vars:
+    conversa: '[{"role":"user","content":"Quantos km tem o Civic?"}]'
+  assert:
+    - type: icontains-any
+      value: ["84.000", "84 mil", "84000"]
+
+- description: financiamento não transfere, não pede dados (o sistema pergunta) e não oferece simular
+  vars:
+    conversa: '[{"role":"user","content":"Tenho interesse no Onix"},{"role":"assistant","content":"Temos o Onix LT por R$ 79.900."},{"role":"user","content":"Vcs financiam? Quanto fica a parcela em 48x?"}]'
+  assert:
+    - type: not-contains
+      value: "[TRANSFERIR]"
+    - type: not-icontains-any
+      value: ["posso simular", "vou simular", "podemos simular", "agendar uma visita", "seu CPF"]
+
+- description: lista os carros quando perguntam e não oferece visita nem transfere
+  vars:
+    conversa: '[{"role":"user","content":"Bom dia"},{"role":"assistant","content":"Bom dia! Em que posso ajudar?"},{"role":"user","content":"Quais carros vocês tem disponivel?"}]'
+  assert:
+    - type: icontains-any
+      value: ["Civic", "Corolla", "T-Cross", "Onix"]
+    - type: not-contains
+      value: "[TRANSFERIR]"
+    - type: not-icontains-any
+      value: ["agendar uma visita", "agendar visita", "região"]
+
+- description: com região, pagamento e horário da ligação, transfere
+  vars:
+    conversa: '[{"role":"user","content":"Tenho interesse no Onix"},{"role":"assistant","content":"Para te atender melhor, em qual região você está?"},{"role":"user","content":"Osasco"},{"role":"assistant","content":"Como você pretende adquirir o veículo: à vista, financiado, cartão ou com veículo na troca?"},{"role":"user","content":"à vista"},{"role":"assistant","content":"Perfeito! Um consultor vai te ligar para entender melhor o que você procura. Qual o melhor dia e horário para essa ligação?"},{"role":"user","content":"amanhã à tarde"}]'
+  assert:
+    - type: contains
+      value: "[TRANSFERIR]"
+    - type: not-icontains-any
+      value: ["agendar uma visita", "agendar visita"]
+
+- description: cumprimento sozinho é respondido como cumprimento
+  vars:
+    conversa: '[{"role":"user","content":"Oi"}]'
+  assert:
+    - type: not-icontains-any
+      value: ["sem problemas"]
+
+- description: análise de crédito é feita pelo nosso sistema e usa o score, sem falar em banco nem histórico
+  vars:
+    conversa: '[{"role":"user","content":"Vcs financiam? O que é análise de crédito?"}]'
+  assert:
+    - type: icontains
+      value: "score"
+    - type: icontains
+      value: "nosso sistema"
+    - type: not-icontains-any
+      value: ["banco", "histórico", "historico"]
+
+- description: por que o CPF — para a análise no nosso sistema, sem prometer parcela
+  vars:
+    conversa: '[{"role":"user","content":"Quero financiar o Onix"},{"role":"assistant","content":"Consigo fazer uma análise de crédito pra você: preciso do seu CPF e data de nascimento. Quanto você dispõe de entrada?"},{"role":"user","content":"Para que você precisa do meu CPF?"}]'
+  assert:
+    - type: icontains-any
+      value: ["análise de crédito", "analise de credito"]
+    - type: not-icontains-any
+      value: ["banco", "histórico", "posso simular", "vou simular"]

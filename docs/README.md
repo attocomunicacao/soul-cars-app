@@ -15,8 +15,8 @@ Documentação do Soul Cars, organizada por assunto (pastas e arquivos em inglê
 | [getting-started.md](guides/getting-started.md) | Instalação e primeiro uso |
 | [user-manual.md](guides/user-manual.md) | Manual do usuário: do estoque ao anúncio |
 | [studio-flow.md](guides/studio-flow.md) | Fluxo de produção no Studio |
-| [instagram.md](guides/instagram.md) | Instagram: conexão, automação e pesquisa |
 | [data-and-backup.md](guides/data-and-backup.md) | Onde ficam os dados e como fazer backup |
+| [smart-app-control.md](guides/smart-app-control.md) | O Windows bloqueou o Soul Cars (Smart App Control) |
 
 ## `architecture/` — como o sistema é montado
 
@@ -28,7 +28,6 @@ Documentação do Soul Cars, organizada por assunto (pastas e arquivos em inglê
 | [architecture-and-migration.md](architecture/architecture-and-migration.md) | Arquitetura e histórico da migração |
 | [python-engine.md](architecture/python-engine.md) | Motor Python |
 | [implementation-details.md](architecture/implementation-details.md) | Contratos e detalhes de implementação |
-| [code-inventory.md](architecture/code-inventory.md) / [reading-coverage.md](architecture/reading-coverage.md) | Inventário histórico (anterior à reestruturação v1) |
 
 ## `development/` — para quem mexe no código
 
@@ -39,6 +38,11 @@ Documentação do Soul Cars, organizada por assunto (pastas e arquivos em inglê
 | [validation.md](development/validation.md) | Validação (testes, smokes) |
 | [github-workflow.md](development/github-workflow.md) | GitHub, CI e releases |
 | [handoff-context.md](development/handoff-context.md) | Contexto técnico para retomar o projeto |
+| [agents.md](development/agents.md) | Agentes do projeto, método de verificação e hook de proteção |
+
+## `ai/` — Laboratório de testes da IA
+
+[lab.md](ai/lab.md) · [lab-cenarios.md](ai/lab-cenarios.md) (lista gerada dos cenários)
 
 ## `crm/` — CRM e Soul IA
 
@@ -50,7 +54,7 @@ Documentação do Soul Cars, organizada por assunto (pastas e arquivos em inglê
 
 ## `planning/` — produto
 
-[product-roadmap.md](planning/product-roadmap.md) · [decisions-log.md](planning/decisions-log.md) · [assessment-2026-10.md](planning/assessment-2026-10.md) · [claude-code-prompt-guide.md](planning/claude-code-prompt-guide.md)
+[product-roadmap.md](planning/product-roadmap.md) · [decisions-log.md](planning/decisions-log.md) · [assessment-2026-10.md](planning/assessment-2026-10.md) · [usability-audit-2026-11.md](planning/usability-audit-2026-11.md) · [claude-code-prompt-guide.md](planning/claude-code-prompt-guide.md)
 
 > Documentos anteriores à versão 1.0 reestruturada podem citar nomes antigos de arquivos
 > em português; os caminhos foram atualizados automaticamente, mas descrições históricas
