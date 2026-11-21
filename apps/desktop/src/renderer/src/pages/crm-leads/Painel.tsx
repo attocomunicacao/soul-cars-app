@@ -256,7 +256,12 @@ export function Painel({
         <p className="dica-crm">
           Clique numa linha para filtrar o painel por SDR.
         </p>
-        <div className="tabela-rolavel">
+        <div
+          className="tabela-rolavel"
+          tabIndex={0}
+          role="region"
+          aria-label="Tabela rolável"
+        >
           <table>
             <thead>
               <tr>
@@ -338,7 +343,12 @@ export function Painel({
           <p className="dica-crm">
             Cor mais forte = mais leads. Clique para filtrar pelo carro.
           </p>
-          <div className="tabela-rolavel">
+          <div
+            className="tabela-rolavel"
+            tabIndex={0}
+            role="region"
+            aria-label="Tabela rolável"
+          >
             <table>
               <thead>
                 <tr>

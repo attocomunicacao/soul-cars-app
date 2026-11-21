@@ -18,8 +18,9 @@
   --fill-hover: #dcdce1;
   /* Texto */
   --ink: #1d1d1f;
-  --muted: #6e6e73;
-  --faint: #86868b;
+  /* Contraste mínimo 4,5:1 também sobre --fill (#e8e8ed): medido com o axe (WCAG AA). */
+  --muted: #5c5c61;
+  --faint: #666669;
   /* Linhas */
   --line: #d2d2d7;
   --hairline: #e5e5ea;
