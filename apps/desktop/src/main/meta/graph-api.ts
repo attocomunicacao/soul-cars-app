@@ -16,6 +16,7 @@ import {
   type DiaMeta,
   type LinhaCampanha,
 } from "../../shared/meta-ads";
+import { buscarComRetentativa } from "../core/http-retry";
 import type { Buscar } from "../crm/utalk-api";
 
 /** Versão padrão da Graph API. */
@@ -63,10 +64,14 @@ export async function graphGet<T = Record<string, unknown>>(
   for (let i = 0; proxima && i < maxPaginas; i++) {
     let res: Response;
     try {
-      res = await buscar(proxima, {
-        headers: { Authorization: `Bearer ${token}` },
-        signal: AbortSignal.timeout(45_000),
-      });
+      // GET: repete falha de rede e 502/503/504. O limite de uso da Meta (códigos 4, 17, 613) vem como
+      // JSON de erro e é tratado abaixo; esperar segundos não o resolve, então a mensagem pede para tentar depois.
+      res = await buscarComRetentativa(
+        buscar,
+        proxima,
+        { headers: { Authorization: `Bearer ${token}` } },
+        { timeoutMs: 45_000, tentativasTransitorias: 2 },
+      );
     } catch (e) {
       throw new Error(`Sem conexão com o Meta (${(e as Error).message})`, {
         cause: e,

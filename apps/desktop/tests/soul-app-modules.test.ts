@@ -213,6 +213,35 @@ describe("CRM · Leads", () => {
     expect(chamadas).toBe(3);
   });
 
+  it("429 espera o tempo que o servidor pediu (Retry-After), não um valor fixo", async () => {
+    const esperas: number[] = [];
+    let chamadas = 0;
+    const cli = new ClienteUmbler(
+      async () =>
+        ++chamadas === 1
+          ? new Response("", { status: 429, headers: { "Retry-After": "7" } })
+          : new Response("{}", { status: 200 }),
+      "x",
+      async (ms) => void esperas.push(ms),
+    );
+    await cli.get("/v1/tags/");
+    expect(esperas).toEqual([7000]);
+  });
+
+  it("erro da API não reproduz o corpo da resposta (pode ter dados de cliente)", async () => {
+    const cli = new ClienteUmbler(
+      async () =>
+        new Response("Contato João 11999998888 joao@gmail.com não achado", {
+          status: 500,
+        }),
+      "x",
+      async () => {},
+    );
+    const erro = await cli.get("/v1/chats/").catch((e: Error) => e);
+    expect((erro as Error).message).toContain("500");
+    expect((erro as Error).message).not.toMatch(/João|11999998888|joao@gmail/);
+  });
+
   it("token recusado vira mensagem clara", async () => {
     const cli = new ClienteUmbler(
       async () => new Response("", { status: 401 }),

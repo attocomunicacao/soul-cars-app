@@ -4,6 +4,7 @@
  * falha de rede ou 429 e percorre a paginação. Nada é alterado no CRM. Sem Electron: o
  * `fetch` é injetado para os testes.
  */
+import { esperaDoRetryAfter, mensagemDeErroHttp } from "../core/http-retry";
 import { BASE_UTALK, type Buscar } from "./utalk-api";
 
 const MAX_PEDIDOS = 80;
@@ -75,7 +76,11 @@ export class ClienteUmbler {
       );
     }
     if (res.status === 429 && tentativa < 4) {
-      await this.esperar(2000 * (tentativa + 1));
+      // O servidor sabe quanto falta; sem o cabeçalho, espera cada vez mais.
+      await this.esperar(
+        esperaDoRetryAfter(res.headers.get("retry-after")) ??
+          2000 * (tentativa + 1),
+      );
       return this.get(caminho, consulta, tentativa + 1);
     }
     if (!res.ok) {
@@ -84,10 +89,9 @@ export class ClienteUmbler {
           res.status,
           "Token do uTalk inválido ou sem permissão. Confira em Configurações.",
         );
-      const corpo = await res.text().catch(() => "");
       throw new ErroApiUmbler(
         res.status,
-        `Erro ${res.status} em ${caminho}: ${corpo.slice(0, 200)}`,
+        await mensagemDeErroHttp(res, `Erro do uTalk em ${caminho}`),
       );
     }
     return (await res.json()) as T;
