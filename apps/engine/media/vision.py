@@ -1,7 +1,8 @@
 """Reconhecimento de imagem local e gratuito (CLIP em ONNX).
 
 Nada de API paga nem de chave: o modelo roda no próprio computador, como o recorte de
-fundo. Na primeira vez ele é baixado (~350 MB) e fica guardado na pasta de dados do app.
+fundo. Na primeira vez ele é baixado (~605 MB) e fica guardado na pasta de dados do app.
+Cada arquivo vem de uma revisão fixa do repositório e só é usado depois de o SHA-256 conferir.
 
 Uso: `pontuar(caminhos, frases)` devolve, para cada foto, a chance de ela combinar com
 cada frase (as frases em inglês funcionam melhor: o modelo foi treinado assim).
@@ -9,6 +10,7 @@ cada frase (as frases em inglês funcionam melhor: o modelo foi treinado assim).
 
 from __future__ import annotations
 
+import hashlib
 import os
 import urllib.request
 from functools import lru_cache
@@ -17,8 +19,14 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-REPO = "https://huggingface.co/Xenova/clip-vit-base-patch32/resolve/main/"
-ARQUIVOS = {"model.onnx": "onnx/model.onnx", "tokenizer.json": "tokenizer.json"}
+# Revisão fixa (commit) do repositório e SHA-256 de cada arquivo, calculados baixando-os uma vez.
+# Para atualizar o modelo: troque a revisão, baixe os arquivos, rode `sha256sum` e atualize os hashes.
+REVISAO = "6b7c523703ae26e39be4b03774966f8571c7f523"
+REPO = f"https://huggingface.co/Xenova/clip-vit-base-patch32/resolve/{REVISAO}/"
+ARQUIVOS = {
+    "model.onnx": ("onnx/model.onnx", "8ac34fc990f890b4bec8d197de81f956fb135a65067e77fadbf8f053656ed711"),
+    "tokenizer.json": ("tokenizer.json", "f7f3b7af117d467b58374797691a6438d3e6b9e9cef800dfd5dced7f697a90cd"),
+}
 # Normalização oficial do CLIP.
 MEDIA = np.array([0.48145466, 0.4578275, 0.40821073], dtype=np.float32)
 DESVIO = np.array([0.26862954, 0.26130258, 0.27577711], dtype=np.float32)
@@ -34,29 +42,67 @@ def pasta_modelo() -> Path:
     return destino
 
 
+def _sha256_do_arquivo(arquivo: Path) -> str:
+    """SHA-256 (hex) de um arquivo, lido em blocos."""
+    resumo = hashlib.sha256()
+    with open(arquivo, "rb") as origem:
+        while bloco := origem.read(1 << 20):
+            resumo.update(bloco)
+    return resumo.hexdigest()
+
+
+def _ja_verificado(alvo: Path, esperado: str) -> bool:
+    """O arquivo no disco é o esperado? Confere o SHA-256 uma vez e guarda uma marca ao lado.
+
+    Arquivos baixados por versões anteriores (da branch "main", sem conferência) não têm marca:
+    são conferidos aqui na primeira vez e, se não baterem, o chamador baixa de novo.
+    A marca vale enquanto o tamanho do arquivo não muda.
+    """
+    if not alvo.is_file() or alvo.stat().st_size <= 1_000_000:
+        return False
+    marca = alvo.with_name(alvo.name + ".sha256")
+    tamanho = alvo.stat().st_size
+    if marca.is_file() and marca.read_text(encoding="utf-8").strip() == f"{esperado} {tamanho}":
+        return True
+    if _sha256_do_arquivo(alvo) != esperado:
+        return False
+    marca.write_text(f"{esperado} {tamanho}", encoding="utf-8")
+    return True
+
+
 def baixar(progresso=None) -> Path:
-    """Garante os arquivos do modelo no disco e devolve a pasta."""
+    """Garante os arquivos do modelo no disco, conferidos pelo SHA-256, e devolve a pasta."""
     aviso = progresso or (lambda pct, texto="": None)
     destino = pasta_modelo()
-    for nome, caminho in ARQUIVOS.items():
+    for nome, (caminho, esperado) in ARQUIVOS.items():
         alvo = destino / nome
-        if alvo.is_file() and alvo.stat().st_size > 1_000_000:
+        if _ja_verificado(alvo, esperado):
             continue
         parcial = alvo.with_suffix(alvo.suffix + ".parcial")
         aviso(2, f"Baixando o modelo de imagem ({nome}) — só na primeira vez")
+        resumo = hashlib.sha256()
         try:
             with urllib.request.urlopen(REPO + caminho, timeout=120) as resposta, open(parcial, "wb") as saida:
                 total = int(resposta.headers.get("Content-Length") or 0)
                 lidos = 0
                 while bloco := resposta.read(1 << 20):
                     saida.write(bloco)
+                    resumo.update(bloco)
                     lidos += len(bloco)
                     if total:
                         aviso(2 + 28 * lidos / total, f"Baixando o modelo de imagem ({lidos >> 20} de {total >> 20} MB)")
         except OSError as exc:
             parcial.unlink(missing_ok=True)
             raise ValueError(f"Não foi possível baixar o modelo de imagem: {exc}") from exc
+        if resumo.hexdigest() != esperado:
+            parcial.unlink(missing_ok=True)
+            raise ValueError(
+                f"O arquivo {nome} baixado não confere com o SHA-256 esperado. "
+                "Ele foi descartado; tente de novo mais tarde."
+            )
+        tamanho = parcial.stat().st_size
         parcial.replace(alvo)
+        alvo.with_name(alvo.name + ".sha256").write_text(f"{esperado} {tamanho}", encoding="utf-8")
     return destino
 
 

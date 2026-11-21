@@ -247,7 +247,7 @@ def ficha(codigo: str | int, referer: str | None = None) -> dict:
             break
     direcao = ""
     if "DIREÇÃO" in pagina or "DIRE" in pagina:
-        depois = linhas[next((i for i, l in enumerate(linhas) if _sem_acento(l) == "DIRECAO"), len(linhas)) :]
+        depois = linhas[next((i for i, linha in enumerate(linhas) if _sem_acento(linha) == "DIRECAO"), len(linhas)) :]
         direcao = _valor_apos(depois, "Assistência", rotulos, 1)
     dados = {
         "titulo": titulo,
@@ -304,7 +304,7 @@ def ficha_texto(texto: str) -> dict:
         if _sem_acento(linha) == "COMPARTILHE:" and i + 1 < len(linhas):
             titulo = linhas[i + 1]
             break
-    depois = linhas[next((i for i, l in enumerate(linhas) if _sem_acento(l) == "DIRECAO"), len(linhas)) :]
+    depois = linhas[next((i for i, linha in enumerate(linhas) if _sem_acento(linha) == "DIRECAO"), len(linhas)) :]
     dados = {
         "titulo": titulo,
         "ano": _valor_apos(linhas, "Ano", rotulos, 1),

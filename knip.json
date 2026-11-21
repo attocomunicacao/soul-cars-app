@@ -1,0 +1,35 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    "apps/desktop": {
+      "entry": [
+        "src/main/index.ts",
+        "src/preload/index.ts",
+        "src/renderer/src/main.tsx",
+        "electron.vite.config.ts",
+        "vitest.config.ts",
+        "scripts/*.cjs",
+        "tests/**/*.test.{ts,mjs}"
+      ],
+      "project": ["src/**/*.{ts,tsx}", "tests/**/*.{ts,mjs}"]
+    },
+    "apps/launcher": {
+      "entry": [
+        "src/main/index.ts",
+        "src/preload/index.ts",
+        "src/renderer/src/main.ts",
+        "electron.vite.config.ts",
+        "scripts/*.cjs",
+        "tests/**/*.test.ts"
+      ],
+      "project": ["src/**/*.ts", "tests/**/*.ts"]
+    }
+  },
+  "ignore": [
+    "apps/engine/**",
+    "scripts/release/**",
+    "website/**",
+    "**/out/**",
+    "**/dist/**"
+  ]
+}

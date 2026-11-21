@@ -18,6 +18,7 @@
  *
  * Porta fiel do `soul_estoque/balanco.py` do app Python.
  */
+import { vendasValidas } from "./canceled-sales";
 import fs from "node:fs";
 import * as caminhos from "../core/paths";
 import { ordenarPorEntrada } from "./ordering";
@@ -189,7 +190,8 @@ export type DadosBndv = {
 /** Estoque, vendas e margem a partir dos CSVs do BNDV. */
 export function dadosBndv(): DadosBndv | null {
   const veic = lerCsvOpcional(caminhos.CSV_VEICULOS());
-  const vend = lerCsvOpcional(caminhos.CSV_VENDAS());
+  // Venda cancelada no BNDV: o veículo voltou para "disponível"; a venda não conta.
+  const vend = vendasValidas(veic, lerCsvOpcional(caminhos.CSV_VENDAS()));
   if (!veic.length) return null;
 
   // mesma regra do sync: sem as duplicatas de placa

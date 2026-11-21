@@ -12,6 +12,7 @@ import path from "node:path";
 import { compararVersoes, type Manifest } from "../shared/manifest";
 import { pastaDownloads } from "./config";
 import { baixarVerificado } from "./download";
+import { comandoDeAtualizacao } from "./update-command";
 
 /** Nova versão do Launcher disponível no manifesto, ou null. */
 export function novoLauncher(manifesto: Manifest | null, plataforma: string) {
@@ -23,8 +24,25 @@ export function novoLauncher(manifesto: Manifest | null, plataforma: string) {
     : null;
 }
 
+/** Atualização em andamento: um segundo pedido espera a mesma, em vez de começar outra. */
+let atualizacao: Promise<void> | null = null;
+
 /** Baixa o instalador novo, executa em silêncio e encerra o Launcher atual. */
-export async function atualizarLauncher(
+export function atualizarLauncher(
+  manifesto: Manifest,
+  plataforma: string,
+  aoProgresso: (fracao: number) => void,
+): Promise<void> {
+  atualizacao ??= executarAtualizacao(manifesto, plataforma, aoProgresso).catch(
+    (erro) => {
+      atualizacao = null; // falhou: libera para tentar de novo
+      throw erro;
+    },
+  );
+  return atualizacao;
+}
+
+async function executarAtualizacao(
   manifesto: Manifest,
   plataforma: string,
   aoProgresso: (fracao: number) => void,
@@ -37,10 +55,14 @@ export async function atualizarLauncher(
     `soul-cars-launcher-setup-${manifesto.launcher.version}.exe`,
   );
   await baixarVerificado(download, destino, aoProgresso);
-  // /S = silencioso (NSIS one-click); --force-run reabre o Launcher ao terminar.
-  spawn(destino, ["/S", "--updated", "--force-run"], {
+  // O instalador só começa ~3 s depois, quando este Launcher já fechou (ver update-command.ts).
+  const { comando, args, env } = comandoDeAtualizacao(destino);
+  spawn(comando, args, {
     detached: true,
     stdio: "ignore",
+    windowsHide: true,
+    windowsVerbatimArguments: true,
+    env,
   }).unref();
-  setTimeout(() => app.quit(), 300);
+  app.quit();
 }

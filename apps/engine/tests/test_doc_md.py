@@ -11,9 +11,6 @@ from documents import crlv  # noqa: E402
 import main  # noqa: E402
 
 # Os CRLVs digitalizados não têm texto: a leitura passa pelo OCR, como no app.
-ler = main._ler_com_ocr_se_preciso if hasattr(main, "_ler_com_ocr_se_preciso") else crlv.read_pdf
-
-
 def ler(dados: bytes, incluir_texto: bool = False) -> dict:
     return main._ler_com_ocr_se_preciso(dados, None, incluir_texto=incluir_texto)
 

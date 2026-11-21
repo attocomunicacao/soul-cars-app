@@ -5,7 +5,9 @@ name: Release
 #
 # Gera e anexa à GitHub Release:
 #   - soul-cars-desktop-<versão>-win-x64.zip   (app, baixado e instalado pelo Launcher)
-#   - soul-cars-launcher-setup-<versão>.exe    (instalador do Launcher, para a equipe)
+#   - soul-cars-desktop-<versão>-patch.zip     (só a pasta resources: atualização sem trocar o .exe)
+#   - soul-cars-launcher-setup-<versão>.exe    (instalador do Launcher; só quando a versão em
+#                                               apps/launcher/package.json mudou)
 #   - manifest.json                             (catálogo lido pelo Launcher: versões + SHA-256)
 #
 # O Launcher sempre lê .../releases/latest/download/manifest.json, então a release
@@ -36,42 +38,108 @@ jobs:
       - name: Definir versão
         id: versao
         shell: bash
+        env:
+          # Entrada do usuário: vai por variável de ambiente, nunca interpolada no script.
+          VERSAO_INFORMADA: ${{ inputs.version }}
         run: |
-          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then V="${GITHUB_REF_NAME#v}"; else V="${{ inputs.version }}"; fi
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then V="${GITHUB_REF_NAME#v}"; else V="$VERSAO_INFORMADA"; fi
+          # Só x.y.z (com sufixo opcional): impede que um nome de tag ou entrada vire comando nos passos seguintes.
+          if ! [[ "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::Versão inválida: '$V'. Use o formato x.y.z."
+            exit 1
+          fi
           echo "valor=$V" >> "$GITHUB_OUTPUT"
 
       - run: npm ci
-      - name: Aplicar a versão aos apps
-        run: |
-          npm version ${{ steps.versao.outputs.valor }} --no-git-tag-version --allow-same-version -w apps/desktop
-          npm version ${{ steps.versao.outputs.valor }} --no-git-tag-version --allow-same-version -w apps/launcher
+      # O app leva a versão da tag. O Launcher tem versão própria (apps/launcher/package.json):
+      # só muda quando o Launcher muda. Assim as releases comuns não oferecem instalador novo do
+      # Launcher (um .exe novo, que o Windows precisaria conhecer de novo antes de abrir).
+      - name: Aplicar a versão ao app
+        run: npm version ${{ steps.versao.outputs.valor }} --no-git-tag-version --allow-same-version -w apps/desktop
 
+      - name: Decidir se o Launcher precisa ser empacotado
+        id: launcher
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LV=$(node -p "require('./apps/launcher/package.json').version")
+          echo "versao=$LV" >> "$GITHUB_OUTPUT"
+          PREV=""
+          if gh release download --pattern manifest.json --output manifest-anterior.json --clobber 2>/dev/null; then
+            PREV=$(node -p "require('./manifest-anterior.json').launcher.version")
+            echo "anterior=manifest-anterior.json" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "$PREV" = "$LV" ]; then echo "empacotar=nao" >> "$GITHUB_OUTPUT"; else echo "empacotar=sim" >> "$GITHUB_OUTPUT"; fi
+          echo "Launcher $LV (publicado: ${PREV:-nenhum}) → empacotar: $(grep empacotar "$GITHUB_OUTPUT" | cut -d= -f2)"
+
+      # Mesmas verificações do CI: uma tag nunca publica código que o CI reprovaria.
+      - run: npm run lint
       - run: npm run typecheck
+      - run: npm run format:check
       - run: npm test
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/engine/uv.lock
+      - run: uv sync --group documentos --group planilha
+        working-directory: apps/engine
+      - run: choco install ffmpeg -y --no-progress
+      - name: Testes do motor Python
+        run: uv run --no-sync python -m unittest discover -s tests -p "test_*.py"
+        working-directory: apps/engine
       - run: npm run package:desktop
-      - run: npm run package:launcher
+      # Instala o pacote recém-gerado pelo Launcher e abre o app (o mesmo caminho do usuário).
+      - run: npm run e2e:launcher
+      - name: Pacote só de código do app
+        id: patch
+        shell: bash
+        run: |
+          V="${{ steps.versao.outputs.valor }}"
+          OUT=$(node scripts/release/create-patch.mjs --unpacked apps/desktop/dist/win-unpacked --out "apps/desktop/dist/soul-cars-desktop-$V-patch.zip")
+          echo "$OUT"
+          echo "runtime=$(echo "$OUT" | grep '^runtime=' | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+      - name: Empacotar o Launcher
+        if: steps.launcher.outputs.empacotar == 'sim'
+        run: npm run package:launcher
 
       - name: Notas da versão
         shell: bash
         run: |
           # Trecho do CHANGELOG.md desta versão (entre "## [x.y.z]" e o próximo "## [").
+          # Aceita também "## \[x.y.z\]" (alguns editores escapam os colchetes ao salvar).
           awk -v v="${{ steps.versao.outputs.valor }}" '
-            $0 ~ "^## \\[" v "\\]" {on=1; next}
-            on && /^## \[/ {exit}
-            on {print}' CHANGELOG.md > release-notes.md
-          [ -s release-notes.md ] || echo "Soul Cars ${{ steps.versao.outputs.valor }}." > release-notes.md
+            { n = split($0, p, sprintf("%c", 92)); l = ""; for (i = 1; i <= n; i++) l = l p[i] }
+            substr(l, 1, 4) == "## [" { if (on) exit; if (index(l, "## [" v "]") == 1) { on = 1; next } }
+            on { print }' CHANGELOG.md > release-notes.md
+          if ! grep -q '[^[:space:]]' release-notes.md; then
+            if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+              echo "::error::CHANGELOG.md não tem a seção ## [${{ steps.versao.outputs.valor }}]. Acrescente-a e publique a tag de novo."
+              exit 1
+            fi
+            echo "::warning::CHANGELOG.md não tem a seção ## [${{ steps.versao.outputs.valor }}]; notas padrão usadas (build de teste)."
+            echo "Soul Cars ${{ steps.versao.outputs.valor }}." > release-notes.md
+          fi
 
       - name: Gerar manifest.json
         shell: bash
         run: |
           V="${{ steps.versao.outputs.valor }}"
-          node scripts/release/create-manifest.mjs \
-            --version "$V" \
-            --app-zip "apps/desktop/dist/soul-cars-desktop-$V-win-x64.zip" \
-            --launcher-exe "apps/launcher/dist/soul-cars-launcher-setup-$V.exe" \
-            --base-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v$V/" \
-            --notes release-notes.md \
-            --out manifest.json
+          LV="${{ steps.launcher.outputs.versao }}"
+          ARGS=(--version "$V"
+            --app-zip "apps/desktop/dist/soul-cars-desktop-$V-win-x64.zip"
+            --patch-zip "apps/desktop/dist/soul-cars-desktop-$V-patch.zip"
+            --runtime "${{ steps.patch.outputs.runtime }}"
+            --launcher-version "$LV"
+            --base-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v$V/"
+            --notes release-notes.md
+            --out manifest.json)
+          if [ "${{ steps.launcher.outputs.empacotar }}" = "sim" ]; then
+            ARGS+=(--launcher-exe "apps/launcher/dist/soul-cars-launcher-setup-$LV.exe")
+          else
+            ARGS+=(--previous-manifest "${{ steps.launcher.outputs.anterior }}")
+          fi
+          node scripts/release/create-manifest.mjs "${ARGS[@]}"
 
       - name: Publicar a Release
         if: github.ref_type == 'tag'
@@ -80,10 +148,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           V="${{ steps.versao.outputs.valor }}"
-          gh release create "v$V" \
-            "apps/desktop/dist/soul-cars-desktop-$V-win-x64.zip" \
-            "apps/launcher/dist/soul-cars-launcher-setup-$V.exe" \
-            manifest.json \
+          LV="${{ steps.launcher.outputs.versao }}"
+          ARQUIVOS=("apps/desktop/dist/soul-cars-desktop-$V-win-x64.zip" "apps/desktop/dist/soul-cars-desktop-$V-patch.zip" manifest.json)
+          if [ "${{ steps.launcher.outputs.empacotar }}" = "sim" ]; then
+            ARQUIVOS+=("apps/launcher/dist/soul-cars-launcher-setup-$LV.exe")
+          fi
+          gh release create "v$V" "${ARQUIVOS[@]}" \
             --title "Soul Cars v$V" --notes-file release-notes.md
 
       - uses: actions/upload-artifact@v4

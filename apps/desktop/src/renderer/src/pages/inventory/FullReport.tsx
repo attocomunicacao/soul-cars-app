@@ -7,7 +7,7 @@
  * página do app rola (sem barra de rolagem dupla). Se o aviso não chegar em
  * 2,5 s, o quadro volta a rolar por dentro para nada ficar preso.
  *
- * O botão "PDF" pede ao main o PDF em A4 (`relatorio_pdf`).
+ * O botão "Exportar PDF" pede ao main o PDF em A4 (`relatorio_pdf`).
  */
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "../../lib/desktop-bridge";
@@ -16,13 +16,11 @@ import { alturaDaMensagem, comAvisoDeAltura } from "../../lib/report-frame";
 type Props = {
   /** HTML completo do relatório. */
   html: string;
-  /** Volta para a lista de veículos. */
-  voltar: () => void;
   /** Mostra um erro de operação no aviso do app. */
   aoErro: (mensagem: string) => void;
 };
 
-export function FullReport({ html, voltar, aoErro }: Props) {
+export function FullReport({ html, aoErro }: Props) {
   const quadro = useRef<HTMLIFrameElement>(null);
   const [altura, setAltura] = useState<number | null>(null);
   const [semAltura, setSemAltura] = useState(false);
@@ -75,9 +73,8 @@ export function FullReport({ html, voltar, aoErro }: Props) {
           title="Gera o relatório inteiro em PDF, em folhas A4, pronto para imprimir"
           onClick={gerarPdf}
         >
-          {gerandoPdf ? "Gerando PDF…" : "PDF"}
+          {gerandoPdf ? "Gerando PDF…" : "Exportar PDF"}
         </button>
-        <button onClick={voltar}>← Voltar ao estoque</button>
       </div>
       {avisoPdf && <p role="status">{avisoPdf}</p>}
       <iframe

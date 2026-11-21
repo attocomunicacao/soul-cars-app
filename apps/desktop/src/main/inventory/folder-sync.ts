@@ -12,6 +12,7 @@
  *
  * Porta fiel do `soul_estoque/sync.py` do app Python.
  */
+import { vendasValidas } from "./canceled-sales";
 import fs from "node:fs";
 import path from "node:path";
 import * as caminhos from "../core/paths";
@@ -332,7 +333,8 @@ export type ResumoSync = {
 export function sincronizar(log: Log, todos = false): ResumoSync {
   caminhos.garantir();
   const veiculos = lerCsv(caminhos.CSV_VEICULOS());
-  const vendas = lerCsv(caminhos.CSV_VENDAS());
+  // Vendas canceladas (veículo de volta ao estoque no BNDV) não entram na ficha.
+  const vendas = vendasValidas(veiculos, lerCsv(caminhos.CSV_VENDAS()));
 
   // última venda de cada veículo; o idSale desempata vendas no mesmo dia
   const porVeiculo = new Map<string, LinhaCsv[]>();

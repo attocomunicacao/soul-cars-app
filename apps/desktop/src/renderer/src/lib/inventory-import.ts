@@ -20,6 +20,8 @@ import {
   type PastaVeiculo,
 } from "./inventory-parse";
 let emAndamento: Promise<Veiculo[]> | null = null;
+/** Sobe quando a leitura das fichas muda, para reler uma vez todas as pastas já importadas. */
+const LEITURA = "estoque_leitura:v2:";
 // Compartilha a origem do Electron; nenhum caminho pessoal fica no código.
 export function importarEstoque() {
   return (emAndamento ??= executarImportacao().finally(() => {
@@ -39,7 +41,7 @@ async function executarImportacao() {
       existentes.find((v) => externo !== null && v.estoque_id === externo);
     if (
       existente &&
-      (await obterConfig(`estoque_leitura:${pasta.caminho}`)) ===
+      (await obterConfig(`${LEITURA}${pasta.caminho}`)) ===
         String(pasta.modificado)
     )
       continue;
@@ -68,10 +70,7 @@ async function executarImportacao() {
       (await criarVeiculo({ nome: patch.nome || modelo, placa }));
     // Preserva progresso e ajustes do Studio ao reler a ficha do BNDV.
     await atualizarVeiculo(id, patch);
-    await salvarConfig(
-      `estoque_leitura:${pasta.caminho}`,
-      String(pasta.modificado),
-    );
+    await salvarConfig(`${LEITURA}${pasta.caminho}`, String(pasta.modificado));
   }
   const presentes = new Set(pastas.map((p) => p.caminho));
   return (await listarVeiculos()).filter(
