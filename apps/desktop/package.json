@@ -16,6 +16,7 @@
     "test:coverage": "vitest run --coverage",
     "smoke": "electron scripts/smoke.cjs",
     "smoke:security": "electron scripts/smoke-security.cjs",
+    "smoke:csp": "electron scripts/smoke-csp.cjs",
     "smoke:pages": "electron scripts/smoke-pages.cjs",
     "smoke:instagram": "node scripts/prepare-instagram-smoke.cjs && electron scripts/instagram-smoke.cjs",
     "screenshots": "electron scripts/capture-screenshots.cjs",
