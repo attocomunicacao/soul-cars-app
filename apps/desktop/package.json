@@ -27,7 +27,7 @@
     "eval:ai:groq": "promptfoo eval -c tests/ai-evals/promptfooconfig.groq.yaml"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.0.0",
@@ -35,7 +35,7 @@
     "axe-core": "^4.14.1",
     "electron": "44.10.2",
     "electron-builder": "^26.0.0",
-    "electron-vite": "^4.0.0",
+    "electron-vite": "^6.0.0",
     "promptfoo": "^0.125.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
