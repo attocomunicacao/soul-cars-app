@@ -57,6 +57,7 @@
     "tests/engine-params.test.ts",
     "tests/atomic-write.test.ts",
     "tests/http-retry.test.ts",
-    "tests/utalk-writer.test.ts"
+    "tests/utalk-writer.test.ts",
+    "tests/meta-url.test.ts"
   ]
 }
