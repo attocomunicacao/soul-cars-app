@@ -164,17 +164,17 @@ app.on("browser-window-created", (_e, w) => {
         if(!document.querySelector('textarea.markdown')||document.querySelector('.editor iframe'))throw Error('Retorno do editor à ficha falhou');
         return {pagina:document.querySelector('aside button.selected').textContent.trim(),sqlite:true,relatorioInterno:true,painelFotos:true,copia:true,editor:true,retornoFicha:true,pacoteDeCriativos:true,estudio3D:true,motor:motor.python,exportacao:saved,png:estoque+'/123_FORD_FIESTA_ABC1D23/CRIATIVO/'+artes[0],png3D:estoque+'/123_FORD_FIESTA_ABC1D23/CRIATIVO/'+pacote.find(n=>n.endsWith('-carrossel-1.png')),versoes:window.soul.versoes};
       })()`);
-      // BNDV embutido: uma vista na janela principal, na sessão do BNDV (persist:bndv), sem preload.
+      // CRM embutido: uma vista na janela principal, na sessão do uTalk (persist:utalk), sem preload.
       await w.webContents.executeJavaScript(
-        "window.soul.invocar('embutida_mostrar',{id:'bndv',x:240,y:0,largura:600,altura:400})",
+        "window.soul.invocar('embutida_mostrar',{id:'crm',x:240,y:0,largura:600,altura:400})",
       );
       const vista = w.contentView.children[0];
       if (
         !vista ||
-        vista.webContents.session !== session.fromPartition("persist:bndv")
+        vista.webContents.session !== session.fromPartition("persist:utalk")
       )
-        throw new Error("O BNDV embutido não usa a sessão do BNDV.");
-      r.bndvEmbutido = true;
+        throw new Error("O CRM embutido não usa a sessão do uTalk.");
+      r.crmEmbutido = true;
       await w.webContents.executeJavaScript(
         "window.soul.invocar('embutida_esconder')",
       );

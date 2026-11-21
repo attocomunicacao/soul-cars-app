@@ -138,11 +138,10 @@ describe("engine_call: forma dos demais parâmetros", () => {
 });
 
 describe("métodos internos e executável do vídeo", () => {
-  it("planilha_aplicar e soulia_planilha não são chamáveis pela interface", () => {
-    for (const metodo of ["planilha_aplicar", "soulia_planilha"])
-      expect(() => motor(metodo, { caminho: dentro }), metodo).toThrow(
-        /method/,
-      );
+  it("soulia_planilha não é chamável pela interface", () => {
+    expect(() => motor("soulia_planilha", { caminho: dentro })).toThrow(
+      /method/,
+    );
   });
 
   it("método desconhecido continua recusado", () => {

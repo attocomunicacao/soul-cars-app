@@ -8,7 +8,6 @@ Bibliotecas pesadas são importadas só no primeiro uso (o ping responde na hora
 
 import base64
 import json
-import os
 import platform
 import sys
 import time
@@ -139,14 +138,6 @@ def gerar_doc_md(params):
     return {"values": resultado["values"], "markdown": markdown, "conflicts": resultado["conflicts"]}
 
 
-def planilha_aplicar(params):
-    """Edita a planilha de finanças (células, linhas e totais). Ver apps/engine/spreadsheets/finance_sheet.py."""
-    from spreadsheets import finance_sheet as planilha
-
-    pasta = Path(os.environ.get("SOUL_DATA_DIR") or ".") / "backups" / "financas"
-    return planilha.aplicar(params["caminho"], params["operacoes"], params.get("lido_em"), str(pasta))
-
-
 def soulia_planilha(params):
     """Grava a planilha da Soul IA a partir de um JSON temporário. Ver apps/engine/spreadsheets/soul_ai_sheet.py."""
     from spreadsheets import soul_ai_sheet as sp
@@ -209,7 +200,6 @@ METHODS = {
     "ficha_web_buscar": ficha_web_buscar,
     "ficha_web_ficha": ficha_web_ficha,
     "fotos_organizar": fotos_organizar,
-    "planilha_aplicar": planilha_aplicar,
     "soulia_planilha": soulia_planilha,
 }
 

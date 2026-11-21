@@ -9,11 +9,12 @@
  *    (componente `ConnectionsSettings`).
  *  - Dados da loja e integrações (componente `StoreSettings`).
  */
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "../../app/icons";
 import { invoke, open } from "../../lib/desktop-bridge";
 import { ConnectionsSettings } from "./ConnectionsSettings";
 import { AppearanceSettings } from "./AppearanceSettings";
+import { SoulAiMemory } from "./SoulAiMemory";
 import { StoreSettings } from "./StoreSettings";
 
 type Props = {
@@ -42,6 +43,7 @@ export function SettingsPanel({
   mostrarAtividade,
   fechar,
 }: Props) {
+  const [erro, setErro] = useState("");
   /** Abre o seletor de pasta e grava a escolha na configuração. */
   const escolherPasta = (chave: "raizDados" | "pastaMotor", titulo?: string) =>
     tarefa(async () => {
@@ -84,6 +86,15 @@ export function SettingsPanel({
         </div>
         <div className="sheet-body">
           <AppearanceSettings />
+          <section>
+            <h3>Memória da Soul IA</h3>
+            {erro && (
+              <div role="alert" className="notice error">
+                <span>{erro}</span>
+              </div>
+            )}
+            <SoulAiMemory aoErro={setErro} />
+          </section>
           <ConnectionsSettings />
           <section>
             <h3>Pasta de dados</h3>

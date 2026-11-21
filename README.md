@@ -7,7 +7,7 @@
 **Do estoque ao anúncio publicado. Num app só, no seu computador.**
 
 Plataforma desktop para revendas de veículos: estoque do BNDV, ficha e documento,
-fotos, vídeo, criativos, anúncio, CRM, Soul IA e finanças.
+fotos, vídeo, criativos, anúncio, CRM e Soul IA.
 
 [**Baixar o Launcher**](../../releases/latest) · [Apresentação](website/index.html) · [Documentação](docs/README.md) · [Changelog](CHANGELOG.md)
 
@@ -32,7 +32,6 @@ junta tudo num fluxo só, **carro por carro**, e deixa cada anúncio pronto para
 | **Studio de produção**   | Ordena e recorta fotos, monta o vídeo com tarjas e legendas animadas, gera os criativos.           |
 | **Pronto para anunciar** | Checklist, textos, títulos e arquivos do anúncio com botão de copiar; lembrete de pausa ao vender. |
 | **CRM e Soul IA**        | Leads por etiqueta, demanda por modelo, desempenho do atendimento e memória das conversas.         |
-| **Finanças**             | Contas do mês direto da planilha da loja, com backup a cada edição.                                |
 
 ## 02 / Telas
 
@@ -93,7 +92,7 @@ soul-cars-app/
 │   ├── launcher/        Soul Cars Launcher — Electron + TypeScript puro
 │   │   └── src/{main,preload,shared,renderer}
 │   ├── desktop/         Soul Cars — Electron + React 19 + TypeScript
-│   │   ├── src/main/        core · ipc · window · inventory · studio · crm · soul-ai · finance
+│   │   ├── src/main/        core · ipc · window · inventory · studio · crm · soul-ai
 │   │   ├── src/preload/     ponte segura window.soul
 │   │   ├── src/shared/      regras puras (anúncio, entrada, vitrine…)
 │   │   ├── src/renderer/    app/ (shell) · pages/<área>/ · lib/ · public/creative-editor
