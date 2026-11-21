@@ -7,6 +7,8 @@
  */
 import { safeStorage } from "electron";
 import * as caminhos from "../core/paths";
+import { cofre } from "../core/secret-store";
+import { limparSegredo } from "../core/secret-vault";
 import type { MensagemIa } from "../../shared/pre-service";
 import {
   FICHA_VAZIA,
@@ -46,27 +48,20 @@ export function atualizarFicha(
 
 // ------------------------------------------------------------ chave do Groq
 export function chaveGroq(): string | null {
-  const g = caminhos.lerConfig()[CHAVE_GROQ];
-  if (typeof g !== "string" || !g) return null;
-  try {
-    return safeStorage.decryptString(Buffer.from(g, "base64"));
-  } catch {
-    return null;
-  }
+  return cofre.ler(CHAVE_GROQ);
 }
 /** Guarda a chave do Groq cifrada pelo sistema; "" remove. */
 export function guardarChaveGroq(chave: string) {
-  const limpa = chave.trim().replace(/^Bearer\s+/i, "");
-  if (!limpa) caminhos.gravarConfig({ [CHAVE_GROQ]: "" });
+  const limpa = limparSegredo(chave);
+  if (!limpa) cofre.apagar(CHAVE_GROQ);
   else {
     if (limpa.length < 20)
       throw new Error("Cole a chave completa do Groq (começa com gsk_).");
-    if (!safeStorage.isEncryptionAvailable())
-      throw new Error(
-        "O Windows não liberou a cifragem para guardar a chave com segurança.",
-      );
     caminhos.gravarConfig({
-      [CHAVE_GROQ]: safeStorage.encryptString(limpa).toString("base64"),
+      [CHAVE_GROQ]: cofre.cifrar(
+        limpa,
+        "O Windows não liberou a cifragem para guardar a chave com segurança.",
+      ),
     });
   }
 }
