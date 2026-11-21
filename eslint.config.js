@@ -102,6 +102,7 @@ export default tseslint.config(
       "apps/*/tests/**/*.mjs",
       "apps/*/scripts/**/*.{cjs,mjs}",
       "scripts/**/*.{cjs,mjs}",
+      ".claude/hooks/**/*.mjs",
       "**/*.config.{js,ts}",
     ],
     languageOptions: {
@@ -111,7 +112,12 @@ export default tseslint.config(
     rules: { "@typescript-eslint/no-require-imports": "off" },
   },
   {
-    files: ["apps/*/tests/**/*.mjs", "scripts/**/*.mjs", "**/*.config.js"],
+    files: [
+      "apps/*/tests/**/*.mjs",
+      "scripts/**/*.mjs",
+      ".claude/hooks/**/*.mjs",
+      "**/*.config.js",
+    ],
     languageOptions: { sourceType: "module" },
   },
 );
