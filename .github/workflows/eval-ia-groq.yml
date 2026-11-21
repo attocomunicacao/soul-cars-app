@@ -1,0 +1,31 @@
+name: Eval IA (Groq)
+
+# Demonstrativo do Pré-atendimento IA: roda os casos de apps/desktop/tests/ai-evals contra o Groq.
+# Manual (botão "Run workflow" na aba Actions). Precisa do secret GROQ_API_KEY no repositório.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  eval:
+    name: Eval do Pré-atendimento IA (Groq)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Roda o eval
+        working-directory: apps/desktop
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          PROMPTFOO_DISABLE_TELEMETRY: "1"
+        run: npx -y promptfoo@0.125.1 eval -c tests/ai-evals/promptfooconfig.groq.yaml --no-progress-bar -o resultado-eval.html -o resultado-eval.json
+      - name: Guarda o relatório
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-ia-groq
+          path: apps/desktop/resultado-eval.*

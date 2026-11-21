@@ -68,17 +68,17 @@ app.on("browser-window-created", (_e, w) => {
         for(let i=0;i<30&&!document.querySelector('.vitrine-cartao');i++)await new Promise(r=>setTimeout(r,100));
         const cartao=document.querySelector('.vitrine-cartao');
         if(!cartao||!cartao.querySelector('img')||!cartao.textContent.includes('Ford')||!cartao.textContent.includes('45.900'))throw Error('Página do estoque atual não abriu o cartão do veículo');
-        [...document.querySelectorAll('button')].find(b=>b.textContent.includes('Voltar ao estoque')).click();
+        [...document.querySelectorAll('nav button')].find(b=>b.textContent==='Lista').click();
         await new Promise(r=>setTimeout(r,200));
         const motor=await window.soul.invocar('engine_call',{method:'ping'});
         if(!motor.python)throw Error('Motor Python não respondeu');
-        const relatorioBotao=[...document.querySelectorAll('nav button')].find(b=>b.textContent.includes('Abrir relatório completo'));
+        const relatorioBotao=[...document.querySelectorAll('nav button')].find(b=>b.textContent.includes('Relatório completo'));
         relatorioBotao.click(); await new Promise(r=>setTimeout(r,400));
         const relatorioFrame=document.querySelector('iframe.relatorio-completo');
         if(!relatorioFrame || !relatorioFrame.srcdoc.includes('<html'))throw Error('Relatório interno não carregou');
         for(let i=0;i<40&&!relatorioFrame.style.height;i++)await new Promise(r=>setTimeout(r,150));
         if(!relatorioFrame.style.height)throw Error('O relatório ficou sem altura definida (segunda barra de rolagem)');
-        const botaoPdf=[...document.querySelectorAll('button')].find(b=>b.textContent==='PDF'||b.textContent==='Gerando PDF…');if(!botaoPdf)throw Error('Falta o botão PDF no relatório completo');
+        const botaoPdf=[...document.querySelectorAll('button')].find(b=>b.textContent==='Exportar PDF'||b.textContent==='Gerando PDF…');if(!botaoPdf)throw Error('Falta o botão Exportar PDF no relatório completo');
         const botao=[...document.querySelectorAll('aside button')].find(b=>b.textContent.includes('Estoque'));botao.click();
         await new Promise(r=>setTimeout(r,100));
         await esperar(noEstoque,'Volta à lista do Estoque falhou');
@@ -103,12 +103,14 @@ app.on("browser-window-created", (_e, w) => {
         Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(ano,'2016');
         ano.dispatchEvent(new Event('input',{bubbles:true}));
         await new Promise(r=>setTimeout(r,100));
-        window.confirm=()=>true;[...document.querySelectorAll('button')].find(b=>b.textContent==='Gerar e salvar DES.md').click();
-        await new Promise(r=>setTimeout(r,400));
-        [...document.querySelectorAll('nav button')].find(b=>b.textContent==='Publicação').click();
+        window.confirm=()=>true;const gerarDes=[...document.querySelectorAll('button')].find(b=>b.textContent==='Gerar e salvar DES.md');gerarDes.click();
+        // Espera o salvamento terminar (aviso "Concluído." e botão liberado) em vez de um tempo fixo: o CI pode ser lento.
         await new Promise(r=>setTimeout(r,100));
-        const copiar=[...document.querySelectorAll('button')].find(b=>b.textContent==='Copiar');
-        if(!copiar)throw Error('Blocos de publicação ausentes');copiar.click();
+        await esperar(()=>!gerarDes.disabled&&document.body.textContent.includes('Concluído.'),'DES.md não foi salvo');
+        [...document.querySelectorAll('nav button')].find(b=>b.textContent==='Publicação').click();
+        const botaoCopiar=()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Copiar');
+        await esperar(botaoCopiar,'Blocos de publicação ausentes');
+        botaoCopiar().click();
         await new Promise(r=>setTimeout(r,200));
         if(!document.querySelector('button.copiado')?.textContent.includes('Copiado'))throw Error('Confirmação de cópia ausente');
         const criativos=[...document.querySelectorAll('nav button')].find(b=>b.textContent==='Criativos');criativos.click();
@@ -154,31 +156,25 @@ app.on("browser-window-created", (_e, w) => {
           if(pacote.length===4)break;
           await new Promise(r=>setTimeout(r,500));
         }
-        if(pacote.length!==4)throw Error('Exportação do pacote Instagram falhou: '+frame.contentDocument.querySelector('#status').textContent);
-        // A ficha atual não possui aba Instagram: o pacote sai do editor.
-        const cadastrados=await window.soul.invocar('db_veiculos_listar',{});
-        const cadastrado=cadastrados.find(v=>v.placa==='ABC1D23');
-        if(!cadastrado)throw Error('Veículo do pacote Instagram não encontrado');
-        const plano=await window.soul.invocar('instagram_plano',{id:cadastrado.id});
-        if(plano.arquivos.filter(a=>a.tipo==='carrossel').length!==3||plano.arquivos.filter(a=>a.tipo==='capa').length!==1)throw Error('Plano do Instagram não reconheceu os quatro criativos exportados: '+plano.pendencias.join('; '));
+        if(pacote.length!==4)throw Error('Exportação do pacote de criativos falhou: '+frame.contentDocument.querySelector('#status').textContent);
         const voltar=[...frame.contentDocument.querySelectorAll('button')].find(b=>b.textContent.trim()==='← Voltar aos dados');
         if(!voltar)throw Error('Botão Voltar aos dados ausente no editor de criativos');
         voltar.click();
         for(let i=0;i<30&&!document.querySelector('textarea.markdown');i++)await new Promise(r=>setTimeout(r,100));
         if(!document.querySelector('textarea.markdown')||document.querySelector('.editor iframe'))throw Error('Retorno do editor à ficha falhou');
-        return {pagina:document.querySelector('aside button.selected').textContent.trim(),sqlite:true,relatorioInterno:true,painelFotos:true,copia:true,editor:true,retornoFicha:true,planoInstagram:true,pacoteInstagram:true,estudio3D:true,motor:motor.python,exportacao:saved,png:estoque+'/123_FORD_FIESTA_ABC1D23/CRIATIVO/'+artes[0],png3D:estoque+'/123_FORD_FIESTA_ABC1D23/CRIATIVO/'+pacote.find(n=>n.endsWith('-carrossel-1.png')),versoes:window.soul.versoes};
+        return {pagina:document.querySelector('aside button.selected').textContent.trim(),sqlite:true,relatorioInterno:true,painelFotos:true,copia:true,editor:true,retornoFicha:true,pacoteDeCriativos:true,estudio3D:true,motor:motor.python,exportacao:saved,png:estoque+'/123_FORD_FIESTA_ABC1D23/CRIATIVO/'+artes[0],png3D:estoque+'/123_FORD_FIESTA_ABC1D23/CRIATIVO/'+pacote.find(n=>n.endsWith('-carrossel-1.png')),versoes:window.soul.versoes};
       })()`);
-      // BNDV embutido: uma vista na janela principal, na sessão do BNDV (persist:bndv), sem preload.
+      // CRM embutido: uma vista na janela principal, na sessão do uTalk (persist:utalk), sem preload.
       await w.webContents.executeJavaScript(
-        "window.soul.invocar('embutida_mostrar',{id:'bndv',x:240,y:0,largura:600,altura:400})",
+        "window.soul.invocar('embutida_mostrar',{id:'crm',x:240,y:0,largura:600,altura:400})",
       );
       const vista = w.contentView.children[0];
       if (
         !vista ||
-        vista.webContents.session !== session.fromPartition("persist:bndv")
+        vista.webContents.session !== session.fromPartition("persist:utalk")
       )
-        throw new Error("O BNDV embutido não usa a sessão do BNDV.");
-      r.bndvEmbutido = true;
+        throw new Error("O CRM embutido não usa a sessão do uTalk.");
+      r.crmEmbutido = true;
       await w.webContents.executeJavaScript(
         "window.soul.invocar('embutida_esconder')",
       );

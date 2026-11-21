@@ -3,7 +3,7 @@
 | Quero alterar | Arquivo |
 |---|---|
 | Duas interfaces, lista, balanço | apps/desktop/src/renderer/src/app/App.tsx |
-| Visual, medidas e cores | apps/desktop/src/renderer/src/styles/global.css |
+| Visual, medidas e cores | DESIGN.md, public/shared/tokens.css e apps/desktop/src/renderer/src/styles/global.css |
 | Ficha, documento, produção e publicação | apps/desktop/src/renderer/src/pages/vehicle/VehiclePage.tsx |
 | Dados da loja e campanha modelo | apps/desktop/src/renderer/src/pages/settings/StoreSettings.tsx |
 | DES.md | renderer/src/lib/des.ts |
@@ -18,7 +18,6 @@
 | Caminhos | main/caminhos.ts |
 | BNDV e financeiro | main/estoque/* |
 | Lucro mensal e setas do relatório | main/estoque/relatorio.ts |
-| Instagram e retomada de publicação | Instagram.tsx, main/studio/instagram.ts, instagram-browser.ts e instagram-plano.ts; veja docs/guides/instagram.md |
 | Automação | apps/engine/* e main/studio/motor.ts |
 | Pronto para anunciar, registro e lembrete de pausa | compartilhado/anuncio.ts, Anunciar.tsx, AvisosAnuncio.tsx, main/estoque/vendas.ts |
 | Versão leve do vídeo para anúncio | apps/engine/video/light_export.py, main/studio/motor.ts e Producao.tsx |

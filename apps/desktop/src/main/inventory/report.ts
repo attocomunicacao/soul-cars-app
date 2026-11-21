@@ -9,6 +9,7 @@
  */
 import fs from "node:fs";
 import * as caminhos from "../core/paths";
+import { SCRIPT_DA_PAGINA_DO_RELATORIO } from "../../shared/report-page-script";
 import {
   AUTO,
   montar,
@@ -447,13 +448,13 @@ const PAGINA = `<!doctype html><html lang="pt-BR"><meta charset="utf-8">
 <style>
 *{box-sizing:border-box}
 :root{
-  --canvas:#f5f3ef; --surface:#fff; --field:#faf9f6; --ink:#262420;
-  --muted:#706b63; --line:#e3ded5; --accent:#885b33; --accent-soft:#f3e9dc;
+  --canvas:#f5f5f7; --surface:#fff; --field:#fbfbfd; --ink:#1d1d1f;
+  --muted:#6e6e73; --line:#e5e5ea; --accent:#8a5a2c; --accent-soft:#f4ece2;
   --ok:#3c7a3f; --danger:#a33227; --ouro:#a9803c; --ouro-soft:#faf1de;
   --radius:16px;
 }
 body{margin:0;padding:30px 24px 60px;background:var(--canvas);color:var(--ink);
-     font:14px/1.55 "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+     font:14px/1.55 -apple-system,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
      -webkit-font-smoothing:antialiased}
 .w{max-width:1180px;margin:0 auto}
 h1{margin:0;font-size:24px;font-weight:600;letter-spacing:-.2px}
@@ -463,11 +464,12 @@ section{background:var(--surface);border:1px solid var(--line);
 h2{margin:0;padding:14px 18px;font-size:11px;letter-spacing:.07em;
    text-transform:uppercase;color:var(--muted);
    border-bottom:1px solid var(--line);background:var(--field)}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
        gap:14px;margin-bottom:18px}
 .card{background:var(--surface);border:1px solid var(--line);
       border-radius:12px;padding:16px 18px}
-.card b{display:block;font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.card b{display:block;font-size:21px;font-weight:600;font-variant-numeric:tabular-nums;
+        white-space:nowrap;letter-spacing:-.02em}
 .card span{color:var(--muted);font-size:12px}
 .cols,.cols3{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
 @media(max-width:820px){.cols,.cols3{grid-template-columns:1fr}}
@@ -585,45 +587,4 @@ Nos veículos em estoque ela é <i>potencial</i>, calculada sobre o preço de ta
 <b>Lucros/prejuízos acumulados</b> é o saldo que fecha a equação contábil
 (Ativo − Passivo − Capital − Reservas), não um resultado apurado.
 </p></div>
-<script>
-var janelasMes=[].slice.call(document.querySelectorAll('.mes-janela')),indiceMes=janelasMes.length-1;
-var anteriorMes=document.getElementById('mes-anterior'),proximoMes=document.getElementById('mes-proximo');
-function mostrarMes(indice){
-  if(!janelasMes.length)return;
-  indiceMes=Math.max(0,Math.min(indice,janelasMes.length-1));
-  janelasMes.forEach(function(p,i){p.hidden=i!==indiceMes;});
-  document.getElementById('mes-periodo').textContent=janelasMes[indiceMes].dataset.periodo;
-  anteriorMes.disabled=indiceMes===0;proximoMes.disabled=indiceMes===janelasMes.length-1;
-}
-if(anteriorMes){anteriorMes.addEventListener('click',function(){mostrarMes(indiceMes-1);});proximoMes.addEventListener('click',function(){mostrarMes(indiceMes+1);});mostrarMes(indiceMes);}
-var q=document.getElementById('q'),tb=document.getElementById('tb'),
-    cnt=document.getElementById('cnt'),
-    ls=[].slice.call(tb.tBodies[0].rows);
-q.addEventListener('input',function(){
-  var t=q.value.toLowerCase().trim(),n=0;
-  ls.forEach(function(r){
-    var ok=!t||r.dataset.b.indexOf(t)>=0;
-    r.style.display=ok?'':'none'; if(ok)n++;
-  });
-  cnt.textContent=n+' veículo'+(n==1?'':'s');
-});
-// ordenar clicando no cabecalho
-[].forEach.call(tb.tHead.rows[0].cells,function(th,i){
-  var desc=false;
-  th.addEventListener('click',function(){
-    desc=!desc;
-    var val=function(tr){
-      var c=tr.cells[i],s=c.textContent.trim();
-      var num=s.replace(/[^0-9,\\-]/g,'').replace(/\\./g,'').replace(',','.');
-      if(/^\\d{2}\\/\\d{2}\\/\\d{4}$/.test(s))
-        return s.slice(6)+s.slice(3,5)+s.slice(0,2);
-      return (num!==''&&!isNaN(parseFloat(num)))?parseFloat(num):s.toLowerCase();
-    };
-    ls.sort(function(a,b){
-      var x=val(a),y=val(b);
-      if(x<y)return desc?1:-1; if(x>y)return desc?-1:1; return 0;
-    });
-    ls.forEach(function(r){tb.tBodies[0].appendChild(r)});
-  });
-});
-</script></html>`;
+<script>${SCRIPT_DA_PAGINA_DO_RELATORIO}</script></html>`;

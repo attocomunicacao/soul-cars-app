@@ -6,6 +6,11 @@
  * `window.launcher` (preload); erros aparecem na faixa vermelha do topo.
  */
 import "./styles.css";
+import {
+  AJUDA_SMART_APP_CONTROL,
+  MARCA_SMART_APP_CONTROL,
+} from "../../shared/launch-errors";
+import { linhasDasNotas, trechosDaLinha } from "../../shared/release-notes";
 import type {
   EstadoApp,
   EstadoLauncher,
@@ -31,7 +36,46 @@ const progresso = new Map<string, Progresso>();
 function mostrarErro(mensagem: string) {
   const faixa = $("error");
   faixa.hidden = !mensagem;
-  faixa.textContent = mensagem;
+  faixa.replaceChildren(el("span", "", mensagem));
+  // Bloqueio do Smart App Control: oferece a página que explica como liberar.
+  if (mensagem.includes(MARCA_SMART_APP_CONTROL)) {
+    const ajuda = el("button", "ghost", "Como liberar");
+    ajuda.onclick = () =>
+      void window.launcher.abrirLink(AJUDA_SMART_APP_CONTROL);
+    faixa.append(ajuda);
+  }
+}
+
+/** Apps sendo abertos agora (o botão mostra "Abrindo…" e fica desativado). */
+const abrindo = new Set<string>();
+
+/** Abre o app e mantém o botão ocupado até o Launcher confirmar que ele começou. */
+function abrirApp(appId: string) {
+  abrindo.add(appId);
+  mostrarAviso("");
+  if (estado) desenhar(estado);
+  void acao(async () => {
+    try {
+      const r = await window.launcher.abrir(appId);
+      // O Windows bloqueou a versão nova: abrimos a anterior e explicamos (não é erro).
+      if (r.versaoBloqueada)
+        mostrarAviso(
+          `O Windows ainda está verificando a versão ${r.versaoBloqueada} (Smart App Control). ` +
+            `Abrimos a versão ${r.versaoAberta}, que já foi liberada. A nova passa a abrir sozinha ` +
+            "quando o Windows terminar, normalmente em algumas horas.",
+        );
+    } finally {
+      abrindo.delete(appId);
+      if (estado) desenhar(estado);
+    }
+  });
+}
+
+/** Mostra um aviso informativo na faixa dourada (vazio esconde). */
+function mostrarAviso(mensagem: string) {
+  const faixa = $("notice");
+  faixa.hidden = !mensagem;
+  faixa.replaceChildren(el("span", "", mensagem));
 }
 
 /** Texto do erro de uma promessa rejeitada pelo IPC (sem o prefixo técnico do Electron). */
@@ -84,57 +128,56 @@ function cartao(item: EstadoApp): HTMLElement {
   capa.append(logo);
 
   const corpo = el("div", "app-body");
-  corpo.append(el("p", "eyebrow mono", "APP DESKTOP · WINDOWS"));
+  corpo.append(el("p", "eyebrow", "App para Windows"));
   corpo.append(el("h2", "", release.name));
   corpo.append(el("p", "muted", release.tagline));
 
   const chips = el("div", "chips");
   if (instalada)
-    chips.append(el("span", "chip ok mono", `INSTALADO · v${instalada}`));
+    chips.append(el("span", "chip ok", `Instalado · v${instalada}`));
   if (situacao === "atualizacao-disponivel" || situacao === "nao-instalado")
-    chips.append(
-      el("span", "chip gold mono", `DISPONÍVEL · v${release.version}`),
-    );
+    chips.append(el("span", "chip gold", `Nova versão · v${release.version}`));
   if (situacao === "indisponivel")
-    chips.append(el("span", "chip mono", "AGUARDANDO PRIMEIRA VERSÃO"));
+    chips.append(el("span", "chip", "Aguardando primeira versão"));
   if (release.releasedAt)
-    chips.append(el("span", "chip mono", data(release.releasedAt)));
+    chips.append(el("span", "chip", data(release.releasedAt)));
   corpo.append(chips);
 
   const botoes = el("div", "actions");
-  const principal = el("button", "primary mono");
+  const principal = el("button", "primary");
   if (ocupado) {
     principal.textContent =
       andamento.etapa === "baixando"
-        ? `BAIXANDO ${Math.round((andamento.fracao ?? 0) * 100)}%`
+        ? `Baixando ${Math.round((andamento.fracao ?? 0) * 100)}%`
         : andamento.etapa === "verificando"
-          ? "VERIFICANDO…"
-          : "INSTALANDO…";
+          ? "Verificando…"
+          : "Instalando…";
     principal.disabled = true;
   } else if (situacao === "nao-instalado") {
-    principal.textContent = "INSTALAR";
+    principal.textContent = "Instalar";
     principal.onclick = () =>
       void acao(() => window.launcher.instalar(release.id));
   } else if (situacao === "atualizacao-disponivel") {
-    principal.textContent = `ATUALIZAR PARA v${release.version}`;
+    principal.textContent = `Atualizar para v${release.version}`;
     principal.onclick = () =>
       void acao(() => window.launcher.instalar(release.id));
   } else if (situacao === "atualizado") {
-    principal.textContent = "ABRIR";
-    principal.onclick = () =>
-      void acao(() => window.launcher.abrir(release.id));
+    principal.textContent = abrindo.has(release.id) ? "Abrindo…" : "Abrir";
+    principal.disabled = abrindo.has(release.id);
+    principal.onclick = () => abrirApp(release.id);
   } else {
-    principal.textContent = "INDISPONÍVEL";
+    principal.textContent = "Indisponível";
     principal.disabled = true;
   }
   botoes.append(principal);
   if (situacao === "atualizacao-disponivel" && !ocupado) {
-    const abrir = el("button", "ghost mono", `ABRIR v${instalada}`);
-    abrir.onclick = () => void acao(() => window.launcher.abrir(release.id));
+    const abrir = el("button", "ghost", `Abrir v${instalada}`);
+    abrir.disabled = abrindo.has(release.id);
+    abrir.onclick = () => abrirApp(release.id);
     botoes.append(abrir);
   }
   if (instalada) {
-    const pasta = el("button", "ghost mono", "ABRIR PASTA");
+    const pasta = el("button", "ghost", "Abrir pasta");
     pasta.onclick = () =>
       void acao(() => window.launcher.abrirPasta(release.id));
     botoes.append(pasta);
@@ -153,12 +196,21 @@ function cartao(item: EstadoApp): HTMLElement {
 
   if (release.notes.trim()) {
     const notas = el("details", "notes");
-    notas.append(el("summary", "mono", `NOTAS DA VERSÃO v${release.version}`));
+    notas.append(el("summary", "", `Novidades da versão ${release.version}`));
     const lista = el("ul");
-    for (const linha of release.notes
-      .split("\n")
-      .map((l) => l.replace(/^[-*]\s*/, "").trim()))
-      if (linha) lista.append(el("li", "", linha));
+    for (const linha of linhasDasNotas(release.notes)) {
+      const item = el("li");
+      // Negrito e código viram <b>/<code> criados no DOM (nunca innerHTML).
+      for (const trecho of trechosDaLinha(linha))
+        item.append(
+          trecho.estilo === "negrito"
+            ? el("b", "", trecho.texto)
+            : trecho.estilo === "codigo"
+              ? el("code", "", trecho.texto)
+              : document.createTextNode(trecho.texto),
+        );
+      lista.append(item);
+    }
     notas.append(lista);
     corpo.append(notas);
   }
@@ -179,11 +231,32 @@ function desenhar(novo: EstadoLauncher) {
     faixa.replaceChildren(
       el("span", "", `Nova versão do Launcher: v${novo.novoLauncher.version}.`),
     );
-    const botao = el("button", "primary mono", "ATUALIZAR LAUNCHER");
+    // O estado do botão vem do progresso (não do clique): cada redesenho durante o download
+    // mantém o botão desabilitado, e um segundo clique não começa outro download.
+    const andamento = progresso.get("launcher");
+    const botao = el(
+      "button",
+      "primary",
+      andamento
+        ? andamento.fracao !== undefined && andamento.fracao >= 1
+          ? "Instalando…"
+          : `Baixando ${Math.round((andamento.fracao ?? 0) * 100)}%`
+        : "Atualizar Launcher",
+    );
+    botao.disabled = !!andamento;
     botao.onclick = () => {
-      botao.disabled = true;
-      botao.textContent = "BAIXANDO…";
-      void acao(() => window.launcher.atualizarLauncher());
+      progresso.set("launcher", {
+        appId: "launcher",
+        etapa: "baixando",
+        fracao: 0,
+      });
+      desenhar(novo);
+      void window.launcher.atualizarLauncher().catch((e) => {
+        // Falhou: libera o botão para tentar de novo e mostra o motivo.
+        progresso.delete("launcher");
+        mostrarErro(textoErro(e));
+        if (estado) desenhar(estado);
+      });
     };
     faixa.append(botao);
   }

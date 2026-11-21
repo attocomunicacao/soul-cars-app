@@ -4,7 +4,6 @@
  * que elas calculam, e nada aqui publica ou ativa anúncio.
  */
 import { blocosDeCopia, type BlocoCopia } from "./publication";
-import { slugInstagram } from "./instagram";
 
 /** Prefixo do nome da campanha de venda (o DES.md ainda gera [LEAD]; o cartão corrige). */
 export const PREFIXO_VENDA = "[VENDA]";
@@ -71,8 +70,20 @@ export function fotosNumeradas(nomes: string[]): {
 }
 
 /** Nome do criativo de foto do anúncio (o mesmo que o editor exporta como "Tráfego Pago"). */
-export const nomeBaseCriativo = (nome: string, ano: string | null) =>
-  slugInstagram(nome, ano);
+export function nomeBaseCriativo(nome: string, ano: string | null) {
+  const normalizar = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+  const titulo = normalizar(nome),
+    a = normalizar(ano || "");
+  return !a || titulo.endsWith(`-${a}`) || titulo === a
+    ? titulo
+    : `${titulo}-${a}`;
+}
 
 export function fotoDoAnuncio(
   criativos: string[],

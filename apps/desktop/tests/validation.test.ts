@@ -8,9 +8,14 @@ import { describe, expect, it } from "vitest";
 import {
   criarEsquemas,
   EXTENSOES_EXECUTAVEIS,
+  hostEhLocal,
   METODOS_DO_MOTOR,
 } from "../src/main/ipc/schemas";
-import { validarChamada } from "../src/main/ipc/validation";
+import {
+  criarCaminhosEscolhidos,
+  dentroDe,
+  validarChamada,
+} from "../src/main/ipc/validation";
 
 const raiz = path.join(os.tmpdir(), "soul-validacao", "dados");
 const interno = path.join(os.tmpdir(), "soul-validacao", "interno");
@@ -53,12 +58,14 @@ describe("cobertura dos esquemas", () => {
 
 describe("validação de argumentos", () => {
   it("descarta campos a mais e exige os obrigatórios", () => {
-    const v = chamar("instagram_plano", { id: 7, intruso: "x" });
-    expect(v.args).toEqual({ id: 7 });
-    expect(() => chamar("instagram_plano", {})).toThrow(/id/);
-    expect(() => chamar("instagram_plano", { id: -1.5 })).toThrow(/id/);
-    expect(() => chamar("instagram_plano", { id: "7; DROP" })).toThrow(/id/);
-    expect(() => chamar("instagram_plano", [])).toThrow(/objeto/);
+    const v = chamar("fotos_listar", { veiculo: 7, intruso: "x" });
+    expect(v.args).toEqual({ veiculo: 7 });
+    expect(() => chamar("fotos_listar", {})).toThrow(/veiculo/);
+    expect(() => chamar("fotos_listar", { veiculo: -1.5 })).toThrow(/veiculo/);
+    expect(() => chamar("fotos_listar", { veiculo: "7; DROP" })).toThrow(
+      /veiculo/,
+    );
+    expect(() => chamar("fotos_listar", [])).toThrow(/objeto/);
   });
 
   it("aceita args nulos quando o comando não pede nada", () => {
@@ -72,6 +79,7 @@ describe("validação de argumentos", () => {
     );
     expect(chamar("engine_call", { method: "ping" }).args).toEqual({
       method: "ping",
+      params: {},
     });
   });
 
@@ -220,9 +228,95 @@ describe("validação de argumentos", () => {
   });
 
   it("não deixa abrir executáveis", () => {
-    for (const nome of ["a.exe", "b.BAT", "c.ps1", "d.lnk", "e.js"])
+    for (const nome of [
+      "a.exe",
+      "b.BAT",
+      "c.ps1",
+      "d.lnk",
+      "e.js",
+      "f.url",
+      "g.application",
+      "h.msc",
+      "i.appref-ms",
+    ])
       expect(EXTENSOES_EXECUTAVEIS.test(nome)).toBe(true);
     for (const nome of ["a.mp4", "b.png", "c.pdf", "pasta"])
       expect(EXTENSOES_EXECUTAVEIS.test(nome)).toBe(false);
+  });
+
+  it("urlOllama só aceita este computador ou a rede local", () => {
+    const salvar = (urlOllama: string) =>
+      chamar("pre_config_salvar", { patch: { urlOllama } });
+    for (const url of [
+      "http://localhost:11434",
+      "http://127.0.0.1:11434",
+      "http://192.168.0.20:11434",
+      "http://10.1.2.3:11434",
+      "http://172.20.0.5:11434",
+      "http://[::1]:11434",
+      "http://servidor-sala:11434",
+      "http://pc.local:11434",
+    ])
+      expect(() => salvar(url), url).not.toThrow();
+    for (const url of [
+      "http://example.com",
+      "https://api.exemplo.com.br/v1",
+      "http://8.8.8.8:11434",
+      "http://172.32.0.1",
+      "ftp://localhost",
+    ])
+      expect(() => salvar(url), url).toThrow();
+  });
+});
+
+describe("hostEhLocal", () => {
+  it("separa rede local de internet", () => {
+    expect(hostEhLocal("localhost")).toBe(true);
+    expect(hostEhLocal("192.168.1.9")).toBe(true);
+    expect(hostEhLocal("169.254.1.1")).toBe(true);
+    expect(hostEhLocal("fd12::1")).toBe(true);
+    expect(hostEhLocal("1.1.1.1")).toBe(false);
+    expect(hostEhLocal("meu.site.com")).toBe(false);
+    expect(hostEhLocal("2001:db8::1")).toBe(false);
+  });
+});
+
+describe("dentroDe", () => {
+  it("aceita a raiz e o que está dentro, recusa o resto", () => {
+    expect(dentroDe(raiz, raiz)).toBe(true);
+    expect(dentroDe(raiz, path.join(raiz, "ESTOQUE", "a.png"))).toBe(true);
+    expect(dentroDe(raiz, path.join(raiz, "..", "fora"))).toBe(false);
+    expect(dentroDe(raiz, raiz + "-irmao")).toBe(false);
+  });
+
+  it("não deixa uma junction/symlink escapar da raiz", () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), "soul-link-"));
+    const dentro = path.join(base, "dados");
+    const fora = path.join(base, "fora");
+    fs.mkdirSync(dentro);
+    fs.mkdirSync(fora);
+    const atalho = path.join(dentro, "atalho");
+    try {
+      fs.symlinkSync(fora, atalho, "junction");
+    } catch {
+      fs.rmSync(base, { recursive: true, force: true });
+      return; // sem permissão para criar o atalho neste ambiente
+    }
+    try {
+      expect(dentroDe(dentro, path.join(atalho, "segredo.txt"))).toBe(false);
+    } finally {
+      fs.rmSync(base, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("caminhos escolhidos no diálogo", () => {
+  it("só aceita o que o seletor devolveu", () => {
+    const c = criarCaminhosEscolhidos();
+    const pasta = path.join(os.tmpdir(), "soul-escolhida");
+    expect(() => c.exigir(pasta, "pastaMotor")).toThrow(/seletor/);
+    c.lembrar(pasta);
+    expect(() => c.exigir(pasta, "pastaMotor")).not.toThrow();
+    expect(() => c.exigir(pasta + "-outra", "pastaMotor")).toThrow();
   });
 });

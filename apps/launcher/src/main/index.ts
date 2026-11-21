@@ -14,6 +14,7 @@ import {
   BrowserWindow,
   app,
   ipcMain,
+  nativeTheme,
   shell,
   type IpcMainInvokeEvent,
 } from "electron";
@@ -38,6 +39,8 @@ import {
   pastaParaMostrar,
   versaoInstalada,
 } from "./installer";
+import { ErroAoAbrir } from "./launch";
+import { registrar } from "./log";
 import { atualizarLauncher, novoLauncher } from "./self-update";
 import { gravarEstado, lerEstado } from "./state";
 
@@ -113,6 +116,15 @@ function comando<A extends unknown[], R>(
   });
 }
 
+/** Registra no log por que um app não abriu (com os detalhes técnicos da falha). */
+function registrarFalhaAoAbrir(nome: string, erro: unknown) {
+  const detalhe =
+    erro instanceof ErroAoAbrir
+      ? `${JSON.stringify(erro.falha)} bloqueadoPeloWindows=${erro.bloqueadoPeloWindows}`
+      : String(erro);
+  registrar(`Falha ao abrir ${nome}: ${detalhe}`);
+}
+
 function registrarComandos() {
   comando(CANAIS.estado, () => estadoAtual());
   comando(CANAIS.verificar, () => verificar());
@@ -125,15 +137,36 @@ function registrarComandos() {
       avisar({ appId: release.id, etapa: "concluido" });
     } catch (erro) {
       const mensagem = erro instanceof Error ? erro.message : String(erro);
+      registrar(
+        `Falha ao instalar ${release.name} ${release.version}: ${mensagem}`,
+      );
       avisar({ appId: release.id, etapa: "erro", mensagem });
       throw erro;
     }
     return estadoAtual();
   });
-  comando(CANAIS.abrir, (appId: string) => {
-    abrirApp(releaseDe(String(appId)));
-    if (lerEstado().preferencias.fecharAoAbrir)
-      setTimeout(() => app.quit(), 800);
+  comando(CANAIS.abrir, async (appId: string) => {
+    const release = releaseDe(String(appId));
+    let resultado;
+    try {
+      resultado = await abrirApp(release);
+      registrar(
+        resultado.versaoBloqueada
+          ? `${release.name} ${resultado.versaoBloqueada} bloqueado pelo Windows; aberta a ${resultado.versaoAberta}.`
+          : `${release.name} ${resultado.versaoAberta} aberto.`,
+      );
+    } catch (erro) {
+      registrarFalhaAoAbrir(release.name, erro);
+      // Erro simples: a interface recebe só a mensagem pronta para o usuário.
+      throw new Error(erro instanceof Error ? erro.message : String(erro), {
+        cause: erro,
+      });
+    }
+    // Só fecha o Launcher depois que o app abriu de fato, e fica aberto quando precisou
+    // usar a versão anterior (para o aviso aparecer).
+    if (lerEstado().preferencias.fecharAoAbrir && !resultado.versaoBloqueada)
+      app.quit();
+    return resultado;
   });
   comando(CANAIS.abrirPasta, async (appId: string) => {
     await shell.openPath(pastaParaMostrar(String(appId)));
@@ -167,7 +200,8 @@ function criarJanela() {
     minWidth: 860,
     minHeight: 560,
     show: false,
-    backgroundColor: "#121110",
+    // Mesmo fundo do tema do Windows (claro ou escuro): evita o clarão ao abrir.
+    backgroundColor: nativeTheme.shouldUseDarkColors ? "#000000" : "#f5f5f7",
     title: "Soul Cars Launcher",
     icon: recurso("icon.ico"),
     autoHideMenuBar: true,
