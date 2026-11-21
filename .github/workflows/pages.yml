@@ -31,9 +31,9 @@ jobs:
           cp -r website/. _site/
           cp docs/assets/screenshots/*.png _site/screenshots/
           cp apps/desktop/resources/soul-logo.jpg _site/soul-logo.jpg
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

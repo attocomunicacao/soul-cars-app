@@ -30,7 +30,7 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
@@ -78,7 +78,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run format:check
       - run: npm test
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: apps/engine/uv.lock
@@ -156,7 +156,7 @@ jobs:
           gh release create "v$V" "${ARQUIVOS[@]}" \
             --title "Soul Cars v$V" --notes-file release-notes.md
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: github.event_name == 'workflow_dispatch'
         with:
           name: soul-cars-${{ steps.versao.outputs.valor }}
