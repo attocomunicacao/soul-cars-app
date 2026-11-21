@@ -2,6 +2,14 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.3.0]
+
+Acabamento e manutenção.
+
+- **Mensagens de erro mais claras**: em todas as telas o erro aparece só com o texto útil, sem o prefixo técnico ("Error invoking remote method…").
+- **Motor de fotos e vídeo atualizado**: Pillow 13, rembg 2.0.87 e numpy 2.5.4, conferidos com um recorte de imagem real.
+- Por baixo dos panos: nomes de arquivos em inglês nas telas de CRM · Leads e Pré-atendimento, ferramentas de build atualizadas, verificação automática dos links da documentação.
+
 ## [1.2.0]
 
 Mais segurança e acabamento, e um app mais enxuto.
