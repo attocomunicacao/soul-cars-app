@@ -16,6 +16,8 @@
     "build": "npm run build -w apps/desktop && npm run build -w apps/launcher",
     "typecheck": "npm run typecheck -w apps/desktop && npm run typecheck -w apps/launcher",
     "lint": "eslint . --max-warnings 0",
+    "docs:check": "node scripts/docs/check-links.mjs && node scripts/docs/sync-agents.mjs --check",
+    "docs:sync": "node scripts/docs/sync-agents.mjs",
     "test": "npm run test -w apps/desktop && npm run test -w apps/launcher",
     "test:engine": "cd apps/engine && uv run --all-groups python -m unittest discover -s tests -p \"test_*.py\"",
     "test:engine:coverage": "cd apps/engine && uv run --all-groups --with coverage python -m coverage run --data-file=.tmp/engine.coverage -m unittest discover -s tests -p \"test_*.py\" && uv run --all-groups --with coverage python -m coverage report --data-file=.tmp/engine.coverage",

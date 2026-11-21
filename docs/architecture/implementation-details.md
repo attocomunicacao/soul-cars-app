@@ -1,6 +1,6 @@
 # Contratos e detalhes de implementação
 
-Complemento do [contexto principal](../development/handoff-context.md), baseado na leitura do código local em 23/10/2026, inclusive testes e scripts. Consulte o [registro de cobertura](reading-coverage.md) para o recorte e as versões dos arquivos. Os comportamentos abaixo descrevem a implementação; não são garantias de execução nem propostas de mudança.
+Complemento do [contexto principal](../development/handoff-context.md), baseado na leitura do código local em 23/10/2026, inclusive testes e scripts. Consulte o registro de cobertura (documento removido; use `git ls-files`) para o recorte e as versões dos arquivos. Os comportamentos abaixo descrevem a implementação; não são garantias de execução nem propostas de mudança.
 
 ## Persistência, identidade e atualização
 

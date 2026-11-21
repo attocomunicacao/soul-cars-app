@@ -2,7 +2,7 @@
 
 > Continuidade entre chats: consulte também [CONTEXTO-PARA-OUTRO-CHAT.md](handoff-context.md), conferido com o código local em 23/10/2026. Ele detalha os fluxos atuais e ressalva descrições históricas abaixo, como CRM no menu, edição financeira e funcionalidades sem tela montada.
 
-> Aprofundamento: [contratos e detalhes de implementação](../architecture/implementation-details.md), [inventário](../architecture/code-inventory.md) e [cobertura da leitura](../architecture/reading-coverage.md). Esses documentos registram regras encontradas nos corpos do código, testes e scripts, além dos limites da análise.
+> Aprofundamento: [contratos e detalhes de implementação](../architecture/implementation-details.md), inventário (documento removido; use `git ls-files`) e cobertura da leitura (documento removido; use `git ls-files`). Esses documentos registram regras encontradas nos corpos do código, testes e scripts, além dos limites da análise.
 
 Leia este arquivo primeiro. Ele resume o que o app faz, onde cada coisa mora e quais regras não se quebram. Depois leia `AGENTS.md`, `02`, `03` e `04` antes de mexer em regra de negócio.
 
