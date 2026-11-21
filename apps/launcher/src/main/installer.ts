@@ -17,7 +17,7 @@
  * na pasta de dados do próprio app, e não são tocados pelo Launcher.
  */
 import { spawn } from "node:child_process";
-import { fsSemAsar as fs, renomearComPaciencia } from "./disk";
+import { exigirEspaco, fsSemAsar as fs, renomearComPaciencia } from "./disk";
 import path from "node:path";
 import type { AppRelease } from "../shared/manifest";
 import type { ResultadoAbertura } from "../shared/api";
@@ -26,7 +26,12 @@ import {
   versoesAlternativas,
   versoesParaLimpar,
 } from "../shared/manifest";
-import { pastaDaVersao, pastaDoApp, pastaDownloads } from "./config";
+import {
+  pastaDaVersao,
+  pastaDoApp,
+  pastaDownloads,
+  pastaInstalacao,
+} from "./config";
 import { baixarVerificado } from "./download";
 import { abrirExecutavel, ErroAoAbrir } from "./launch";
 import { registrar } from "./log";
@@ -163,6 +168,41 @@ async function instalarPorPacoteDeCodigo(
   return true;
 }
 
+/**
+ * Troca `final` pela pasta recém-extraída sem nunca ficar sem a versão: a pasta antiga só
+ * vai para `<final>.antiga` (um rename, que falha inteiro se algo a estiver usando) e volta
+ * ao lugar se a troca não terminar. Antes, `rmSync(final)` apagava primeiro e um erro no rename
+ * deixava o app sem pasta.
+ */
+export async function colocarNoLugar(temporaria: string, final: string) {
+  const antiga = `${final}.antiga`;
+  fs.rmSync(antiga, APAGAR);
+  const haviaFinal = fs.existsSync(final);
+  if (haviaFinal) await renomearComPaciencia(final, antiga);
+  try {
+    await renomearComPaciencia(temporaria, final);
+  } catch (erro) {
+    if (haviaFinal) {
+      try {
+        fs.rmSync(final, APAGAR);
+        await renomearComPaciencia(antiga, final);
+      } catch (volta) {
+        registrar(
+          `Não foi possível restaurar ${final} depois de uma troca que falhou: ${String(volta)}`,
+        );
+      }
+    }
+    throw erro;
+  }
+  if (haviaFinal) {
+    try {
+      fs.rmSync(antiga, APAGAR);
+    } catch (erro) {
+      registrar(`Não foi possível apagar ${antiga}: ${String(erro)}`);
+    }
+  }
+}
+
 /** Baixa e instala a versão do manifesto; devolve a pasta instalada. */
 export async function instalarApp(
   release: AppRelease,
@@ -178,6 +218,8 @@ export async function instalarApp(
     throw new Error(`${release.name} já está sendo instalado.`);
   emAndamento.add(release.id);
   try {
+    // O zip e a pasta extraída (≈ 3× o zip) ficam no mesmo disco ao mesmo tempo.
+    exigirEspaco(pastaInstalacao(), download.size * 4);
     const executavel = nomeExecutavel(release);
     const final = pastaDaVersao(release.id, release.version);
     const temporaria = `${final}.extraindo`;
@@ -212,8 +254,7 @@ export async function instalarApp(
     }
     if (!acharExecutavel(temporaria, executavel))
       throw new Error(`O pacote baixado não contém ${executavel}.`);
-    fs.rmSync(final, APAGAR);
-    await renomearComPaciencia(temporaria, final);
+    await colocarNoLugar(temporaria, final);
 
     // Marca como ativa e limpa versões antigas (se alguma estiver aberta, fica para depois).
     const estado = gravarEstado((e) => {
@@ -238,7 +279,10 @@ export async function instalarApp(
           force: true,
         });
         return true;
-      } catch {
+      } catch (erro) {
+        registrar(
+          `Não foi possível apagar a versão antiga ${v} de ${release.id}: ${String(erro)}`,
+        );
         return false;
       }
     });

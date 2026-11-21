@@ -19,11 +19,13 @@ import {
   type ChildProcessWithoutNullStreams,
   spawn,
 } from "node:child_process";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { app } from "electron";
 import * as caminhos from "../core/paths";
+import { registrar } from "../core/diagnostics";
 import { pastaDeModelos } from "./models";
 
 export type Emitir = (canal: string, carga: unknown) => void;
@@ -81,8 +83,14 @@ export function estadoMotor() {
 
 /** uv baixado pelo próprio app (usuário final não precisa instalar nada). */
 const UV_LOCAL = () => path.join(caminhos.userData(), "uv", "uv.exe");
-const UV_URL =
-  "https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-pc-windows-msvc.zip";
+/**
+ * Versão do uv e SHA-256 do zip oficial (astral-sh/uv, 0.13.9). Ao subir a versão, atualize os dois
+ * juntos: o hash sai de `sha256sum` do zip baixado.
+ */
+const UV_VERSAO = "0.13.9";
+const UV_SHA256 =
+  "edd61f7f5728a56cc62455386661860bdfc7bab65872f39b0c25bdcc1d8e1beb";
+const UV_URL = `https://github.com/astral-sh/uv/releases/download/${UV_VERSAO}/uv-x86_64-pc-windows-msvc.zip`;
 
 function uvDisponivel(): string | null {
   return naPath("uv") ?? (fs.existsSync(UV_LOCAL()) ? UV_LOCAL() : null);
@@ -98,17 +106,26 @@ async function garantirUv(emitir: Emitir): Promise<string> {
   const resposta = await fetch(UV_URL);
   if (!resposta.ok)
     throw new Error(`Falha ao baixar o uv (${resposta.status}).`);
+  const conteudo = Buffer.from(await resposta.arrayBuffer());
+  if (createHash("sha256").update(conteudo).digest("hex") !== UV_SHA256)
+    throw new Error(
+      "O uv baixado não confere com o esperado (SHA-256). Instalação cancelada.",
+    );
   const zip = path.join(pasta, "uv.zip");
-  fs.writeFileSync(zip, Buffer.from(await resposta.arrayBuffer()));
+  fs.writeFileSync(zip, conteudo);
   await new Promise<void>((resolver, rejeitar) => {
+    // Os caminhos vão por variável de ambiente: nome de usuário com apóstrofo não quebra o comando.
     const p = spawn(
       "powershell.exe",
       [
         "-NoProfile",
         "-Command",
-        `Expand-Archive -LiteralPath '${zip}' -DestinationPath '${pasta}' -Force`,
+        "Expand-Archive -LiteralPath $env:SOUL_UV_ZIP -DestinationPath $env:SOUL_UV_PASTA -Force",
       ],
-      { windowsHide: true },
+      {
+        windowsHide: true,
+        env: { ...process.env, SOUL_UV_ZIP: zip, SOUL_UV_PASTA: pasta },
+      },
     );
     p.on("error", rejeitar);
     p.on("close", (c) =>
@@ -203,8 +220,11 @@ function garantirProcesso(emitir: Emitir) {
     },
   });
   const ativo = processo;
-  ativo.stderr.on("data", () => {
-    /* stdout é reservado ao protocolo JSON. */
+  // stdout é reservado ao protocolo JSON; o que o motor escreve no stderr vai para o app.log.
+  ativo.stderr.setEncoding("utf8");
+  ativo.stderr.on("data", (texto: string) => {
+    for (const linha of texto.split(/\r?\n/))
+      if (linha.trim()) registrar(`motor: ${linha.trim().slice(0, 300)}`);
   });
   ativo.on("error", (erro) => falharMotor(erro.message));
   ativo.on("exit", () => {
@@ -223,16 +243,22 @@ function garantirProcesso(emitir: Emitir) {
       const linha = buffer.slice(0, corte).trim();
       buffer = buffer.slice(corte + 1);
       if (!linha) continue;
+      // Saída de um processo que já foi substituído (timeout, reinício) não pode virar
+      // resposta da chamada seguinte.
+      if (processo !== ativo) continue;
+      let resposta: Record<string, unknown>;
       try {
-        const resposta = JSON.parse(linha) as Record<string, unknown>;
-        if ("progress" in resposta) {
-          emitir("engine:progresso", resposta.progress);
-          continue;
-        }
-        pendente?.(resposta);
+        resposta = JSON.parse(linha) as Record<string, unknown>;
       } catch {
-        /* linha que não é JSON: o motor imprimiu algo solto */
+        // Linha que não é JSON: o motor imprimiu algo solto. Fica no log para diagnóstico.
+        registrar(`motor: linha fora do protocolo: ${linha.slice(0, 200)}`);
+        continue;
       }
+      if ("progress" in resposta) {
+        emitir("engine:progresso", resposta.progress);
+        continue;
+      }
+      pendente?.(resposta);
     }
   });
   return ativo;

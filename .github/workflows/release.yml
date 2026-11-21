@@ -38,8 +38,16 @@ jobs:
       - name: Definir versão
         id: versao
         shell: bash
+        env:
+          # Entrada do usuário: vai por variável de ambiente, nunca interpolada no script.
+          VERSAO_INFORMADA: ${{ inputs.version }}
         run: |
-          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then V="${GITHUB_REF_NAME#v}"; else V="${{ inputs.version }}"; fi
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then V="${GITHUB_REF_NAME#v}"; else V="$VERSAO_INFORMADA"; fi
+          # Só x.y.z (com sufixo opcional): impede que um nome de tag ou entrada vire comando nos passos seguintes.
+          if ! [[ "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::Versão inválida: '$V'. Use o formato x.y.z."
+            exit 1
+          fi
           echo "valor=$V" >> "$GITHUB_OUTPUT"
 
       - run: npm ci
@@ -65,9 +73,24 @@ jobs:
           if [ "$PREV" = "$LV" ]; then echo "empacotar=nao" >> "$GITHUB_OUTPUT"; else echo "empacotar=sim" >> "$GITHUB_OUTPUT"; fi
           echo "Launcher $LV (publicado: ${PREV:-nenhum}) → empacotar: $(grep empacotar "$GITHUB_OUTPUT" | cut -d= -f2)"
 
+      # Mesmas verificações do CI: uma tag nunca publica código que o CI reprovaria.
+      - run: npm run lint
       - run: npm run typecheck
+      - run: npm run format:check
       - run: npm test
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/engine/uv.lock
+      - run: uv sync --group documentos --group planilha
+        working-directory: apps/engine
+      - run: choco install ffmpeg -y --no-progress
+      - name: Testes do motor Python
+        run: uv run --no-sync python -m unittest discover -s tests -p "test_*.py"
+        working-directory: apps/engine
       - run: npm run package:desktop
+      # Instala o pacote recém-gerado pelo Launcher e abre o app (o mesmo caminho do usuário).
+      - run: npm run e2e:launcher
       - name: Pacote só de código do app
         id: patch
         shell: bash
@@ -90,7 +113,11 @@ jobs:
             substr(l, 1, 4) == "## [" { if (on) exit; if (index(l, "## [" v "]") == 1) { on = 1; next } }
             on { print }' CHANGELOG.md > release-notes.md
           if ! grep -q '[^[:space:]]' release-notes.md; then
-            echo "::warning::CHANGELOG.md não tem a seção ## [${{ steps.versao.outputs.valor }}]; notas padrão usadas."
+            if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+              echo "::error::CHANGELOG.md não tem a seção ## [${{ steps.versao.outputs.valor }}]. Acrescente-a e publique a tag de novo."
+              exit 1
+            fi
+            echo "::warning::CHANGELOG.md não tem a seção ## [${{ steps.versao.outputs.valor }}]; notas padrão usadas (build de teste)."
             echo "Soul Cars ${{ steps.versao.outputs.valor }}." > release-notes.md
           fi
 

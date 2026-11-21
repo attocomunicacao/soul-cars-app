@@ -90,7 +90,7 @@ class TestFicha(unittest.TestCase):
         self.assertEqual(valor("Lugares"), "5")
         self.assertEqual(valor("Portas"), "4")
         self.assertEqual(valor("Câmbio", 2), "Manual de 5 marchas")
-        depois = self.linhas[next(i for i, l in enumerate(self.linhas) if cnw._sem_acento(l) == "DIRECAO"):]
+        depois = self.linhas[next(i for i, linha in enumerate(self.linhas) if cnw._sem_acento(linha) == "DIRECAO"):]
         self.assertEqual(cnw._valor_apos(depois, "Assistência", self.rotulos, 1), "Elétrica")
 
     def test_so_equipamentos_de_serie(self):

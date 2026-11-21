@@ -12,8 +12,9 @@ import {
   salvarFoto,
   localizarFotosVitrine,
   FOTOS_VITRINE,
-  type Slot,
+  ehSlot,
 } from "../../../lib/vehicle-files";
+import { lerAjustes } from "../../../lib/creative-settings";
 import {
   fuelLabel,
   formatNumber,
@@ -90,11 +91,16 @@ export function Creatives({
             },
           });
           if (v.pasta) await importarFotosPadrao(v.id, v.pasta);
+          const ajustesLidos = lerAjustes(v.ajustes);
           post({
             type: "soul:photos",
             photos: await carregarFotos(v.id),
-            ajustes: v.ajustes ? JSON.parse(v.ajustes) : null,
+            ajustes: ajustesLidos.ajustes,
           });
+          if (ajustesLidos.corrompido)
+            setAviso(
+              "Os ajustes salvos deste veículo estavam corrompidos e foram ignorados. Ajuste de novo e eles serão regravados.",
+            );
           if (v.pasta)
             post({
               type: "soul:vitrine-photos",
@@ -113,8 +119,9 @@ export function Creatives({
           onBack();
           break;
         case "soul:photo":
-          if (data.file instanceof File)
-            await salvarFoto(v.id, data.slot as Slot, data.file);
+          if (!(data.file instanceof File) || !ehSlot(data.slot))
+            throw new Error("Foto inválida.");
+          await salvarFoto(v.id, data.slot, data.file);
           break;
         case "soul:vitrine-crop":
           await vitrine();

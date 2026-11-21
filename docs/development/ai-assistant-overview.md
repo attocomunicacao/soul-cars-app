@@ -48,7 +48,7 @@ renderer (React)  →  preload (window.soul.invocar / ouvir)  →  IPC (main)  �
 
 ## 4. Regras que não se quebram
 
-- Não modificar `legado/` nem `dados-loja/` (locais, fora do Git).
+- Não modificar `dados-loja/` (local, fora do Git).
 - ID BNDV identifica pasta/veículo; pastas existentes e órfãs nunca são renomeadas nem apagadas.
 - Migrações de banco distribuídas são imutáveis: nova mudança vira nova versão.
 - Preservar `DES.md` e `DOC.md` (formato verificado por fixture).

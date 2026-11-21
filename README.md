@@ -89,7 +89,7 @@ Detalhes em [docs/architecture/launcher-and-updates.md](docs/architecture/launch
 ## 05 / Arquitetura
 
 ```text
-soul-cars/
+soul-cars-app/
 ├── apps/
 │   ├── launcher/        Soul Cars Launcher — Electron + TypeScript puro
 │   │   └── src/{main,preload,shared,renderer}

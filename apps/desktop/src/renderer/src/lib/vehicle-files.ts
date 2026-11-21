@@ -6,6 +6,17 @@ import { invoke } from "./desktop-bridge";
 import { statusProducao } from "./production-status";
 
 export type Slot = "main" | "left" | "center" | "right" | "original";
+/** Todos os slots válidos (o main confere de novo; aqui a interface recusa antes de enviar). */
+export const SLOTS: readonly Slot[] = [
+  "main",
+  "left",
+  "center",
+  "right",
+  "original",
+];
+/** Diz se o valor vindo do editor (iframe) é um slot conhecido. */
+export const ehSlot = (v: unknown): v is Slot =>
+  typeof v === "string" && (SLOTS as readonly string[]).includes(v);
 export type FotoSalva = { slot: Slot; mime: string; nome: string };
 
 const enc = encodeURIComponent;

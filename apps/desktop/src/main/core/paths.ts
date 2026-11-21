@@ -68,7 +68,7 @@ export function gravarConfig(patch: Config) {
  * Raiz dos dados visíveis (ESTOQUE/ e dados/).
  *
  * Na primeira execução, se existir uma pasta de dados já usada (`dados-loja`
- * dentro do projeto, ou a do app Python antigo), ela é adotada — assim as
+ * dentro do projeto), ela é adotada — assim as
  * pastas e o balanço já criados continuam valendo.
  */
 export function raizDados(): string {
@@ -78,8 +78,6 @@ export function raizDados(): string {
   const candidatos = [
     path.resolve(base, "dados-loja"),
     path.resolve(base, "..", "dados-loja"),
-    path.resolve(base, "legado", "estoque-python"),
-    path.resolve(base, "..", "soul-cars-estoque"),
   ];
   const herdada = candidatos.find((c) =>
     fs.existsSync(path.join(c, "ESTOQUE")),

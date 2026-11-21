@@ -85,6 +85,10 @@ describe("lerManifesto", () => {
     const m = manifesto();
     m.apps[0].executable = { win32: "..\\..\\cmd.exe" };
     expect(() => lerManifesto(m)).toThrow(/executable/);
+    for (const nome of ["..", ".", "...", "a..b"]) {
+      m.apps[0].executable = { win32: nome };
+      expect(() => lerManifesto(m), nome).toThrow(/executable/);
+    }
   });
 
   it("recusa schemaVersion desconhecido", () => {

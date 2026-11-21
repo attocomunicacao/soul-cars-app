@@ -251,7 +251,7 @@ class TestComposicaoEditorial(unittest.TestCase):
             linhas = ass.read_text(encoding="utf-8").splitlines()
         for w in p["palavras"]:
             texto = w["w"].upper()
-            eventos = [l.split(",", 9) for l in linhas if l.startswith("Dialogue: 1,") and l.endswith("}" + texto)]
+            eventos = [linha.split(",", 9) for linha in linhas if linha.startswith("Dialogue: 1,") and linha.endswith("}" + texto)]
             self.assertTrue(eventos, w["w"])
             esperado = legendas.ass_time(max(p["palavras"][0]["s"], w["s"] - 0.02))
             self.assertEqual(eventos[0][1], esperado)
@@ -302,22 +302,22 @@ class TestAssRenderiza(unittest.TestCase):
         ass = self.pasta / "l.ass"
         legendas.gerar_ass(falar(FALA), 20.0, ass, render.FONT, "FIAT ARGO 2022")
         linhas = ass.read_text(encoding="utf-8").splitlines()
-        estilos = [l for l in linhas if l.startswith("Style:")]
+        estilos = [linha for linha in linhas if linha.startswith("Style:")]
         self.assertEqual(len(estilos), 2)
         for estilo in estilos:
             campos = estilo.split(",")
             self.assertEqual(campos[15:18], ["1", "0", "0"], estilo)  # BorderStyle, Outline 0, Shadow 0
-        brilhos = [l for l in linhas if l.startswith("Dialogue: 0,")]
-        textos = [l for l in linhas if l.startswith("Dialogue: 1,")]
+        brilhos = [linha for linha in linhas if linha.startswith("Dialogue: 0,")]
+        textos = [linha for linha in linhas if linha.startswith("Dialogue: 1,")]
         self.assertTrue(brilhos and textos)
-        self.assertTrue(all(",Glow," in l and "\\blur" in l for l in brilhos))
+        self.assertTrue(all(",Glow," in linha and "\\blur" in linha for linha in brilhos))
         self.assertNotIn("Sombra", "\n".join(linhas))
         self.assertEqual(set(re.findall(r"\\1c(&H[0-9A-F]+&)", "\n".join(linhas))), {"&HFFFFFF&"})
         for brilho, texto in zip(brilhos, textos):
             self.assertEqual(brilho.split(",")[1:3], texto.split(",")[1:3])
             self.assertEqual(re.findall(r"\\1c(&H[0-9A-F]+&)", brilho), re.findall(r"\\1c(&H[0-9A-F]+&)", texto))
             self.assertEqual(re.findall(r"\\(?:pos|move)\([^)]*\)", brilho), re.findall(r"\\(?:pos|move)\([^)]*\)", texto))
-        self.assertFalse(any("\\bord" in l for l in linhas))
+        self.assertFalse(any("\\bord" in linha for linha in linhas))
 
     def test_gerar_ass_do_texto_completo(self):
         ass = self.pasta / "l.ass"

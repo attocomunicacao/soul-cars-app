@@ -40,6 +40,7 @@ Documentação do Soul Cars, organizada por assunto (pastas e arquivos em inglê
 | [validation.md](development/validation.md) | Validação (testes, smokes) |
 | [github-workflow.md](development/github-workflow.md) | GitHub, CI e releases |
 | [handoff-context.md](development/handoff-context.md) | Contexto técnico para retomar o projeto |
+| [agents.md](development/agents.md) | Agentes do projeto, método de verificação e hook de proteção |
 
 ## `ai/` — Laboratório de testes da IA
 

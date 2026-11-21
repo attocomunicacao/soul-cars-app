@@ -6,7 +6,12 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fsSemAsar, renomearComPaciencia } from "../src/main/disk";
+import {
+  espacoLivre,
+  exigirEspaco,
+  fsSemAsar,
+  renomearComPaciencia,
+} from "../src/main/disk";
 
 const temp = () => fs.mkdtempSync(path.join(os.tmpdir(), "soul-disk-"));
 
@@ -58,5 +63,23 @@ describe("renomearComPaciencia", () => {
       throw Object.assign(new Error("sumiu"), { code: "ENOENT" });
     });
     await expect(renomearComPaciencia("x", "y", 5, 1)).rejects.toThrow("sumiu");
+  });
+});
+
+describe("espaço em disco", () => {
+  it("sabe quanto há livre, mesmo numa pasta que ainda não existe", () => {
+    const livre = espacoLivre(path.join(temp(), "ainda", "nao", "existe"));
+    expect(livre).toBeGreaterThan(0);
+  });
+
+  it("recusa com mensagem clara quando falta espaço", () => {
+    expect(() => exigirEspaco("x", 600 * 1_048_576, 100 * 1_048_576)).toThrow(
+      /600 MB.*100 MB/,
+    );
+  });
+
+  it("aceita quando cabe e segue quando não dá para medir", () => {
+    expect(() => exigirEspaco("x", 100, 1000)).not.toThrow();
+    expect(() => exigirEspaco("x", 100, null)).not.toThrow();
   });
 });

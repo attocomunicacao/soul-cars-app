@@ -4,7 +4,6 @@
  * (`ads_read`), fica cifrado pelo Windows (safeStorage) no config.json e nunca volta para a
  * interface. Também guarda a conta de anúncios, a versão da API e as preferências do painel.
  */
-import { safeStorage } from "electron";
 import {
   CONFIG_META_PADRAO,
   type ConfigMeta,
@@ -12,6 +11,8 @@ import {
 } from "../../shared/meta-ads";
 import { arquivoInterno, gravarJson, lerJson } from "../core/json-store";
 import * as caminhos from "../core/paths";
+import { cofre } from "../core/secret-store";
+import { limparSegredo } from "../core/secret-vault";
 import type { Buscar } from "../crm/utalk-api";
 import {
   VERSAO_GRAPH,
@@ -26,13 +27,7 @@ const CHAVE_TOKEN = "metaTokenCifrado";
 const ARQ_CONFIG = () => arquivoInterno("meta-ads", "config.json");
 
 function lerToken(): string | null {
-  const guardado = caminhos.lerConfig()[CHAVE_TOKEN];
-  if (typeof guardado !== "string" || !guardado) return null;
-  try {
-    return safeStorage.decryptString(Buffer.from(guardado, "base64"));
-  } catch {
-    return null;
-  }
+  return cofre.ler(CHAVE_TOKEN);
 }
 
 /** Credenciais para o main (o token nunca vai para a interface). */
@@ -61,14 +56,13 @@ export function salvarMeta(p: {
   versao?: string;
 }) {
   const patch: Record<string, unknown> = {};
-  const token = (p.token ?? "").trim().replace(/^Bearer\s+/i, "");
+  const token = limparSegredo(p.token ?? "");
   if (token) {
     if (token.length < 20) throw new Error("Cole o token completo do Meta.");
-    if (!safeStorage.isEncryptionAvailable())
-      throw new Error(
-        "O Windows não liberou a cifragem para guardar o token com segurança.",
-      );
-    patch[CHAVE_TOKEN] = safeStorage.encryptString(token).toString("base64");
+    patch[CHAVE_TOKEN] = cofre.cifrar(
+      token,
+      "O Windows não liberou a cifragem para guardar o token com segurança.",
+    );
   }
   if (p.conta !== undefined) patch.metaConta = normalizarConta(p.conta);
   if (p.versao !== undefined)
@@ -84,7 +78,7 @@ export function gravarTokenMeta(token: string) {
 
 /** Esquece o token do Meta. */
 export function removerTokenMeta() {
-  caminhos.gravarConfig({ [CHAVE_TOKEN]: "" });
+  cofre.apagar(CHAVE_TOKEN);
   return estadoMeta();
 }
 
