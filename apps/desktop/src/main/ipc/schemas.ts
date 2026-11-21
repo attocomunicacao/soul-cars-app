@@ -26,7 +26,8 @@ import {
   type Regra,
 } from "./validation";
 
-export const METODOS_DO_MOTOR = [
+/** Métodos que a interface pode chamar por `engine_call`. */
+export const METODOS_DO_MOTOR_PELA_INTERFACE = [
   "ping",
   "ler_crlv",
   "ocr_equipamentos",
@@ -39,9 +40,83 @@ export const METODOS_DO_MOTOR = [
   "ficha_web_buscar",
   "ficha_web_ficha",
   "fotos_organizar",
+] as const;
+
+/** Métodos que só o processo principal chama (finanças e Soul IA); a interface não os alcança. */
+export const METODOS_INTERNOS_DO_MOTOR = [
   "planilha_aplicar",
   "soulia_planilha",
 ] as const;
+
+/** Todos os métodos de `apps/engine/main.py` (um teste confere a lista com o Python). */
+export const METODOS_DO_MOTOR = [
+  ...METODOS_DO_MOTOR_PELA_INTERFACE,
+  ...METODOS_INTERNOS_DO_MOTOR,
+] as const;
+
+/** Nome de modelo de recorte: só letras, números, hífen e sublinhado (vira nome de pasta e de arquivo). */
+const modeloDeRecorte: Regra<string> = (v, campo) => {
+  const t = texto({ max: 60 })(v, campo);
+  if (!/^[A-Za-z0-9_-]+$/.test(t))
+    throw new Error(
+      `Argumento inválido: "${campo}" deve ser um nome de modelo simples.`,
+    );
+  return t;
+};
+
+/** Ano vindo da ficha: texto curto ou número; nulo vira ausente. */
+const anoDoModelo: Regra<string | number | undefined> = (v, campo) => {
+  if (v === undefined || v === null) return undefined;
+  return typeof v === "number"
+    ? inteiro(v, campo)
+    : texto({ max: 10, vazio: true })(v, campo);
+};
+
+/** Parâmetros aceitos por cada método do motor chamado pela interface. Fora daqui, o campo é descartado. */
+function parametrosDoMotor(
+  pasta: Regra<string>,
+): Record<
+  (typeof METODOS_DO_MOTOR_PELA_INTERFACE)[number],
+  Record<string, Regra>
+> {
+  // Um arquivo vem em base64 (anexo) ou do disco (dentro das raízes), nunca de qualquer lugar.
+  const arquivo = {
+    arquivo: opcional(texto({ max: 60_000_000 })),
+    origem: opcional(pasta),
+  };
+  const nomeDaBusca = {
+    nome: texto({ max: 200, vazio: true }),
+    ano: anoDoModelo,
+  };
+  return {
+    ping: {},
+    aquecer_recorte: {},
+    ler_crlv: { ...arquivo, senha: opcional(texto({ max: 200, vazio: true })) },
+    gerar_doc_md: {
+      ...arquivo,
+      senha: opcional(texto({ max: 200, vazio: true })),
+      texto_integral: opcional(booleano),
+    },
+    ocr_equipamentos: {
+      ...arquivo,
+      modo: opcional(umDe("auto", "seguranca", "conforto", "infotenimento")),
+    },
+    remover_fundo: {
+      ...arquivo,
+      destino: opcional(pasta),
+      modelo: opcional(modeloDeRecorte),
+    },
+    fotos_organizar: { pasta },
+    cnw_buscar: nomeDaBusca,
+    ficha_web_buscar: nomeDaBusca,
+    cnw_ficha: {
+      codigo: texto({ max: 100 }),
+      referer: opcional(texto({ max: 500, vazio: true })),
+    },
+    ficha_web_ficha: { codigo: texto({ max: 100 }) },
+    cnw_texto: { texto: texto({ max: 200_000, vazio: true }) },
+  };
+}
 
 const PRESETS_META = PERIODOS_META.map(([v]) => v);
 const PRESETS_FUNIL = PERIODOS_FUNIL.map(([v]) => v);
@@ -216,6 +291,7 @@ function esquemasDoBanco(): Record<string, Esquema> {
 
 export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
   const pasta = caminhoEmRaizes(ctx.raizes);
+  const PARAMETROS_DO_MOTOR = parametrosDoMotor(pasta);
   const nome = texto({ max: 255 });
   const veiculo = idVeiculo;
   const vazio: Esquema = {};
@@ -507,8 +583,18 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
     // ---- motor Python ----
     engine_call: {
       args: {
-        method: umDe(...METODOS_DO_MOTOR),
+        method: umDe(...METODOS_DO_MOTOR_PELA_INTERFACE),
         params: opcional(objetoLivre),
+      },
+      // Os `params` só valem na forma do método escolhido: caminho dentro das raízes, campos conhecidos.
+      depois: (args) => {
+        const metodo =
+          args.method as (typeof METODOS_DO_MOTOR_PELA_INTERFACE)[number];
+        const params = objeto(PARAMETROS_DO_MOTOR[metodo])(
+          args.params ?? {},
+          "params",
+        );
+        return { ...args, params };
       },
     },
     engine_reiniciar: vazio,
@@ -520,7 +606,6 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
         veiculo: texto({ max: 200 }),
         motor: texto({ max: 200, vazio: true }),
         preco: texto({ max: 50, vazio: true }),
-        python: opcional(caminhoQualquer),
       },
     },
     video_cancelar: vazio,

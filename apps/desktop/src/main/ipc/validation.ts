@@ -12,6 +12,11 @@ import path from "node:path";
 export type Regra<T = unknown> = (valor: unknown, campo: string) => T;
 export type Esquema = {
   args?: Record<string, Regra>;
+  /**
+   * Validação que depende de mais de um campo (ex.: os `params` de `engine_call` variam com o `method`).
+   * Roda sobre os argumentos já validados e devolve os argumentos finais.
+   */
+  depois?: (args: Record<string, unknown>) => Record<string, unknown>;
   cabecalhos?: Record<string, Regra>;
   corpo?: "obrigatorio";
 };
@@ -191,7 +196,8 @@ export function validarChamada(
     cabecalhos === undefined || cabecalhos === null ? {} : cabecalhos;
   if (!ehObjetoPlano(brutoCab)) return erro("cabecalhos", "um objeto");
 
-  const limpos = aplicar(esquema.args ?? {}, bruto, "");
+  const aplicados = aplicar(esquema.args ?? {}, bruto, "");
+  const limpos = esquema.depois ? esquema.depois(aplicados) : aplicados;
   const limposCab = aplicar(esquema.cabecalhos ?? {}, brutoCab, "cabeçalho");
 
   if (corpo !== null && !(corpo instanceof Uint8Array))
