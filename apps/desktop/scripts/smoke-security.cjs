@@ -306,13 +306,44 @@ app.whenReady().then(async () => {
           r.ok && r.v && typeof r.v === "object",
           JSON.stringify(r).slice(0, 100),
         );
-        r = await inv("engine_call", { method: "soulia_planilha", params: {} });
+        // `ler_crlv` sem arquivo passa pelo esquema (os dois campos são opcionais) e chega ao Python.
+        r = await inv("engine_call", { method: "ler_crlv", params: {} });
         registra(
-          "motor: campo ausente vira mensagem clara (não derruba o motor)",
-          !r.ok && (/Campo ausente/.test(r.e) || /No module named/.test(r.e)),
+          "motor: parâmetro faltando vira mensagem clara (não derruba o motor)",
+          !r.ok &&
+            /Arquivo não recebido|Campo ausente|No module named/.test(r.e),
           /No module named/.test(r.e)
             ? "ignorado: dependência opcional ausente"
             : r.e,
+        );
+        r = await inv("engine_call", {
+          method: "ler_crlv",
+          params: {
+            origem: path.join(os.tmpdir(), "fora-das-raizes", "x.pdf"),
+          },
+        });
+        registra(
+          "motor: caminho de origem fora das pastas do app é recusado antes de chegar ao Python",
+          !r.ok && /fora da pasta de dados/.test(r.e),
+          r.e,
+        );
+        r = await inv("engine_call", { method: "soulia_planilha", params: {} });
+        registra(
+          "motor: método interno (planilha da Soul IA) não é chamável pela interface",
+          !r.ok && /method/.test(r.e),
+          r.e,
+        );
+        r = await inv("video_gerar", {
+          pasta: raiz,
+          veiculo: "TESTE",
+          motor: "",
+          preco: "",
+          python: "C:/Windows/System32/cmd.exe",
+        });
+        registra(
+          "motor: o executável do vídeo informado pela interface é ignorado (sem motor, falha por falta dele)",
+          !r.ok && !/cmd\.exe/.test(r.e),
+          r.e,
         );
         r = await inv("engine_call", { method: "ping", params: {} });
         registra(

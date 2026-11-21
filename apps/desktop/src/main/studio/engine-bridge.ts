@@ -352,11 +352,11 @@ export function cancelarVideo(): boolean {
 function executarVideo(
   script: string,
   argumentos: string[],
-  python: string | null | undefined,
   emitir: Emitir,
 ): Promise<VideoPronto> {
   const pasta = pastaMotor();
-  const exe = python || pythonMotor();
+  // Sempre o Python do ambiente do motor: o executável nunca vem da interface.
+  const exe = pythonMotor();
   if (!exe || !pasta)
     throw new Error(
       "Instale o motor opcional de vídeo (docs/architecture/python-engine.md).",
@@ -422,22 +422,20 @@ export function gerarVideo(
     veiculo: string;
     motor: string;
     preco: string;
-    python?: string | null;
   },
   emitir: Emitir,
 ): Promise<VideoPronto> {
   return executarVideo(
     "render.py",
     [args.pasta, args.veiculo, args.motor, args.preco],
-    args.python,
     emitir,
   );
 }
 
 /** Versão leve para anúncio: recodifica o VIDEO_*.mp4 em ANUNCIO/ (apps/engine/video/light_export.py). */
 export function gerarVideoLeve(
-  args: { pasta: string; python?: string | null },
+  args: { pasta: string },
   emitir: Emitir,
 ): Promise<VideoPronto> {
-  return executarVideo("light_export.py", [args.pasta], args.python, emitir);
+  return executarVideo("light_export.py", [args.pasta], emitir);
 }
