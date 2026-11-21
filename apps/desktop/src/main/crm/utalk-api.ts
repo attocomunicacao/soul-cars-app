@@ -4,6 +4,7 @@
  */
 
 import { classificarEtiqueta } from "../../shared/crm-tags";
+import { buscarComRetentativa } from "../core/http-retry";
 
 export const BASE_UTALK = "https://app-utalk.umbler.com/api";
 
@@ -43,7 +44,6 @@ type Etiqueta = { id: string; name?: string; emoji?: string | null };
 
 const TOMADA = 100;
 const SIMULTANEAS = 4;
-const ESPERA_TENTATIVA_MS = 800;
 
 export class ErroUtalk extends Error {}
 
@@ -57,28 +57,23 @@ export async function pedir<T>(
   for (const [k, v] of Object.entries(consulta))
     for (const item of Array.isArray(v) ? v : [v])
       url.searchParams.append(k, item);
-  const TENTATIVAS = 3;
   let r: Response | undefined;
   let falha: unknown;
-  for (let tentativa = 1; tentativa <= TENTATIVAS; tentativa++) {
-    try {
-      r = await buscar(url.toString(), {
+  try {
+    // Leitura: repete rede e 502/503/504 (até 3 chamadas no total) e espera o `Retry-After` em 429.
+    r = await buscarComRetentativa(
+      buscar,
+      url.toString(),
+      {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
-        signal: AbortSignal.timeout(30_000),
-      });
-      // Erro do servidor costuma passar sozinho; as demais respostas seguem para a checagem abaixo.
-      if (r.status < 500 || tentativa === TENTATIVAS) break;
-    } catch (e) {
-      falha = e;
-      r = undefined;
-    }
-    if (tentativa < TENTATIVAS)
-      await new Promise((ok) =>
-        setTimeout(ok, ESPERA_TENTATIVA_MS * tentativa),
-      );
+      },
+      { timeoutMs: 30_000, tentativasTransitorias: 2, tentativas429: 3 },
+    );
+  } catch (e) {
+    falha = e;
   }
   if (!r) {
     const nome = falha instanceof Error ? falha.name : "";
