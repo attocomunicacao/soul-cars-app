@@ -9,6 +9,7 @@
  */
 import { BrowserWindow, WebContentsView, shell } from "electron";
 import * as caminhos from "../core/paths";
+import { urlDoGerenciadorMeta } from "./meta-url";
 
 export type IdEmbutida = "crm" | "bndv" | "meta";
 
@@ -34,8 +35,8 @@ const SITES: Record<
     hosts: /(^|\.)(bndv\.com\.br|google\.com|microsoftonline\.com)$/i,
   },
   meta: {
-    url: () =>
-      "https://adsmanager.facebook.com/adsmanager/manage/all?nav_source=comet&nav_entry_point=comet_bookmark&campaign_id=415838275119884&placement=bkmk_admgr&extra_1=campaign&act=340363905178843",
+    // A conta vem da configuração do usuário (a mesma do painel Campanhas); nenhum ID fica no código.
+    url: () => urlDoGerenciadorMeta(caminhos.lerConfig().metaConta as string),
     sessao: "persist:meta",
     hosts: /(^|\.)(facebook|meta|instagram|fbsbx)\.com$/i,
   },
