@@ -69,8 +69,8 @@ def ajustar_datas(ws, ano: int, mes: int) -> None:
     (primeiro bloco dia 5, segundo dia 20). A data do TOTAL acompanha."""
     for i, (cabecalho, total) in enumerate(_blocos(ws)):
         dia = DIAS_VENCIMENTO[min(i, len(DIAS_VENCIMENTO) - 1)]
-        for l in range(cabecalho + 1, total):
-            ws.cell(l, COL_VENCIMENTO).value = dt.datetime(ano, mes, dia)
+        for linha in range(cabecalho + 1, total):
+            ws.cell(linha, COL_VENCIMENTO).value = dt.datetime(ano, mes, dia)
         ws.cell(total, COL_VENCIMENTO).value = f"{dia:02d}/{mes:02d}/{ano}"
 
 
