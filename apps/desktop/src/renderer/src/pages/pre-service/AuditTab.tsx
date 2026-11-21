@@ -21,7 +21,7 @@ const DESFECHO = {
 } as const;
 
 /** Cada resposta da IA com o que chegou, o que o modelo devolveu e os sinais de alerta. */
-export function Auditoria({
+export function AuditTab({
   p,
   aoErro,
 }: {

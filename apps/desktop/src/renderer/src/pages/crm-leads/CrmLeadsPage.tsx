@@ -25,11 +25,11 @@ import {
 import { Segmentado, Vazio, fmt, ha, textoDoErro } from "../../app/components";
 import { Icon } from "../../app/icons";
 import { invoke } from "../../lib/desktop-bridge";
-import { Painel } from "./Painel";
+import { Dashboard } from "./Dashboard";
 import { Kanban } from "./Kanban";
-import { ListaLeads } from "./ListaLeads";
-import { Atividade } from "./Atividade";
-import { DetalheLead } from "./DetalheLead";
+import { LeadList } from "./LeadList";
+import { Activity } from "./Activity";
+import { LeadDetail } from "./LeadDetail";
 
 type Dados = {
   snapshot: SnapshotCrm | null;
@@ -271,7 +271,7 @@ export function CrmLeadsPage({
           </Vazio>
         </div>
       ) : visao === "painel" ? (
-        <Painel
+        <Dashboard
           snap={snap}
           cfg={cfg!}
           leads={leads}
@@ -281,12 +281,12 @@ export function CrmLeadsPage({
       ) : visao === "kanban" ? (
         <Kanban snap={snap} cfg={cfg!} leads={leads} abrir={setAberto} />
       ) : visao === "leads" ? (
-        <ListaLeads snap={snap} cfg={cfg!} leads={leads} abrir={setAberto} />
+        <LeadList snap={snap} cfg={cfg!} leads={leads} abrir={setAberto} />
       ) : (
-        <Atividade eventos={dados.events} intervalo={intervalo} />
+        <Activity eventos={dados.events} intervalo={intervalo} />
       )}
       {aberto && snap && (
-        <DetalheLead
+        <LeadDetail
           lead={aberto}
           snap={snap}
           cfg={cfg!}

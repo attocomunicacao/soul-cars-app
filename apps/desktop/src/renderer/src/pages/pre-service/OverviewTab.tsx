@@ -11,7 +11,7 @@ const STATUS = {
 } as const;
 
 // ------------------------------------------------------------------ Visão geral
-export function Visao({ p, agir }: { p: Painel; agir: Agir }) {
+export function OverviewTab({ p, agir }: { p: Painel; agir: Agir }) {
   const comIa = p.chats.filter((c) => c.status === "ativo").length;
   const comEquipe = p.chats.filter((c) => c.status === "humano").length;
   return (

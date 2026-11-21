@@ -22,7 +22,7 @@ import { Avatar, Kpi, fmt } from "../../app/components";
 import { etiquetasDeStatus, mapaEtiquetas, mapaSdr } from "./lead-helpers";
 
 // ------------------------------------------------------------------ Painel
-export function Painel({
+export function Dashboard({
   snap,
   cfg,
   leads,

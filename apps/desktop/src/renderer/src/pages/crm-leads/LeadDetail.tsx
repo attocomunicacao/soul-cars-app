@@ -11,7 +11,7 @@ import { openUrl } from "../../lib/desktop-bridge";
 import { Etiquetas, mapaSdr } from "./lead-helpers";
 
 // ------------------------------------------------------------------ Detalhe
-export function DetalheLead({
+export function LeadDetail({
   lead: l,
   snap,
   cfg,

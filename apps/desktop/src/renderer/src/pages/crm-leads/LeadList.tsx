@@ -16,7 +16,7 @@ import { Etiquetas, mapaEtiquetas, mapaSdr } from "./lead-helpers";
 // ------------------------------------------------------------------ Leads
 type ColunaOrdem = "name" | "car" | "status" | "member" | "lastActive";
 
-export function ListaLeads({
+export function LeadList({
   snap,
   cfg,
   leads,
