@@ -1323,7 +1323,7 @@ documentos = [
 planilha = [{ name = "openpyxl", specifier = ">=3.1.5" }]
 recorte = [
     { name = "pillow", specifier = ">=13.0.0" },
-    { name = "rembg", extras = ["cpu"], specifier = ">=2.0.86" },
+    { name = "rembg", extras = ["cpu"], specifier = ">=2.0.87" },
 ]
 video = [
     { name = "faster-whisper", specifier = ">=1.2.1" },
