@@ -3,7 +3,8 @@
  * Funil): cartão de número, controle segmentado, selo de situação, lista de destaques,
  * gaveta lateral e estado vazio. Visual em DESIGN.md.
  */
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { proximoIndiceDeFoco } from "../lib/focus-trap";
 import { Icon, type NomeIcone } from "./icons";
 
 /** Cartão de número (KPI): rótulo, valor grande e uma linha de apoio. */
@@ -146,7 +147,14 @@ export function Destaques({
   );
 }
 
-/** Gaveta lateral (detalhe de um lead). Fecha no X, no Esc ou clicando fora. */
+/** Itens que recebem foco pelo teclado dentro de um diálogo. */
+const FOCAVEIS =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Gaveta lateral (detalhe de um lead). Fecha no X, no Esc ou clicando fora. O Tab circula só
+ * dentro dela e, ao fechar, o foco volta ao elemento que a abriu.
+ */
 export function Gaveta({
   titulo,
   fechar,
@@ -156,8 +164,34 @@ export function Gaveta({
   fechar: () => void;
   children: ReactNode;
 }) {
+  const gaveta = useRef<HTMLElement>(null);
+  // Quem tinha o foco ao abrir é guardado já na primeira renderização: o `autoFocus` do botão de
+  // fechar roda na montagem, antes de qualquer efeito, e `document.activeElement` já seria ele.
+  const quemAbriu = useRef<Element | null | undefined>(undefined);
+  if (quemAbriu.current === undefined)
+    quemAbriu.current = document.activeElement;
+  // Só no fechamento: um `fechar` novo a cada render não pode mexer no foco.
+  useEffect(
+    () => () => {
+      const anterior = quemAbriu.current;
+      if (anterior instanceof HTMLElement) anterior.focus();
+    },
+    [],
+  );
   useEffect(() => {
-    const tecla = (e: KeyboardEvent) => e.key === "Escape" && fechar();
+    const tecla = (e: KeyboardEvent) => {
+      if (e.key === "Escape") return fechar();
+      if (e.key !== "Tab" || !gaveta.current) return;
+      const itens = [...gaveta.current.querySelectorAll<HTMLElement>(FOCAVEIS)];
+      const destino = proximoIndiceDeFoco(
+        itens.length,
+        itens.indexOf(document.activeElement as HTMLElement),
+        e.shiftKey,
+      );
+      if (destino === null) return;
+      e.preventDefault();
+      itens[destino].focus();
+    };
     window.addEventListener("keydown", tecla);
     return () => window.removeEventListener("keydown", tecla);
   }, [fechar]);
@@ -167,6 +201,7 @@ export function Gaveta({
       onMouseDown={(e) => e.target === e.currentTarget && fechar()}
     >
       <aside
+        ref={gaveta}
         className="gaveta"
         role="dialog"
         aria-modal="true"
