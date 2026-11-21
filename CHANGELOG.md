@@ -2,6 +2,20 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.1.0]
+
+Versão de revisão: mais segurança e estabilidade, sem mudar o que o app faz no dia a dia.
+
+- **Mais segurança nas configurações**: a pasta do motor e a raiz dos dados só são aceitas quando escolhidas pelo seletor de pastas; arquivos de atalho (`.url`) e outros tipos que o Windows executaria não abrem mais pelo app; pastas que apontam para fora da pasta de dados (atalhos do Windows) são reconhecidas e barradas.
+- **Pré-atendimento IA**: o endereço do Ollama só aceita este computador ou a rede local (antes aceitava qualquer endereço da internet).
+- **Sites embutidos** (uTalk, BNDV e Meta): só navegam por `http(s)` e só recebem permissões (microfone, câmera, notificações) das próprias páginas; a janela de atualização do BNDV passou a rodar em modo protegido.
+- **Instalação do motor mais confiável**: o instalador do motor (uv) é baixado numa versão fixa e verificado antes de usar, e a instalação não quebra mais quando o nome do usuário do Windows tem apóstrofo.
+- **Motor Python mais resistente**: uma resposta inválida não derruba mais o motor, e os erros aparecem com a causa ("Campo ausente na requisição: ...") em vez de uma mensagem genérica. O que o motor registra de erro agora vai para o log do app.
+- **Editor de criativos**: se os ajustes salvos de um veículo estiverem corrompidos, as fotos carregam do mesmo jeito e o app avisa que os ajustes foram ignorados.
+- **CRM · Leads**: a gaveta de detalhe do lead prende o Tab dentro dela e, ao fechar com Esc, devolve o foco a quem a abriu.
+- **Registro de erros**: os erros dos comandos internos passam a ir para o log do app (`app.log`), o que facilita o suporte.
+- Por baixo dos panos, sem mudar o comportamento: o código do Pré-atendimento IA e das páginas Pré-atendimento e CRM · Leads foi dividido em módulos menores, e os tokens do uTalk e do Meta e a chave do Groq passaram a usar um único cofre. Os valores já salvos continuam valendo.
+
 ## [1.0.23]
 
 - **Laboratório da IA mais rápido e igual ao atendimento real**: os testes passam a usar os exemplos reais da equipe (como o atendimento com "usar histórico do CRM" ligado) e mostram, em cada resposta, quem respondeu, quantos tokens gastou e quanto tempo levou. Antes de rodar, a tela estima quantas respostas e tokens a seleção vai gastar
