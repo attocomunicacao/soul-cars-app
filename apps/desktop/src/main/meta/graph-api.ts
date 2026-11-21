@@ -16,6 +16,7 @@ import {
   type DiaMeta,
   type LinhaCampanha,
 } from "../../shared/meta-ads";
+import { buscarComRetentativa } from "../core/http-retry";
 import type { Buscar } from "../crm/utalk-api";
 
 /** Versão padrão da Graph API. */
@@ -51,6 +52,16 @@ export function mensagemDoMeta(e: {
   return `Meta: ${e.message ?? "erro da API"}`;
 }
 
+/** Verdadeiro para https em graph.facebook.com (a única origem para onde o token pode ir). */
+function enderecoDaMeta(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && u.hostname === "graph.facebook.com";
+  } catch {
+    return false;
+  }
+}
+
 /** GET paginado (segue `paging.next`). Token inválido vira mensagem clara. */
 export async function graphGet<T = Record<string, unknown>>(
   buscar: Buscar,
@@ -63,10 +74,14 @@ export async function graphGet<T = Record<string, unknown>>(
   for (let i = 0; proxima && i < maxPaginas; i++) {
     let res: Response;
     try {
-      res = await buscar(proxima, {
-        headers: { Authorization: `Bearer ${token}` },
-        signal: AbortSignal.timeout(45_000),
-      });
+      // GET: repete falha de rede e 502/503/504. O limite de uso da Meta (códigos 4, 17, 613) vem como
+      // JSON de erro e é tratado abaixo; esperar segundos não o resolve, então a mensagem pede para tentar depois.
+      res = await buscarComRetentativa(
+        buscar,
+        proxima,
+        { headers: { Authorization: `Bearer ${token}` } },
+        { timeoutMs: 45_000, tentativasTransitorias: 2 },
+      );
     } catch (e) {
       throw new Error(`Sem conexão com o Meta (${(e as Error).message})`, {
         cause: e,
@@ -82,6 +97,9 @@ export async function graphGet<T = Record<string, unknown>>(
     }
     out.push(...(json.data ?? []));
     proxima = json.paging?.next;
+    // O token vai em cada pedido: só segue para a própria Meta, nunca para um endereço vindo da resposta.
+    if (proxima && !enderecoDaMeta(proxima))
+      throw new Error("O Meta devolveu um endereço inesperado na paginação.");
   }
   return out;
 }

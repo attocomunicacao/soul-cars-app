@@ -575,6 +575,9 @@ export type EntradaContexto = {
   ficha?: FichaLead;
 };
 
+/** Só o primeiro nome: o nome completo não precisa sair do computador para o modelo externo. */
+const primeiroNome = (nome = "") => nome.trim().split(/\s+/)[0] ?? "";
+
 export const variaveis = (
   loja: LojaIa,
   nomeAgente: string,
@@ -680,7 +683,7 @@ export function montarMensagens(e: EntradaContexto) {
     `
 
 ${REGRAS_DE_ENCAMINHAMENTO}` +
-    `\n\nNome do lead: ${e.nomeLead || "desconhecido"}.\n\nCONTEXTO:\n${contexto}` +
+    `\n\nNome do lead: ${primeiroNome(e.nomeLead) || "desconhecido"}.\n\nCONTEXTO:\n${contexto}` +
     avisoDeHorario(e.conversa) +
     avisoDeLink(e.conversa) +
     avisoDeEstoque(e.veiculos, e.conversa) +

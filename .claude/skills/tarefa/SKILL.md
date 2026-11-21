@@ -43,6 +43,6 @@ Ao final: commit com mensagem em português, push e PR; atualize o CHANGELOG.md 
 ## 4. Abra o chat
 
 1. Mostre o prompt ao usuário em um bloco curto.
-2. Chame `start_session` com `initiation: "user_asked"`, `context: "fresh"`, `title` = "<Módulo>: <resumo>", `prompt` = o prompt montado, `background` = "Projeto Soul Cars (monorepo Electron + React em soul-cars/). Regras em AGENTS.md e CLAUDE.md. Tarefa criada pelo orquestrador /tarefa.", e `branch_name` = o slug.
+2. Chame `start_session` com `initiation: "user_asked"`, `context: "fresh"`, `title` = "<Módulo>: <resumo>", `prompt` = o prompt montado, `background` = "Projeto Soul Cars (monorepo Electron + React na raiz do projeto). Regras em AGENTS.md e CLAUDE.md. Tarefa criada pelo orquestrador /tarefa.", e `branch_name` = o slug.
 3. Com `list_groups`, ache o grupo da tabela e chame `move_sessions` com o id da nova sessão.
 4. Responda em uma linha com o link da sessão. Fim; não continue a tarefa aqui.

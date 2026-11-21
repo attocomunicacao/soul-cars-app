@@ -5,6 +5,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { gravarAtomico } from "./atomic-write";
 import { userData } from "./paths";
 
 /** Caminho de um arquivo dentro da pasta de dados interna. */
@@ -22,8 +23,5 @@ export function lerJson<T>(arquivo: string, padrao: T): T {
 
 /** Grava um JSON criando a pasta, de forma atômica. */
 export function gravarJson(arquivo: string, dados: unknown) {
-  fs.mkdirSync(path.dirname(arquivo), { recursive: true });
-  const tmp = `${arquivo}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(dados));
-  fs.renameSync(tmp, arquivo);
+  gravarAtomico(arquivo, JSON.stringify(dados));
 }

@@ -13,8 +13,6 @@ export type NomeIcone =
   | "crm"
   | "meta"
   | "leads"
-  | "bndv"
-  | "financas"
   | "studio"
   | "ajustes"
   | "menu"
@@ -61,18 +59,6 @@ const TRACOS: Record<NomeIcone, ReactElement> = {
     <>
       <circle cx="9" cy="8" r="3.2" />
       <path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.6M18 14a5 5 0 0 1 2.5 5" />
-    </>
-  ),
-  bndv: (
-    <>
-      <rect x="4" y="4" width="16" height="16" rx="3" />
-      <path d="M8 15v-3M12 15V9M16 15v-5" />
-    </>
-  ),
-  financas: (
-    <>
-      <rect x="3" y="6" width="18" height="12" rx="2.5" />
-      <circle cx="12" cy="12" r="2.5" />
     </>
   ),
   studio: (

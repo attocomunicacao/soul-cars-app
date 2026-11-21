@@ -6,10 +6,9 @@
  *
  *  - "estoque"  → lista de veículos, vitrine e relatório completo (página inicial)
  *  - "studio"   → ficha de um veículo (aberta a partir do estoque; não aparece no menu)
- *  - "crm" / "bndv" / "meta" → sites embutidos (WebContentsView no processo principal)
- *  - "leads"    → painel do CRM e memória da Soul IA
+ *  - "crm" / "meta" → sites embutidos (WebContentsView no processo principal)
+ *  - "leadsCrm" / "metaPainel" / "funil" → painéis de dados (Leads, Campanhas, Meta → CRM)
  *  - "preAtendimento" → a IA que atende pelo WhatsApp os leads com a etiqueta de gatilho
- *  - "financas" → planilha financeira do mês
  */
 import type { NomeIcone } from "./icons";
 
@@ -18,10 +17,7 @@ export type Pagina =
   | "estoque"
   | "studio"
   | "crm"
-  | "leads"
-  | "bndv"
   | "meta"
-  | "financas"
   | "leadsCrm"
   | "metaPainel"
   | "funil"
@@ -63,22 +59,10 @@ export const MENU: readonly ItemMenu[] = [
   { pagina: "funil", rotulo: "Meta → CRM", icone: "funil", grupo: "Funil" },
 ];
 
-/**
- * Páginas fora do menu desde a versão 1.0.3 (o CRM e o Meta Ads voltaram depois). O código delas continua no app
- * (pages/leads, pages/finance, pages/embedded); para trazer uma de volta, mova o
- * item para `MENU`. O login do BNDV não depende do item "BNDV": o botão
- * "Atualizar BNDV" abre a janela de login sozinho quando a sessão expira.
- */
-export const MENU_OCULTO: readonly ItemMenu[] = [
-  { pagina: "leads", rotulo: "Painel antigo e Soul IA", icone: "leads" },
-  { pagina: "bndv", rotulo: "BNDV", icone: "bndv" },
-  { pagina: "financas", rotulo: "Finanças", icone: "financas" },
-];
-
 /** Páginas que mostram um site externo embutido (ocupam a área inteira). */
-export const PAGINAS_EMBUTIDAS = ["crm", "bndv", "meta"] as const;
+export const PAGINAS_EMBUTIDAS = ["crm", "meta"] as const;
 
-/** Verdadeiro quando a página é um site embutido (CRM, BNDV ou Meta Ads). */
+/** Verdadeiro quando a página é um site embutido (CRM ou Meta Ads). */
 export function ehEmbutida(
   pagina: Pagina,
 ): pagina is (typeof PAGINAS_EMBUTIDAS)[number] {

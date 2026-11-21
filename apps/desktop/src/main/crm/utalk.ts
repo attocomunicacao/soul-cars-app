@@ -1,12 +1,11 @@
 /**
- * Métricas do CRM (uTalk). O token da API é gerado pelo usuário em account.umbler.com/profile e fica
+ * Token do CRM (uTalk). O token da API é gerado pelo usuário em account.umbler.com/profile e fica
  * só neste computador, cifrado pelo sistema (safeStorage) dentro do config.json. A interface nunca
  * recebe o token de volta: só sabe se ele existe.
  */
 import * as caminhos from "../core/paths";
 import { cofre } from "../core/secret-store";
 import { limparSegredo } from "../core/secret-vault";
-import { visaoGeral, type Buscar } from "./utalk-api";
 
 const CHAVE = "utalkTokenCifrado";
 
@@ -19,7 +18,7 @@ function lerToken(): string | null {
   return cofre.ler(CHAVE);
 }
 
-export function estadoUtalk() {
+function estadoUtalk() {
   return { configurado: lerToken() !== null };
 }
 
@@ -37,10 +36,4 @@ export function salvarTokenUtalk(token: string) {
 export function removerTokenUtalk() {
   cofre.apagar(CHAVE);
   return estadoUtalk();
-}
-
-export async function visaoUtalk() {
-  const token = lerToken();
-  if (!token) throw new Error("Cadastre o token do uTalk primeiro.");
-  return visaoGeral(fetch as Buscar, token);
 }
