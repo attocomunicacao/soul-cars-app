@@ -297,16 +297,6 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
   const vazio: Esquema = {};
 
   return {
-    // ---- Instagram ----
-    instagram_plano: { args: { id: veiculo } },
-    instagram_estado: { args: { id: veiculo } },
-    instagram_conta: { args: { conta: texto({ max: 100, vazio: true }) } },
-    instagram_abrir: vazio,
-    instagram_publicar: { args: { id: veiculo } },
-    instagram_cancelar: vazio,
-
-    instagram_reiniciar: { args: { id: veiculo } },
-
     // ---- banco, caminhos e configuração ----
     ...esquemasDoBanco(),
     app_data: vazio,

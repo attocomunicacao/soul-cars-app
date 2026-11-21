@@ -18,7 +18,6 @@
     "smoke:security": "electron scripts/smoke-security.cjs",
     "smoke:csp": "electron scripts/smoke-csp.cjs",
     "smoke:pages": "electron scripts/smoke-pages.cjs",
-    "smoke:instagram": "node scripts/prepare-instagram-smoke.cjs && electron scripts/instagram-smoke.cjs",
     "screenshots": "electron scripts/capture-screenshots.cjs",
     "package": "electron-vite build && electron-builder --win --publish never",
     "lab:ai:offline": "vitest run tests/lab-offline.test.ts tests/lab-runner.test.ts tests/pre-service-guard.test.ts",

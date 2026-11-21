@@ -266,7 +266,7 @@ Não afirmar que passaram sem executar na revisão em questão. Nesta tarefa de 
 4. Ler testes do mesmo domínio antes de modificar regras.
 5. Fazer alteração, executar verificações proporcionais e atualizar o trecho deste guia afetado.
 
-Documentação complementar: [índice](../README.md), [visão geral anterior](ai-assistant-overview.md), [arquitetura](../architecture/architecture-and-migration.md), [dados/backup](../guides/data-and-backup.md), [motor](../architecture/python-engine.md), [Instagram](../guides/instagram.md), [CRM](../crm/crm-data-and-reports.md) e [Soul IA](../crm/soul-ai.md). Para o contrato uTalk, consultar `13-api-utalk-biblioteca.md` por assunto, sem carregar toda a biblioteca em cada chat.
+Documentação complementar: [índice](../README.md), [visão geral anterior](ai-assistant-overview.md), [arquitetura](../architecture/architecture-and-migration.md), [dados/backup](../guides/data-and-backup.md), [motor](../architecture/python-engine.md), [CRM](../crm/crm-data-and-reports.md) e [Soul IA](../crm/soul-ai.md). Para o contrato uTalk, consultar `13-api-utalk-biblioteca.md` por assunto, sem carregar toda a biblioteca em cada chat.
 # Atualização das tarjas (23/10/2026)
 
 Consultar [21-layout-e-movimento-das-tarjas.md](../video/banner-layout-and-motion.md): padding uniforme de 32 px, largura máxima de 936 px, alturas pelo texto, espaçamento de 8 px e flutuação contínua sincronizada. Mantém as legendas brancas em Lato e as entradas/saídas suaves existentes.

@@ -26,19 +26,14 @@ export function Creatives({
   veiculo: v,
   onChange,
   onBack,
-  prepararInstagram = false,
-  onInstagramPronto,
 }: {
   veiculo: Veiculo;
   onChange: (v: Veiculo) => void;
   onBack: () => void;
-  prepararInstagram?: boolean;
-  onInstagramPronto?: () => void;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const atual = useRef(v);
   atual.current = v;
-  const exportadosInstagram = useRef(new Set<string>());
   const [aviso, setAviso] = useState("");
   const post = (data: unknown) =>
     frame.current?.contentWindow?.postMessage(
@@ -106,7 +101,6 @@ export function Creatives({
               type: "soul:vitrine-photos",
               photos: await carregarFotosVitrine(v.pasta),
             });
-          if (prepararInstagram) post({ type: "soul:instagram-export" });
           break;
         }
         case "soul:ajustes": {
@@ -157,25 +151,12 @@ export function Creatives({
             message: `Salvo em ${caminho}`,
           });
           setAviso(`Salvo em ${caminho}`);
-          if (
-            prepararInstagram &&
-            /-(carrossel-[123]|trafego-pago)\.png$/i.test(data.name)
-          ) {
-            exportadosInstagram.current.add(data.name);
-            if (exportadosInstagram.current.size === 4) onInstagramPronto?.();
-          }
           if (v.status === "rascunho") {
             await atualizarVeiculo(v.id, { status: "criativos" });
             onChange({ ...atual.current, status: "criativos" });
           }
           break;
         }
-        case "soul:instagram-export-error":
-          setAviso(
-            data.message ||
-              "Não foi possível gerar os criativos do Instagram. Confira os campos e as fotos.",
-          );
-          break;
       }
     } catch (e) {
       setAviso(String(e));

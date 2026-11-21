@@ -24,7 +24,6 @@ function arquivos(pasta: string, ext: RegExp, saida: string[] = []): string[] {
 const SEM_ESTILO_DE_PROPOSITO = new Set<string>([
   "funil", // contêiner do painel Funil; os filhos (`funil-*`) têm estilo
   "saude", // contêiner do painel de saúde das campanhas; os filhos (`saude-*`) têm estilo
-  "instagram", // contêiner do publicador; os filhos (`instagram-*`) têm estilo
 ]);
 
 describe("classes CSS do renderer", () => {
