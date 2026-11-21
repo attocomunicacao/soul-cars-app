@@ -15,7 +15,6 @@ Documentação do Soul Cars, organizada por assunto (pastas e arquivos em inglê
 | [getting-started.md](guides/getting-started.md) | Instalação e primeiro uso |
 | [user-manual.md](guides/user-manual.md) | Manual do usuário: do estoque ao anúncio |
 | [studio-flow.md](guides/studio-flow.md) | Fluxo de produção no Studio |
-| [instagram.md](guides/instagram.md) | Instagram: conexão, automação e pesquisa |
 | [data-and-backup.md](guides/data-and-backup.md) | Onde ficam os dados e como fazer backup |
 | [smart-app-control.md](guides/smart-app-control.md) | O Windows bloqueou o Soul Cars (Smart App Control) |
 

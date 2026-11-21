@@ -75,7 +75,6 @@ jobs:
         working-directory: apps/engine
       - run: npm run build -w apps/desktop
       - run: npm run smoke
-      - run: npm run smoke:instagram
       # Segurança, cofre, motor e gaveta (smoke:security) e páginas + acessibilidade (smoke:pages),
       # com perfil e dados temporários.
       - run: npm run smoke:security

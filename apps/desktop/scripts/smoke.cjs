@@ -156,19 +156,13 @@ app.on("browser-window-created", (_e, w) => {
           if(pacote.length===4)break;
           await new Promise(r=>setTimeout(r,500));
         }
-        if(pacote.length!==4)throw Error('Exportação do pacote Instagram falhou: '+frame.contentDocument.querySelector('#status').textContent);
-        // A ficha atual não possui aba Instagram: o pacote sai do editor.
-        const cadastrados=await window.soul.invocar('db_veiculos_listar',{});
-        const cadastrado=cadastrados.find(v=>v.placa==='ABC1D23');
-        if(!cadastrado)throw Error('Veículo do pacote Instagram não encontrado');
-        const plano=await window.soul.invocar('instagram_plano',{id:cadastrado.id});
-        if(plano.arquivos.filter(a=>a.tipo==='carrossel').length!==3||plano.arquivos.filter(a=>a.tipo==='capa').length!==1)throw Error('Plano do Instagram não reconheceu os quatro criativos exportados: '+plano.pendencias.join('; '));
+        if(pacote.length!==4)throw Error('Exportação do pacote de criativos falhou: '+frame.contentDocument.querySelector('#status').textContent);
         const voltar=[...frame.contentDocument.querySelectorAll('button')].find(b=>b.textContent.trim()==='← Voltar aos dados');
         if(!voltar)throw Error('Botão Voltar aos dados ausente no editor de criativos');
         voltar.click();
         for(let i=0;i<30&&!document.querySelector('textarea.markdown');i++)await new Promise(r=>setTimeout(r,100));
         if(!document.querySelector('textarea.markdown')||document.querySelector('.editor iframe'))throw Error('Retorno do editor à ficha falhou');
-        return {pagina:document.querySelector('aside button.selected').textContent.trim(),sqlite:true,relatorioInterno:true,painelFotos:true,copia:true,editor:true,retornoFicha:true,planoInstagram:true,pacoteInstagram:true,estudio3D:true,motor:motor.python,exportacao:saved,png:estoque+'/123_FORD_FIESTA_ABC1D23/CRIATIVO/'+artes[0],png3D:estoque+'/123_FORD_FIESTA_ABC1D23/CRIATIVO/'+pacote.find(n=>n.endsWith('-carrossel-1.png')),versoes:window.soul.versoes};
+        return {pagina:document.querySelector('aside button.selected').textContent.trim(),sqlite:true,relatorioInterno:true,painelFotos:true,copia:true,editor:true,retornoFicha:true,pacoteDeCriativos:true,estudio3D:true,motor:motor.python,exportacao:saved,png:estoque+'/123_FORD_FIESTA_ABC1D23/CRIATIVO/'+artes[0],png3D:estoque+'/123_FORD_FIESTA_ABC1D23/CRIATIVO/'+pacote.find(n=>n.endsWith('-carrossel-1.png')),versoes:window.soul.versoes};
       })()`);
       // BNDV embutido: uma vista na janela principal, na sessão do BNDV (persist:bndv), sem preload.
       await w.webContents.executeJavaScript(

@@ -2,13 +2,13 @@
 
 > `CLAUDE.md` e `AGENTS.md` têm **exatamente o mesmo conteúdo**. Ao alterar um, copie para o outro.
 
-App desktop privado da Atto Comunicação para a revenda SOUL Cars: estoque e vendas do BNDV, ficha do veículo (Studio), produção de mídia, criativos, anúncios, Instagram, CRM uTalk, Meta Ads, Pré-atendimento IA e finanças. Tudo roda no Windows da loja; dados ficam no computador do usuário.
+App desktop privado da Atto Comunicação para a revenda SOUL Cars: estoque e vendas do BNDV, ficha do veículo (Studio), produção de mídia, criativos, anúncios, CRM uTalk, Meta Ads, Pré-atendimento IA e finanças. Tudo roda no Windows da loja; dados ficam no computador do usuário.
 
 ## Economia de contexto
 
 - Não varrer o repositório; ir direto aos arquivos do mapa abaixo e aos testes do mesmo domínio.
 - Ignorar `node_modules/`, `out/`, `dist/`, `apps/engine/.venv/`, `apps/engine/tessdata/`, `*.lock`, `package-lock.json`, fontes/binários em `public/creative-editor/assets/`.
-- Ler `docs/` só quando a tarefa tocar o assunto: visual → `DESIGN.md`; arquitetura → `docs/architecture/`; dados/backup → `docs/guides/data-and-backup.md`; CRM/uTalk → `docs/crm/`; vídeo → `docs/video/`; IA/testes da IA → `docs/ai/lab.md`; Instagram → `docs/guides/instagram.md`; releases → `docs/architecture/launcher-and-updates.md`.
+- Ler `docs/` só quando a tarefa tocar o assunto: visual → `DESIGN.md`; arquitetura → `docs/architecture/`; dados/backup → `docs/guides/data-and-backup.md`; CRM/uTalk → `docs/crm/`; vídeo → `docs/video/`; IA/testes da IA → `docs/ai/lab.md`; releases → `docs/architecture/launcher-and-updates.md`.
 - Vários docs (`docs/development/vibe-coding-guide.md`, `docs/development/handoff-context.md`, `docs/architecture/architecture-and-migration.md`) ainda citam nomes antigos em português (`ipc.ts`, `esquema.ts`, `Ficha.tsx`, `criativo/`…). **O mapa deste arquivo prevalece**; confira o caminho real antes de seguir um doc.
 
 ## Stack
@@ -48,7 +48,7 @@ Caminhos relativos a `apps/desktop/src/`.
 | Estoque (lista, vitrine, relatório) | `renderer/src/pages/inventory/*`, `lib/inventory-import.ts`, `lib/inventory-parse.ts`; main: `inventory/folder-sync.ts`, `showcase*.ts`, `ordering.ts` |
 | BNDV (extração, GraphQL) | `main/inventory/bndv-extraction.ts`, `bndv-graphql.ts`, `bndv-schema.ts`, `canceled-sales.ts`, `sales.ts` |
 | Balanço e relatório completo | `main/inventory/balance.ts`, `report.ts`, `report-print.ts`, `report-pdf.ts`; `renderer/src/lib/report-frame.ts` |
-| Ficha do veículo (Studio) | `renderer/src/pages/vehicle/VehiclePage.tsx` (abas Ficha → Produção → Criativos → Pronto para anunciar → Publicação → Instagram) |
+| Ficha do veículo (Studio) | `renderer/src/pages/vehicle/VehiclePage.tsx` (abas Ficha → Produção → Criativos) |
 | CRLV / DOC.md | `pages/vehicle/sheet/CrlvDocument.tsx`; engine `documents/crlv.py`, `ocr.py` |
 | Ficha técnica da web | `lib/web-specs-cache.ts`; engine `specs/web_lookup.py`, `carros_na_web.py`, `ficha_completa.py` |
 | DES.md e blocos de anúncio | `lib/description-generator.ts`, `shared/des-md.ts`, `shared/publication.ts`, fixture `apps/desktop/tests/fixtures/DES.md` |
@@ -56,7 +56,6 @@ Caminhos relativos a `apps/desktop/src/`.
 | Editor de criativos | `pages/vehicle/creatives/Creatives.tsx`; `renderer/public/creative-editor/` (`layout4.*`, `layout6.*`, `shadow.js`, `original-floor.js`, `workbench.*`, `app-bridge.js`, `flow-bridge.js`) |
 | Pronto para anunciar / pausa | `shared/ad-readiness.ts`, `pages/vehicle/ready-to-advertise/*`, `pages/inventory/AdPauseAlerts.tsx`, `shared/ad-ai-prompt.ts` |
 | Relatórios Meta Ads (XLSX) | `pages/vehicle/publication/AdsReports.tsx`, `lib/ads-reports.ts`, `lib/xlsx.ts` |
-| Instagram | `pages/vehicle/instagram/InstagramPublisher.tsx`, `shared/instagram.ts`, `main/studio/instagram.ts`, `instagram-browser.ts`, `instagram-plan.ts` |
 | Entrada por pasta sincronizada | `main/studio/intake.ts`, `shared/intake-rules.ts`, `pages/inventory/FileIntake.tsx` |
 | Banco do Studio | `main/studio/database.ts`, `schema.ts` (migrações), `repository.ts` (consultas), `legacy-import.ts`; `renderer/src/lib/database.ts`; `shared/vehicle.ts` (`EDITAVEIS`) |
 | IPC | `main/ipc/commands.ts`, `schemas.ts`, `validation.ts`; `preload/index.ts`; `renderer/src/lib/desktop-bridge.ts`, `types.ts` |
@@ -100,7 +99,7 @@ Regras puras (sem Electron, testáveis) ficam em `src/shared/` ou em arquivos do
   - token pessoal da API do uTalk (CRM) — só leitura;
   - token do Meta Ads (Graph API, permissão `ads_read`) — só leitura; painéis Leads, Campanhas e Funil;
   - Pré-atendimento IA (desligado por padrão): plano grátis do Groq (`groqChaveCifrada`) ou Ollama local. `main/pre-service/utalk-writer.ts` é o **único** ponto que escreve no uTalk (mensagens, fotos e etiquetas do contato).
-- Meta Ads e o registro de anúncios são locais: nada ativa ou pausa campanha remotamente. O Instagram publica de fato, só quando o usuário aciona.
+- Meta Ads e o registro de anúncios são locais: nada ativa ou pausa campanha remotamente.
 - O nome do pacote `apps/desktop` (`soul-cars-app`) define a pasta de dados `%APPDATA%\soul-cars-app`: não renomeie.
 - Toda versão publicada ganha uma seção `## [x.y.z]` em `CHANGELOG.md` (vira as notas no Launcher).
 - Antes de editar, confira `git status`/diff; não restaure arquivos indiscriminadamente.
@@ -124,7 +123,6 @@ Antes do commit: `npm run lint && npm run typecheck && npm test` (e `npm run bui
 | Alteração | Comando extra |
 |---|---|
 | IPC, preload, editor, disco | `npm run smoke` |
-| Instagram | `npm run smoke:instagram` |
 | Motor Python | `npm run test:engine` |
 | Pré-atendimento IA | `npm run lab:ai:offline` (sem modelo; `npm run lab:corpus` se mexeu no corpus) e `npm run eval:ai` (Ollama aberto) ou `npm run eval:ai:groq` |
 | Launcher | `npm run e2e:launcher` (exige `npm run package:desktop`) |
