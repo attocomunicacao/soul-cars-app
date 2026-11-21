@@ -3,6 +3,7 @@
  * cópia como DOC.md. Sem PDF na pasta, "Ler documento" pede o arquivo, anexa e lê de
  * uma vez (antes o botão ficava desativado sem explicar o motivo).
  */
+import { textoDoErro } from "../../../app/components";
 import { useEffect, useState, type ReactNode } from "react";
 import { open } from "../../../lib/desktop-bridge";
 import {
@@ -41,7 +42,7 @@ export function CrlvDocument({
         const s = await statusProducao(pasta);
         if (ativo) setStatus(s);
       } catch (e) {
-        if (ativo) setAviso(String(e));
+        if (ativo) setAviso(textoDoErro(e));
       } finally {
         consultando = false;
       }
@@ -66,7 +67,7 @@ export function CrlvDocument({
       await verificar();
       setAviso(resultado === false ? "Seleção cancelada." : mensagem);
     } catch (e) {
-      setAviso(String(e));
+      setAviso(textoDoErro(e));
     } finally {
       setOcupado(false);
       onBusy(false);

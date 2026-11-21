@@ -2,6 +2,7 @@
  * Área de um site embutido (CRM uTalk, Meta Ads): reserva o espaço na janela e
  * pede ao main para posicionar a WebContentsView sobre ele.
  */
+import { textoDoErro } from "../../app/components";
 import { useEffect, useRef } from "react";
 import { invoke } from "../../lib/desktop-bridge";
 
@@ -33,7 +34,7 @@ export function EmbeddedSite({
         y: r.top,
         largura: r.width,
         altura: r.height,
-      }).catch((e) => aoErro(String(e)));
+      }).catch((e) => aoErro(textoDoErro(e)));
     };
     const agendar = () => {
       cancelAnimationFrame(quadro);

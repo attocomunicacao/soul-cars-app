@@ -2,6 +2,7 @@
  * Ficha do veículo (Studio): abas Ficha → Produção → Criativos → Pronto para anunciar →
  * Publicação → Instagram. Lê CRLV, busca ficha técnica e gera DOC.md/DES.md.
  */
+import { textoDoErro } from "../../app/components";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Icon } from "../../app/icons";
 import {
@@ -323,7 +324,7 @@ export function VehiclePage({
       await fn();
       setAviso("Concluído.");
     } catch (e) {
-      setAviso(String(e));
+      setAviso(textoDoErro(e));
     } finally {
       setOcupado(false);
     }

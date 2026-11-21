@@ -2,6 +2,7 @@
  * Entrada de arquivos por pasta sincronizada (Drive/OneDrive): escolha da pasta, situação
  * do vigia e histórico do que foi copiado para cada veículo.
  */
+import { textoDoErro } from "../../app/components";
 import { useEffect, useState } from "react";
 import { obterConfig, salvarConfig } from "../../lib/database";
 import { ask, invoke, open, revealItemInDir } from "../../lib/desktop-bridge";
@@ -65,7 +66,7 @@ export function FileIntake() {
     const buscar = () =>
       void invoke<Resposta>("entrada_estado")
         .then((r) => ativo && setDados(r))
-        .catch((e) => ativo && setErro(String(e)));
+        .catch((e) => ativo && setErro(textoDoErro(e)));
     buscar();
     const timer = setInterval(buscar, 10_000);
     const desligar = [
@@ -91,7 +92,7 @@ export function FileIntake() {
     try {
       await fn();
     } catch (e) {
-      setErro(String(e));
+      setErro(textoDoErro(e));
     } finally {
       setOcupado(false);
     }

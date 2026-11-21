@@ -32,6 +32,7 @@ import {
   Segmentado,
   Vazio,
   fmt,
+  textoDoErro,
 } from "../../app/components";
 import { Icon } from "../../app/icons";
 import { invoke } from "../../lib/desktop-bridge";
@@ -88,7 +89,7 @@ export function FunnelPage({
         setD(r);
         setDatas(r.range);
       } catch (e) {
-        aoErro(String(e));
+        aoErro(textoDoErro(e));
       } finally {
         setCarregando(false);
       }
@@ -107,7 +108,7 @@ export function FunnelPage({
       await invoke("funil_config_salvar", { patch });
       await carregar();
     } catch (e) {
-      aoErro(String(e));
+      aoErro(textoDoErro(e));
     }
   };
 

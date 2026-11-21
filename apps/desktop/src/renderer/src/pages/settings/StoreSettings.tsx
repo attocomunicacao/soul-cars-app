@@ -2,6 +2,7 @@
  * Configurações da loja: dados da revenda, conta do Instagram e token pessoal do uTalk
  * (guardado cifrado no main, nunca devolvido à interface).
  */
+import { textoDoErro } from "../../app/components";
 import { useEffect, useState } from "react";
 import {
   obterLoja,
@@ -27,10 +28,10 @@ export function StoreSettings() {
   useEffect(() => {
     void obterLoja()
       .then(setLoja)
-      .catch((e) => setAviso(String(e)));
+      .catch((e) => setAviso(textoDoErro(e)));
     void obterConfig("campanha_modelo")
       .then((c) => setCampanhaModelo(c ?? ""))
-      .catch((e) => setAviso(String(e)));
+      .catch((e) => setAviso(textoDoErro(e)));
   }, []);
   async function salvar() {
     setOcupado(true);
@@ -39,7 +40,7 @@ export function StoreSettings() {
       await salvarConfig("campanha_modelo", campanhaModelo.trim() || null);
       setAviso("Configurações salvas.");
     } catch (e) {
-      setAviso(String(e));
+      setAviso(textoDoErro(e));
     } finally {
       setOcupado(false);
     }

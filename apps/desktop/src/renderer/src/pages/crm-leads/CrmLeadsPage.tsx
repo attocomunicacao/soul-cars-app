@@ -97,7 +97,7 @@ export function CrmLeadsPage({
         setDados(d);
         if (d.conectado) void atualizar();
       })
-      .catch((e) => aoErro(String(e)));
+      .catch((e) => aoErro(textoDoErro(e)));
     return () => {
       vivo = false;
     };

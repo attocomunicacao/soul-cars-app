@@ -2,6 +2,7 @@
  * Vitrine do estoque atual: um cartão por veículo em estoque (foto grande, preço em
  * destaque e ficha técnica resumida), com atalho para a ficha no Studio.
  */
+import { textoDoErro } from "../../app/components";
 import { Icon } from "../../app/icons";
 import { useEffect, useMemo, useState } from "react";
 import type { CartaoVitrine } from "../../../../shared/showcase";
@@ -29,7 +30,7 @@ export function Showcase({
     invoke<CartaoVitrine[]>("estoque_vitrine")
       // Regra da loja: na vitrine só entra o que está em estoque e tem fotos.
       .then((c) => ativo && setCartoes(c.filter((x) => x.disponivel)))
-      .catch((e) => ativo && setErro(String(e)));
+      .catch((e) => ativo && setErro(textoDoErro(e)));
     return () => {
       ativo = false;
     };
