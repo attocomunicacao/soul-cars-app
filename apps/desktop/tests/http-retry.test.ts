@@ -220,6 +220,14 @@ describe("mensagens de erro sem o corpo da resposta", () => {
     ).not.toMatch(/x@y\.com|12345678901/);
   });
 
+  it("telefone e CPF formatados também não passam", () => {
+    const r = resumoSeguroDoCorpo(
+      '{"message":"Ligar (11) 99999-8888, CPF 123.456.789-09, fixo 11 3333 4444"}',
+    );
+    expect(r).not.toMatch(/9999|456\.789|3333/);
+    expect(r).toContain("[número]");
+  });
+
   it("sem mensagem útil, devolve só o status", async () => {
     expect(
       await mensagemDeErroHttp(resp(502, "<html>bad gateway</html>"), "Meta"),

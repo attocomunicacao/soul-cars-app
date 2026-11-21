@@ -451,15 +451,36 @@ describe("Meta Ads", () => {
 
   it("Graph API: segue a paginação e traduz token vencido", async () => {
     const paginas: Record<string, unknown> = {
-      "https://x/1": { data: [{ a: 1 }], paging: { next: "https://x/2" } },
-      "https://x/2": { data: [{ a: 2 }] },
+      "https://graph.facebook.com/1": {
+        data: [{ a: 1 }],
+        paging: { next: "https://graph.facebook.com/2" },
+      },
+      "https://graph.facebook.com/2": { data: [{ a: 2 }] },
     };
     const ok = await graphGet(
       async (u) => new Response(JSON.stringify(paginas[u])),
-      "https://x/1",
+      "https://graph.facebook.com/1",
       "t",
     );
     expect(ok).toEqual([{ a: 1 }, { a: 2 }]);
+    // O token nunca segue para um endereço que não é da Meta, mesmo se a resposta mandar.
+    const chamadas: string[] = [];
+    await expect(
+      graphGet(
+        async (u) => {
+          chamadas.push(u);
+          return new Response(
+            JSON.stringify({
+              data: [],
+              paging: { next: "https://evil.example.com/steal" },
+            }),
+          );
+        },
+        "https://graph.facebook.com/1",
+        "t",
+      ),
+    ).rejects.toThrow(/endereço inesperado/);
+    expect(chamadas).toEqual(["https://graph.facebook.com/1"]);
     await expect(
       graphGet(
         async () =>

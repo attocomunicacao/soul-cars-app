@@ -134,10 +134,14 @@ export function resumoSeguroDoCorpo(corpo: string): string {
     (v): v is string => typeof v === "string" && v.trim() !== "",
   );
   if (!candidato || candidato.length > 160) return "";
-  return candidato
-    .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, "[e-mail]")
-    .replace(/\d{7,}/g, "[número]")
-    .trim();
+  return (
+    candidato
+      .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, "[e-mail]")
+      // Telefone e CPF costumam vir formatados ("(11) 99999-8888", "123.456.789-09"): dígitos separados
+      // por espaço, ponto, hífen ou parênteses, com 7 ou mais no total.
+      .replace(/\d(?:[\s.()-]?\d){6,}/g, "[número]")
+      .trim()
+  );
 }
 
 /** "<contexto>: erro 404 (mensagem curta)." sem o corpo da resposta. */
