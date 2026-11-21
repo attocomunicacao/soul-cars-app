@@ -4,6 +4,18 @@ updates:
     directory: /
     schedule: { interval: weekly }
     open-pull-requests-limit: 5
+    ignore:
+      # Exigem o Vite 8 (o projeto usa o 7) e o typescript-eslint só aceita TypeScript < 6.1.
+      - dependency-name: "@vitejs/plugin-react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      # Os tipos acompanham o Node do Electron embutido (44 = Node 24), não a última versão.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # Electron muda o runtime e o executável: só em release própria, com teste em máquina da loja.
+      - dependency-name: "electron"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: uv
     directory: /apps/engine
     schedule: { interval: weekly }
