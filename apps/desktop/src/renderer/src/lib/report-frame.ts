@@ -3,21 +3,15 @@
  * (sandbox sem allow-same-origin). Para o iframe não ter uma segunda barra de
  * rolagem, a página avisa a própria altura e o app ajusta o iframe a ela.
  */
-export const MENSAGEM_ALTURA = "soul:relatorio-altura";
+import {
+  CORPO_DO_SCRIPT_DE_ALTURA,
+  MENSAGEM_ALTURA,
+} from "../../../shared/report-script";
 
-const SCRIPT = `<script>(function(){
-  var enviar = function () {
-    var altura = Math.ceil(document.documentElement.offsetHeight);
-    // Sem altura (janela escondida ou ainda sem layout), a página continua rolável por dentro.
-    if (!(altura > 0)) return;
-    document.documentElement.style.overflow = "hidden";
-    parent.postMessage({ tipo: "${MENSAGEM_ALTURA}", altura: altura }, "*");
-  };
-  addEventListener("load", enviar);
-  addEventListener("resize", enviar);
-  if (window.ResizeObserver) new ResizeObserver(enviar).observe(document.documentElement);
-  enviar();
-})();</script>`;
+export { MENSAGEM_ALTURA };
+
+// O mesmo texto vira o hash liberado na política de segurança de conteúdo (main/core/csp.ts).
+const SCRIPT = `<script>${CORPO_DO_SCRIPT_DE_ALTURA}</script>`;
 
 /** Acrescenta o aviso de altura ao HTML do relatório. */
 export function comAvisoDeAltura(html: string) {
