@@ -44,7 +44,7 @@ As bibliotecas **não são redistribuídas** no instalador nem no repositório: 
 | llvmlite | 0.49.0 | BSD-2-Clause AND Apache-2.0 WITH LLVM-exception | indireta |
 | networkx | 3.6.1 | BSD-3-Clause | indireta |
 | numba | 0.67.0 | BSD-2-Clause | indireta |
-| numpy | 2.5.3 | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 | direta (documentos) |
+| numpy | 2.5.4 | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 | direta (documentos) |
 | onnxruntime | 1.30.0 | MIT | indireta |
 | openpyxl | 3.1.5 | MIT | direta (planilha) |
 | packaging | 26.3 | Apache-2.0 OR BSD-2-Clause | indireta |
