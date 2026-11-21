@@ -89,6 +89,7 @@ export function Respostas({ p, agir }: { p: Painel; agir: Agir }) {
         </p>
         <textarea
           rows={18}
+          aria-label="Persona e regras"
           value={persona}
           onChange={(e) => setPersona(e.target.value)}
         />

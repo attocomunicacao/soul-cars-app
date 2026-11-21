@@ -77,9 +77,16 @@ jobs:
       - run: npm run smoke
       - run: npm run smoke:instagram
       # Segurança, cofre, motor e gaveta (smoke:security) e páginas + acessibilidade (smoke:pages),
-      # com perfil e dados temporários. O axe só informa; SOUL_AXE_ESTRITO=1 faria reprovar.
+      # com perfil e dados temporários.
       - run: npm run smoke:security
+      # Acessibilidade (axe, WCAG AA) em modo estrito, nos dois temas: qualquer violação reprova.
       - run: npm run smoke:pages
+        env:
+          SOUL_AXE_ESTRITO: "1"
+      - run: npm run smoke:pages
+        env:
+          SOUL_AXE_ESTRITO: "1"
+          SOUL_TEMA: dark
       # Política de segurança de conteúdo: o relatório funciona sob ela e o que é de fora é barrado.
       - run: npm run smoke:csp
 

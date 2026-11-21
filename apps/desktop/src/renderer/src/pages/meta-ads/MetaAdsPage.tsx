@@ -447,7 +447,12 @@ function VisaoGeral({ d, cfg }: { d: DadosMeta; cfg: ConfigMeta }) {
       <div className="panel">
         <h2>Público · {rotulo.toLowerCase()} por idade e gênero</h2>
         {generos.length ? (
-          <div className="tabela-rolavel">
+          <div
+            className="tabela-rolavel"
+            tabIndex={0}
+            role="region"
+            aria-label="Tabela rolável"
+          >
             <table>
               <thead>
                 <tr>
@@ -617,7 +622,12 @@ function Campanhas({ d, cfg }: { d: DadosMeta; cfg: ConfigMeta }) {
           Exportar CSV
         </button>
       </div>
-      <div className="tabela-rolavel">
+      <div
+        className="tabela-rolavel"
+        tabIndex={0}
+        role="region"
+        aria-label="Tabela rolável"
+      >
         <table>
           <thead>
             <tr>

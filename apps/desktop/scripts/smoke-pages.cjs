@@ -154,7 +154,7 @@ app.on("browser-window-created", (_e, w) => {
       const auditar = async (nome) => {
         axe[nome] =
           await js(`axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa'] } })
-          .then((r) => r.violations.map((v) => ({ id: v.id, impacto: v.impact, ocorrencias: v.nodes.length })))`);
+          .then((r) => r.violations.map((v) => ({ id: v.id, impacto: v.impact, ocorrencias: v.nodes.length, exemplos: v.nodes.slice(0, 40).map((n) => { const d = (n.any[0] && n.any[0].data) || {}; return { alvo: n.target.join(' '), fg: d.fgColor, bg: d.bgColor, razao: d.contrastRatio, tamanho: d.fontSize }; }) })))`);
       };
 
       // ---------------- Configurações sobre uma página embutida (a vista nativa cobre a tela)
@@ -166,6 +166,7 @@ app.on("browser-window-created", (_e, w) => {
           `(() => { const f = document.querySelector('.sheet-backdrop'); return !!f && getComputedStyle(f).display !== 'none' && f.getBoundingClientRect().width > 0; })()`,
         ),
       );
+      await auditar("configuracoes");
       await js(
         `[...document.querySelectorAll('.sheet .segmented button')].find((b) => b.textContent.trim() === 'Escuro')?.click(); window.__t.dormir(300)`,
       );
@@ -183,6 +184,12 @@ app.on("browser-window-created", (_e, w) => {
         await js(`document.documentElement.dataset.theme === 'light'`),
       );
       await js(`window.__t.menu('Configurações'); window.__t.dormir(300)`);
+
+      // ---------------- Estoque
+      await js(
+        `window.__t.menu('Estoque'); window.__t.esperar(() => !!document.querySelector('.metric-link'), 'Estoque não abriu')`,
+      );
+      await auditar("estoque");
 
       // ---------------- CRM · Leads
       await js(

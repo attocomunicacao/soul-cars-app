@@ -103,7 +103,12 @@ export function ListaLeads({
           Exportar CSV
         </button>
       </div>
-      <div className="tabela-rolavel">
+      <div
+        className="tabela-rolavel"
+        tabIndex={0}
+        role="region"
+        aria-label="Tabela rolável"
+      >
         <table>
           <thead>
             <tr>
