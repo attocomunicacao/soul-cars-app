@@ -17,6 +17,7 @@
  */
 import { app } from "electron";
 import fs from "node:fs";
+import { gravarAtomico } from "./atomic-write";
 import { lerConfigJson } from "./config-json";
 import path from "node:path";
 
@@ -58,8 +59,8 @@ export function lerConfig(): Config {
 
 export function gravarConfig(patch: Config) {
   const atual = { ...lerConfig(), ...patch };
-  fs.mkdirSync(userData(), { recursive: true });
-  fs.writeFileSync(ARQUIVO_CONFIG(), JSON.stringify(atual, null, 2), "utf8");
+  // Atômico: o config.json guarda a raiz de dados e os segredos cifrados; um arquivo cortado perderia tudo.
+  gravarAtomico(ARQUIVO_CONFIG(), JSON.stringify(atual, null, 2));
   cache = atual;
   return atual;
 }

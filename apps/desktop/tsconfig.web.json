@@ -54,6 +54,7 @@
     "tests/lab-lista.test.ts",
     "tests/lab-agil.test.ts",
     "tests/secret-vault.test.ts",
-    "tests/engine-params.test.ts"
+    "tests/engine-params.test.ts",
+    "tests/atomic-write.test.ts"
   ]
 }
