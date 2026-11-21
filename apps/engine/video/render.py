@@ -2,6 +2,7 @@
 
 Uso: python render.py <pasta_do_veiculo> "<veículo>" "<motor/câmbio>" "<preço>"
 """
+import atexit
 import json
 import os
 import re
@@ -275,6 +276,26 @@ def localizar_video(root: Path) -> Path:
     return videos[0]
 
 
+def limpar_trabalho(work: Path, manter_transcricao: bool = False) -> None:
+    """Apaga a pasta de trabalho `.soul_tmp` (vídeos intermediários, áudio, tarjas, fontes).
+
+    Em falha ou numa nova geração (`manter_transcricao=True`) guarda só `*_words.json`: a
+    transcrição leva minutos e é reaproveitada pelo cache. No sucesso apaga tudo.
+    """
+    if not work.exists():
+        return
+    if not manter_transcricao:
+        shutil.rmtree(work, ignore_errors=True)
+        return
+    for item in work.iterdir():
+        if item.is_file() and item.name.endswith("_words.json"):
+            continue
+        if item.is_dir():
+            shutil.rmtree(item, ignore_errors=True)
+        else:
+            item.unlink(missing_ok=True)
+
+
 def main(folder: str, veiculo: str, motor: str, preco: str) -> None:
     t0 = time.time()
     root = Path(folder)
@@ -290,6 +311,10 @@ def main(folder: str, veiculo: str, motor: str, preco: str) -> None:
     out = root / f"VIDEO_{model}.mp4"
     work = root / ".soul_tmp"
     work.mkdir(exist_ok=True)
+    # Sobras de uma geração cancelada ou que falhou saem agora (a transcrição em cache fica) e, se esta
+    # também falhar, saem ao encerrar o processo. No sucesso a pasta inteira é apagada mais abaixo.
+    limpar_trabalho(work, manter_transcricao=True)
+    atexit.register(limpar_trabalho, work, True)
 
     progresso(1, "Lendo o vídeo bruto")
     dur = probe_duration(video)
