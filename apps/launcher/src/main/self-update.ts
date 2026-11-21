@@ -12,6 +12,7 @@ import path from "node:path";
 import { compararVersoes, type Manifest } from "../shared/manifest";
 import { pastaDownloads } from "./config";
 import { baixarVerificado } from "./download";
+import { comandoDeAtualizacao } from "./update-command";
 
 /** Nova versão do Launcher disponível no manifesto, ou null. */
 export function novoLauncher(manifesto: Manifest | null, plataforma: string) {
@@ -54,22 +55,14 @@ async function executarAtualizacao(
     `soul-cars-launcher-setup-${manifesto.launcher.version}.exe`,
   );
   await baixarVerificado(download, destino, aoProgresso);
-  // O instalador só começa ~3 s depois, quando este Launcher já fechou: com o app aberto,
-  // o NSIS silencioso não consegue substituir os arquivos.
-  // /S = silencioso (NSIS one-click); --force-run reabre o Launcher ao terminar.
-  spawn(
-    process.env.ComSpec ?? "cmd.exe",
-    [
-      "/d",
-      "/c",
-      `ping -n 4 127.0.0.1 >nul & start "" "${destino}" /S --updated --force-run`,
-    ],
-    {
-      detached: true,
-      stdio: "ignore",
-      windowsHide: true,
-      windowsVerbatimArguments: true,
-    },
-  ).unref();
+  // O instalador só começa ~3 s depois, quando este Launcher já fechou (ver update-command.ts).
+  const { comando, args, env } = comandoDeAtualizacao(destino);
+  spawn(comando, args, {
+    detached: true,
+    stdio: "ignore",
+    windowsHide: true,
+    windowsVerbatimArguments: true,
+    env,
+  }).unref();
   app.quit();
 }

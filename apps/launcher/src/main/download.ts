@@ -20,6 +20,33 @@ export async function sha256DoArquivo(arquivo: string): Promise<string> {
   return hash.digest("hex");
 }
 
+/** Opções do download (o padrão serve; os testes encurtam os tempos). */
+export type OpcoesDownload = {
+  /** Tempo sem receber nenhum byte antes de desistir. */
+  inatividadeMs?: number;
+};
+
+/** Sem nenhum byte por este tempo, a conexão é considerada parada. */
+const INATIVIDADE_PADRAO_MS = 60_000;
+/** `.part` de tentativas antigas com mais que isto são apagados. */
+const PARCIAL_ORFAO_MS = 60 * 60_000;
+
+/** Apaga restos `<destino>.<pid>-<hora>.part` de tentativas que morreram no meio. */
+function limparParciaisOrfaos(destino: string) {
+  const pasta = path.dirname(destino);
+  const prefixo = `${path.basename(destino)}.`;
+  try {
+    for (const nome of fs.readdirSync(pasta)) {
+      if (!nome.startsWith(prefixo) || !nome.endsWith(".part")) continue;
+      const arquivo = path.join(pasta, nome);
+      if (Date.now() - fs.statSync(arquivo).mtimeMs > PARCIAL_ORFAO_MS)
+        fs.rmSync(arquivo, { force: true });
+    }
+  } catch {
+    /* limpeza é só ajuda: nunca impede o download */
+  }
+}
+
 /** Downloads em andamento por arquivo de destino (um pedido repetido reaproveita o mesmo). */
 const emAndamento = new Map<
   string,
@@ -39,6 +66,7 @@ export function baixarVerificado(
   destino: string,
   aoProgresso: (fracao: number) => void,
   sinal?: AbortSignal,
+  opcoes: OpcoesDownload = {},
 ): Promise<string> {
   const chave = path.resolve(destino).toLowerCase();
   const atual = emAndamento.get(chave);
@@ -52,6 +80,7 @@ export function baixarVerificado(
     destino,
     (f) => ouvintes.forEach((o) => o(f)),
     sinal,
+    opcoes,
   ).finally(() => emAndamento.delete(chave));
   emAndamento.set(chave, { promessa, ouvintes });
   return promessa;
@@ -87,6 +116,7 @@ async function baixar(
   destino: string,
   aoProgresso: (fracao: number) => void,
   sinal?: AbortSignal,
+  opcoes: OpcoesDownload = {},
 ): Promise<string> {
   fs.mkdirSync(path.dirname(destino), { recursive: true });
   if (
@@ -96,14 +126,45 @@ async function baixar(
     aoProgresso(1);
     return destino;
   }
+  limparParciaisOrfaos(destino);
   // Nome exclusivo: nem outro processo nem um resto de tentativa anterior usam o mesmo arquivo.
   const parcial = `${destino}.${process.pid}-${Date.now()}.part`;
-  const resposta = await fetch(download.url, {
-    redirect: "follow",
-    signal: sinal,
-  });
-  if (!resposta.ok || !resposta.body)
+
+  // Conexão parada (sem nenhum byte por um tempo) é abortada, em vez de travar a instalação.
+  const inatividadeMs = opcoes.inatividadeMs ?? INATIVIDADE_PADRAO_MS;
+  const controle = new AbortController();
+  const sinalFinal = sinal
+    ? AbortSignal.any([sinal, controle.signal])
+    : controle.signal;
+  let relogio: NodeJS.Timeout | undefined;
+  const armar = () => {
+    clearTimeout(relogio);
+    relogio = setTimeout(
+      () =>
+        controle.abort(
+          new Error(
+            "O download parou de receber dados. Verifique a internet e tente de novo.",
+          ),
+        ),
+      inatividadeMs,
+    );
+  };
+
+  armar();
+  let resposta: Response;
+  try {
+    resposta = await fetch(download.url, {
+      redirect: "follow",
+      signal: sinalFinal,
+    });
+  } catch (erro) {
+    clearTimeout(relogio);
+    throw erro;
+  }
+  if (!resposta.ok || !resposta.body) {
+    clearTimeout(relogio);
     throw new Error(`Falha no download (${resposta.status}).`);
+  }
 
   const hash = createHash("sha256");
   const saida = fs.createWriteStream(parcial);
@@ -113,9 +174,15 @@ async function baixar(
       resposta.body as unknown as WebReadableStream,
     );
     for await (const parte of corpo) {
+      armar();
       const bloco = parte as Buffer;
       hash.update(bloco);
       recebidos += bloco.length;
+      // Mais bytes que o manifesto declara: não adianta baixar o resto para recusar no fim.
+      if (recebidos > download.size)
+        throw new Error(
+          "O servidor enviou mais dados do que o manifesto declara. Download cancelado.",
+        );
       if (!saida.write(bloco))
         await new Promise<void>((r) => saida.once("drain", () => r()));
       aoProgresso(Math.min(recebidos / download.size, 1));
@@ -127,6 +194,8 @@ async function baixar(
     saida.destroy();
     fs.rmSync(parcial, { force: true });
     throw erro;
+  } finally {
+    clearTimeout(relogio);
   }
 
   const obtido = hash.digest("hex");

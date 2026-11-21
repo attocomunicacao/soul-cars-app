@@ -8,6 +8,7 @@
  * sem esse tratamento. Fora do Electron (testes), usa o `node:fs` normal.
  */
 import { createRequire } from "node:module";
+import path from "node:path";
 import type nodeFs from "node:fs";
 
 const requerer = createRequire(import.meta.url);
@@ -16,6 +17,37 @@ const requerer = createRequire(import.meta.url);
 export const fsSemAsar: typeof nodeFs = process.versions.electron
   ? (requerer("original-fs") as typeof nodeFs)
   : (requerer("node:fs") as typeof nodeFs);
+
+/**
+ * Bytes livres no disco que contém `pasta` (sobe até o primeiro ancestral que existe).
+ * Devolve null se não der para saber: nesse caso a instalação segue sem a checagem.
+ */
+export function espacoLivre(pasta: string): number | null {
+  let atual = path.resolve(pasta);
+  for (;;) {
+    try {
+      const s = fsSemAsar.statfsSync(atual);
+      return Number(s.bavail) * Number(s.bsize);
+    } catch {
+      const pai = path.dirname(atual);
+      if (pai === atual) return null;
+      atual = pai;
+    }
+  }
+}
+
+/** Falha com uma mensagem clara se o disco de `pasta` tem menos de `bytes` livres. */
+export function exigirEspaco(
+  pasta: string,
+  bytes: number,
+  livre: number | null = espacoLivre(pasta),
+): void {
+  if (livre === null || livre >= bytes) return;
+  const mb = (n: number) => Math.ceil(n / 1_048_576);
+  throw new Error(
+    `Falta espaço no disco: a instalação precisa de cerca de ${mb(bytes)} MB livres e há ${mb(livre)} MB. Libere espaço e tente de novo.`,
+  );
+}
 
 /**
  * Renomeia a pasta extraída para a definitiva. O antivírus costuma analisar o executável
