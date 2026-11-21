@@ -10,7 +10,7 @@ dependencies = []
 [dependency-groups]
 planilha = ["openpyxl>=3.1.5"]
 documentos = ["numpy>=2.5.4", "pdfplumber>=0.11.10", "pillow>=13.0.0", "pytesseract>=0.3.13"]
-recorte = ["pillow>=13.0.0", "rembg[cpu]>=2.0.86"]
+recorte = ["pillow>=13.0.0", "rembg[cpu]>=2.0.87"]
 video = ["faster-whisper>=1.2.1", "pillow>=13.0.0"]
 
 [tool.ruff]
