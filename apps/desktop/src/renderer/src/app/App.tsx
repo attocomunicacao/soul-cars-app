@@ -21,8 +21,6 @@ import {
 import { Showcase } from "../pages/inventory/Showcase";
 import { VehicleTable } from "../pages/inventory/VehicleTable";
 import { EmbeddedSite } from "../pages/embedded/EmbeddedSite";
-import { FinancePage } from "../pages/finance/FinancePage";
-import { LeadsPage } from "../pages/leads/LeadsPage";
 import { SettingsPanel } from "../pages/settings/SettingsPanel";
 import { VehiclePage } from "../pages/vehicle/VehiclePage";
 import { CrmLeadsPage } from "../pages/crm-leads/CrmLeadsPage";
@@ -129,7 +127,12 @@ export function App() {
       />
       <main className={ehEmbutida(pagina) ? "crm" : ""}>
         {ehEmbutida(pagina) && (
-          <EmbeddedSite key={pagina} id={pagina} aoErro={setErro} />
+          <EmbeddedSite
+            key={pagina}
+            id={pagina}
+            aoErro={setErro}
+            pausada={config}
+          />
         )}
         {noEstoque && (
           <FolderBar
@@ -147,19 +150,6 @@ export function App() {
             }
             aoErro={setErro}
           />
-        )}
-        {(pagina === "financas" || pagina === "leads") && (
-          <header>
-            <div>
-              <p className="eyebrow">SOUL CARS</p>
-              <h1>{pagina === "financas" ? "Finanças" : "Leads"}</h1>
-              <p>
-                {pagina === "financas"
-                  ? "Contas do mês a partir da planilha financeira."
-                  : "Painel do CRM com o desempenho do atendimento e, em aba à parte, a memória da Soul IA."}
-              </p>
-            </div>
-          </header>
         )}
         {erro && (
           <div role="alert" className="notice error com-fechar">
@@ -221,10 +211,6 @@ export function App() {
             aoErro={setErro}
             abrirConfiguracoes={() => setConfig(true)}
           />
-        ) : pagina === "financas" ? (
-          <FinancePage aoErro={setErro} />
-        ) : pagina === "leads" ? (
-          <LeadsPage aoErro={setErro} />
         ) : aba === "vitrine" && pagina === "estoque" ? (
           <Showcase lista={lista} abrir={abrirFicha} />
         ) : aba === "completo" && pagina === "estoque" ? (

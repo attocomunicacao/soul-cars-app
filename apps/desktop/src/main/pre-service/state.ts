@@ -7,6 +7,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { gravarAtomico } from "../core/atomic-write";
 import * as caminhos from "../core/paths";
 import type { Buscar } from "../crm/utalk-api";
 import {
@@ -110,8 +111,8 @@ export function carregar(): Estado {
   return estado;
 }
 export function gravar() {
-  fs.mkdirSync(caminhos.userData(), { recursive: true });
-  fs.writeFileSync(ARQUIVO(), JSON.stringify(carregar(), null, 1), "utf8");
+  // Atômico: este arquivo guarda configuração, chats e rascunhos inteiros do atendimento.
+  gravarAtomico(ARQUIVO(), JSON.stringify(carregar(), null, 1));
   emitirEvento("preatendimento:mudou", null);
 }
 export function registrar(tipo: string, texto: string) {

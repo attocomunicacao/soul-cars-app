@@ -1,11 +1,11 @@
 /**
  * Testes (Vitest) de src/renderer/src/app/navigation.ts: desde a 1.0.3 o menu lateral
- * mostra o Estoque, os painéis CRM · Leads, Meta Ads e Funil (1.0.12) e os sites embutidos; as demais páginas ficam guardadas em MENU_OCULTO.
+ * mostra o Estoque, os painéis CRM · Leads, Meta Ads e Funil (1.0.12) e os sites embutidos. As páginas ocultas (Finanças, painel antigo de Leads e BNDV) foram removidas.
  */
 import { describe, expect, it } from "vitest";
 import {
   MENU,
-  MENU_OCULTO,
+  PAGINAS_EMBUTIDAS,
   itemSelecionado,
 } from "../src/renderer/src/app/navigation";
 
@@ -23,13 +23,8 @@ describe("menu lateral", () => {
     expect(MENU.every((i) => !!i.icone)).toBe(true);
   });
 
-  it("guarda as páginas ocultas para voltar depois, sem repetir o Estoque", () => {
-    expect(MENU_OCULTO.map((i) => i.pagina)).toEqual([
-      "leads",
-      "bndv",
-      "financas",
-    ]);
-    expect(MENU_OCULTO.some((i) => i.pagina === "estoque")).toBe(false);
+  it("só o CRM e o Meta Ads são sites embutidos", () => {
+    expect([...PAGINAS_EMBUTIDAS]).toEqual(["crm", "meta"]);
   });
 
   it("o Estoque continua marcado com a ficha (studio) aberta", () => {

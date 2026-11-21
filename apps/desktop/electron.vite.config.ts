@@ -8,6 +8,27 @@
 import { resolve } from "node:path";
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
 import react from "@vitejs/plugin-react";
+import type { Plugin } from "vite";
+import { politicaDoRenderer } from "./src/main/core/csp";
+
+/**
+ * Injeta a política de segurança de conteúdo no `index.html` do renderer, só no build de produção.
+ * No `npm run dev` o servidor do Vite usa scripts inline para o recarregamento automático, e a
+ * política os barraria. A política está em `src/main/core/csp.ts`.
+ */
+function cspDoRenderer(): Plugin {
+  return {
+    name: "soul-csp",
+    apply: "build",
+    transformIndexHtml(html) {
+      const meta = `<meta http-equiv="Content-Security-Policy" content="${politicaDoRenderer()}">`;
+      // Depois do <meta charset>, que precisa estar nos primeiros 1024 bytes do arquivo.
+      return /<meta charset[^>]*>/i.test(html)
+        ? html.replace(/<meta charset[^>]*>/i, (m) => m + meta)
+        : html.replace(/<head>/i, (m) => m + meta);
+    },
+  };
+}
 
 export default defineConfig({
   main: {
@@ -31,8 +52,10 @@ export default defineConfig({
     resolve: {
       alias: { "@": resolve("src/renderer/src") },
     },
-    plugins: [react()],
+    plugins: [react(), cspDoRenderer()],
     build: {
+      // O padrão do electron-vite é não minificar; minificar encolhe o bundle em mais da metade.
+      minify: "esbuild",
       rollupOptions: { input: { index: resolve("src/renderer/index.html") } },
     },
   },

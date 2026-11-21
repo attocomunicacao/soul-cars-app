@@ -58,12 +58,14 @@ describe("cobertura dos esquemas", () => {
 
 describe("validação de argumentos", () => {
   it("descarta campos a mais e exige os obrigatórios", () => {
-    const v = chamar("instagram_plano", { id: 7, intruso: "x" });
-    expect(v.args).toEqual({ id: 7 });
-    expect(() => chamar("instagram_plano", {})).toThrow(/id/);
-    expect(() => chamar("instagram_plano", { id: -1.5 })).toThrow(/id/);
-    expect(() => chamar("instagram_plano", { id: "7; DROP" })).toThrow(/id/);
-    expect(() => chamar("instagram_plano", [])).toThrow(/objeto/);
+    const v = chamar("fotos_listar", { veiculo: 7, intruso: "x" });
+    expect(v.args).toEqual({ veiculo: 7 });
+    expect(() => chamar("fotos_listar", {})).toThrow(/veiculo/);
+    expect(() => chamar("fotos_listar", { veiculo: -1.5 })).toThrow(/veiculo/);
+    expect(() => chamar("fotos_listar", { veiculo: "7; DROP" })).toThrow(
+      /veiculo/,
+    );
+    expect(() => chamar("fotos_listar", [])).toThrow(/objeto/);
   });
 
   it("aceita args nulos quando o comando não pede nada", () => {
@@ -77,6 +79,7 @@ describe("validação de argumentos", () => {
     );
     expect(chamar("engine_call", { method: "ping" }).args).toEqual({
       method: "ping",
+      params: {},
     });
   });
 

@@ -2,15 +2,14 @@
 
 > `CLAUDE.md` e `AGENTS.md` têm **exatamente o mesmo conteúdo**. Ao alterar um, copie para o outro.
 
-App desktop privado da Atto Comunicação para a revenda SOUL Cars: estoque e vendas do BNDV, ficha do veículo (Studio), produção de mídia, criativos, anúncios, Instagram, CRM uTalk, Meta Ads, Pré-atendimento IA e finanças. Tudo roda no Windows da loja; dados ficam no computador do usuário.
+App desktop privado da Atto Comunicação para a revenda SOUL Cars: estoque e vendas do BNDV, ficha do veículo (Studio), produção de mídia, criativos, anúncios, CRM uTalk, Meta Ads, Pré-atendimento IA. Tudo roda no Windows da loja; dados ficam no computador do usuário.
 
 ## Economia de contexto
 
 - Não varrer o repositório; ir direto aos arquivos do mapa abaixo e aos testes do mesmo domínio.
 - Ignorar `node_modules/`, `out/`, `dist/`, `apps/engine/.venv/`, `apps/engine/tessdata/`, `*.lock`, `package-lock.json`, fontes/binários em `public/creative-editor/assets/`.
-- Protótipos antigos ficam em `../_legado/` (fora do git): não ler nem portar sem pedido explícito.
-- Ler `docs/` só quando a tarefa tocar o assunto: visual → `DESIGN.md`; arquitetura → `docs/architecture/`; dados/backup → `docs/guides/data-and-backup.md`; CRM/uTalk → `docs/crm/`; vídeo → `docs/video/`; IA/testes da IA → `docs/ai/lab.md`; Instagram → `docs/guides/instagram.md`; releases → `docs/architecture/launcher-and-updates.md`.
-- Vários docs (`docs/development/vibe-coding-guide.md`, `handoff-context.md`, `architecture-and-migration.md`) ainda citam nomes antigos em português (`ipc.ts`, `esquema.ts`, `Ficha.tsx`, `criativo/`…). **O mapa deste arquivo prevalece**; confira o caminho real antes de seguir um doc.
+- Ler `docs/` só quando a tarefa tocar o assunto: visual → `DESIGN.md`; arquitetura → `docs/architecture/`; dados/backup → `docs/guides/data-and-backup.md`; CRM/uTalk → `docs/crm/`; vídeo → `docs/video/`; IA/testes da IA → `docs/ai/lab.md`; releases → `docs/architecture/launcher-and-updates.md`.
+- Vários docs (`docs/development/vibe-coding-guide.md`, `docs/development/handoff-context.md`, `docs/architecture/architecture-and-migration.md`) ainda citam nomes antigos em português (`ipc.ts`, `esquema.ts`, `Ficha.tsx`, `criativo/`…). **O mapa deste arquivo prevalece**; confira o caminho real antes de seguir um doc.
 
 ## Stack
 
@@ -36,7 +35,7 @@ main/studio/engine-bridge.ts ↔ JSON por linha ↔ apps/engine/main.py
 - Só a janela principal (mainFrame) invoca comandos. Comando sem esquema (ou esquema sem comando) impede o app de abrir. SQL arbitrário fica bloqueado.
 - Binários trafegam como `Uint8Array`; cabeçalhos de caminho/nome são codificados uma vez no renderer e decodificados no main.
 - Sites embutidos (uTalk, BNDV, Meta) são `WebContentsView` sem preload, com partições persistentes.
-- Navegação é estado React (sem roteador): `renderer/src/app/navigation.ts` define `Pagina`, `MENU` e `MENU_OCULTO` (Leads antigos/Soul IA, BNDV e Finanças estão ocultos, mas o código continua).
+- Navegação é estado React (sem roteador): `renderer/src/app/navigation.ts` define `Pagina`, `MENU` e `PAGINAS_EMBUTIDAS` (só o CRM e o Meta Ads são sites embutidos).
 
 ## Mapa: quero alterar → arquivo
 
@@ -49,27 +48,25 @@ Caminhos relativos a `apps/desktop/src/`.
 | Estoque (lista, vitrine, relatório) | `renderer/src/pages/inventory/*`, `lib/inventory-import.ts`, `lib/inventory-parse.ts`; main: `inventory/folder-sync.ts`, `showcase*.ts`, `ordering.ts` |
 | BNDV (extração, GraphQL) | `main/inventory/bndv-extraction.ts`, `bndv-graphql.ts`, `bndv-schema.ts`, `canceled-sales.ts`, `sales.ts` |
 | Balanço e relatório completo | `main/inventory/balance.ts`, `report.ts`, `report-print.ts`, `report-pdf.ts`; `renderer/src/lib/report-frame.ts` |
-| Ficha do veículo (Studio) | `renderer/src/pages/vehicle/VehiclePage.tsx` (abas Ficha → Produção → Criativos → Pronto para anunciar → Publicação → Instagram) |
+| Ficha do veículo (Studio) | `renderer/src/pages/vehicle/VehiclePage.tsx` (abas Ficha → Produção → Criativos) |
 | CRLV / DOC.md | `pages/vehicle/sheet/CrlvDocument.tsx`; engine `documents/crlv.py`, `ocr.py` |
 | Ficha técnica da web | `lib/web-specs-cache.ts`; engine `specs/web_lookup.py`, `carros_na_web.py`, `ficha_completa.py` |
-| DES.md e blocos de anúncio | `lib/description-generator.ts`, `shared/publication.ts`, fixture `apps/desktop/tests/fixtures/DES.md` |
+| DES.md e blocos de anúncio | `lib/description-generator.ts`, `shared/des-md.ts`, `shared/publication.ts`, fixture `apps/desktop/tests/fixtures/DES.md` |
 | Produção (fotos, recorte, vídeo) | `pages/vehicle/production/*`, `lib/production-status.ts`, `lib/vehicle-files.ts`, `main/studio/files.ts`, `main/studio/models.ts`; engine `media/*`, `video/*` |
 | Editor de criativos | `pages/vehicle/creatives/Creatives.tsx`; `renderer/public/creative-editor/` (`layout4.*`, `layout6.*`, `shadow.js`, `original-floor.js`, `workbench.*`, `app-bridge.js`, `flow-bridge.js`) |
 | Pronto para anunciar / pausa | `shared/ad-readiness.ts`, `pages/vehicle/ready-to-advertise/*`, `pages/inventory/AdPauseAlerts.tsx`, `shared/ad-ai-prompt.ts` |
 | Relatórios Meta Ads (XLSX) | `pages/vehicle/publication/AdsReports.tsx`, `lib/ads-reports.ts`, `lib/xlsx.ts` |
-| Instagram | `pages/vehicle/instagram/InstagramPublisher.tsx`, `shared/instagram.ts`, `main/studio/instagram.ts`, `instagram-browser.ts`, `instagram-plan.ts` |
 | Entrada por pasta sincronizada | `main/studio/intake.ts`, `shared/intake-rules.ts`, `pages/inventory/FileIntake.tsx` |
 | Banco do Studio | `main/studio/database.ts`, `schema.ts` (migrações), `repository.ts` (consultas), `legacy-import.ts`; `renderer/src/lib/database.ts`; `shared/vehicle.ts` (`EDITAVEIS`) |
 | IPC | `main/ipc/commands.ts`, `schemas.ts`, `validation.ts`; `preload/index.ts`; `renderer/src/lib/desktop-bridge.ts`, `types.ts` |
 | Caminhos, config, diagnóstico | `main/core/paths.ts`, `config-json.ts`, `json-store.ts`, `diagnostics.ts`, `gpu.ts`, `legacy-ai-cleanup.ts`; `main/index.ts`, `main/window/*` |
 | Motor Python (ponte) | `main/studio/engine-bridge.ts`, `renderer/src/lib/engine-client.ts`, `apps/engine/main.py` |
 | CRM · Leads (Kanban, SDR) | `pages/crm-leads/CrmLeadsPage.tsx`, `shared/crm-leads.ts`, `shared/crm-tags.ts`, `main/crm/leads.ts`, `leads-sync.ts`, `umbler-client.ts`, `utalk-api.ts`, `utalk.ts` |
-| Soul IA (memória, desempenho) | `pages/leads/*`, `main/soul-ai/*` (banco próprio `soul-ia.db`), engine `spreadsheets/soul_ai_sheet.py` |
+| Soul IA (memória do histórico; alimenta exemplos reais e o Laboratório) | `pages/settings/SoulAiMemory.tsx` (em Configurações, com "Esquecer"), `main/soul-ai/*` (banco próprio `soul-ia.db`), engine `spreadsheets/soul_ai_sheet.py` |
 | Meta Ads (Campanhas) | `pages/meta-ads/MetaAdsPage.tsx`, `shared/meta-ads.ts`, `main/meta/graph-api.ts`, `meta.ts` |
 | Funil Meta → CRM | `pages/funnel/FunnelPage.tsx`, `shared/funnel.ts`, `main/funnel/funnel.ts` |
-| Pré-atendimento IA | `pages/pre-service/PreServicePage.tsx`, `shared/pre-service.ts`, `shared/pre-service-pipeline.ts` (pós-processamento), `shared/pre-service-guard.ts` (anti-duplicação), `main/pre-service/pre-service.ts`, `llm.ts`, `utalk-writer.ts`; evals em `apps/desktop/tests/ai-evals/` |
-| Laboratório de testes da IA | `pages/pre-service/lab/LabTab.tsx`, `renderer/src/lib/lab-client.ts`, `main/lab/{runner,lab,history-analysis,audit-scenarios}.ts`, `shared/lab.ts`, `shared/lab-corpus.ts` (`CONJUNTO_RAPIDO`); lista em `docs/ai/lab-cenarios.md`; skills `/ia-ciclo` (erros pontuais), `/ia-lab` e `/ia-corpus` |
-| Finanças | `pages/finance/FinancePage.tsx`, `lib/finance.ts`, `main/finance/finance.ts`; engine `spreadsheets/finance_sheet.py` |
+| Pré-atendimento IA | `pages/pre-service/PreServicePage.tsx`, `shared/pre-service.ts`, `shared/pre-service-pipeline.ts` (pós-processamento), `shared/pre-service-guard.ts` (anti-duplicação), `shared/pre-service-audit.ts` + `main/pre-service/audit.ts` (auditoria), `shared/lead-profile.ts`, `main/pre-service/pre-service.ts`, `llm.ts`, `utalk-writer.ts`; evals em `apps/desktop/tests/ai-evals/` |
+| Laboratório de testes da IA | `pages/pre-service/lab/LabTab.tsx`, `renderer/src/lib/lab-client.ts`, `main/lab/{runner,lab,history-analysis,audit-scenarios,cli,cli-args}.ts` (`npm run lab:cli`), `shared/lab.ts`, `shared/lab-corpus.ts` (`CONJUNTO_RAPIDO`); lista em `docs/ai/lab-cenarios.md`; skills `/ia-ciclo` (erros pontuais), `/ia-lab` e `/ia-corpus` |
 | Configurações e conexões | `pages/settings/*`, `main/crm/soul-app-import.ts` |
 | Launcher | `apps/launcher/src/{main,preload,renderer,shared}`; contrato em `shared/api.ts`, manifesto em `shared/manifest.ts` |
 | CI / release | `.github/workflows/{ci,release,pages,eval-ia-groq}.yml`, `scripts/release/*`, `CHANGELOG.md` |
@@ -89,7 +86,7 @@ Regras puras (sem Electron, testáveis) ficam em `src/shared/` ou em arquivos do
 - **Pastas e arquivos com nome em inglês** (padrão americano). Identificadores, comentários, mensagens ao usuário, commits e PRs em português.
 - Todo arquivo de código começa com um cabeçalho explicando a responsabilidade dele; funções exportadas têm comentário do que fazem.
 - Preserve as duas interfaces principais: Estoque primeiro e Studio segundo.
-- O repositório não guarda nenhum arquivo de veículo. Dados reais ficam na raiz de dados escolhida no app (fora do projeto); `dados-loja/` e `legado/` continuam no `.gitignore`. Nunca versione mídia, documentos, bancos, CSVs, sessões ou dados reais; prints e testes usam dados fictícios.
+- O repositório não guarda nenhum arquivo de veículo. Dados reais ficam na raiz de dados escolhida no app (fora do projeto); `dados-loja/` fica dentro da raiz do projeto e continua no `.gitignore`. Nunca versione mídia, documentos, bancos, CSVs, sessões ou dados reais; prints e testes usam dados fictícios.
 - Não coloque caminhos pessoais, documentos reais, senhas ou tokens no código.
 - Electron main controla disco, banco e processos; renderer usa a ponte preload.
 - Migrações de banco distribuídas são imutáveis; acrescente uma nova versão (vale para `soul.db` e `soul-ia.db`).
@@ -101,7 +98,7 @@ Regras puras (sem Electron, testáveis) ficam em `src/shared/` ou em arquivos do
   - token pessoal da API do uTalk (CRM) — só leitura;
   - token do Meta Ads (Graph API, permissão `ads_read`) — só leitura; painéis Leads, Campanhas e Funil;
   - Pré-atendimento IA (desligado por padrão): plano grátis do Groq (`groqChaveCifrada`) ou Ollama local. `main/pre-service/utalk-writer.ts` é o **único** ponto que escreve no uTalk (mensagens, fotos e etiquetas do contato).
-- Meta Ads e o registro de anúncios são locais: nada ativa ou pausa campanha remotamente. O Instagram publica de fato, só quando o usuário aciona.
+- Meta Ads e o registro de anúncios são locais: nada ativa ou pausa campanha remotamente.
 - O nome do pacote `apps/desktop` (`soul-cars-app`) define a pasta de dados `%APPDATA%\soul-cars-app`: não renomeie.
 - Toda versão publicada ganha uma seção `## [x.y.z]` em `CHANGELOG.md` (vira as notas no Launcher).
 - Antes de editar, confira `git status`/diff; não restaure arquivos indiscriminadamente.
@@ -110,14 +107,21 @@ Regras puras (sem Electron, testáveis) ficam em `src/shared/` ou em arquivos do
 
 Uma branch por funcionalidade a partir da `main` atualizada (`feat/…`, `fix/…`, `test/…`, `docs/…`) → commit em português → push → PR → CI → merge. Release: `git tag vX.Y.Z && git push origin vX.Y.Z` (o workflow `release.yml` gera app, patch, launcher e `manifest.json`). Para abrir uma tarefa em chat novo, use a skill `/tarefa`.
 
+## Comandos do dia a dia
+
+Rodar da raiz do monorepo:
+
+- `npm run dev` — app desktop em modo desenvolvimento (electron-vite); `npm run dev:launcher` para o launcher.
+- Um teste só (Vitest): `npx vitest run apps/desktop/tests/navigation.test.ts` ou `npm test -w apps/desktop -- -t "nome do teste"`.
+- Um teste do motor Python: `cd apps/engine && uv run --all-groups python -m unittest tests.test_<nome>`.
+
 ## Validação
 
-Antes do commit: `npm run lint && npm run typecheck && npm test` (e `npm run build`; o CI também roda `npm run format:check` — use `npm run format`).
+Antes do commit: `npm run lint && npm run typecheck && npm test` (e `npm run build`; o CI também roda `npm run format:check` — use `npm run format` — e `npm run docs:check`, que confere os links dos `.md` e se o `AGENTS.md` é idêntico a este arquivo; para copiar use `npm run docs:sync`).
 
 | Alteração | Comando extra |
 |---|---|
 | IPC, preload, editor, disco | `npm run smoke` |
-| Instagram | `npm run smoke:instagram` |
 | Motor Python | `npm run test:engine` |
 | Pré-atendimento IA | `npm run lab:ai:offline` (sem modelo; `npm run lab:corpus` se mexeu no corpus) e `npm run eval:ai` (Ollama aberto) ou `npm run eval:ai:groq` |
 | Launcher | `npm run e2e:launcher` (exige `npm run package:desktop`) |

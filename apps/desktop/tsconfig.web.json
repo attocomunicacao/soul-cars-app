@@ -31,7 +31,7 @@
     "tests/des-md.test.ts",
     "tests/lead-profile.test.ts",
     "tests/lead-fixes.test.ts",
-    "tests/estoque-midia.test.ts",
+    "tests/inventory-media.test.ts",
     "tests/legacy-ai-cleanup.test.ts",
     "tests/validation.test.ts",
     "tests/bndv-graphql.test.ts",
@@ -51,8 +51,15 @@
     "tests/lab-runner.test.ts",
     "tests/lab-offline.test.ts",
     "tests/lab-history.test.ts",
-    "tests/lab-lista.test.ts",
-    "tests/lab-agil.test.ts",
-    "tests/secret-vault.test.ts"
+    "tests/lab-list.test.ts",
+    "tests/lab-quick.test.ts",
+    "tests/secret-vault.test.ts",
+    "tests/engine-params.test.ts",
+    "tests/atomic-write.test.ts",
+    "tests/http-retry.test.ts",
+    "tests/utalk-writer.test.ts",
+    "tests/csp.test.ts",
+    "tests/meta-url.test.ts",
+    "tests/css-classes.test.ts"
   ]
 }
