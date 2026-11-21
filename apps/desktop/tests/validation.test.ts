@@ -77,6 +77,7 @@ describe("validação de argumentos", () => {
     );
     expect(chamar("engine_call", { method: "ping" }).args).toEqual({
       method: "ping",
+      params: {},
     });
   });
 
