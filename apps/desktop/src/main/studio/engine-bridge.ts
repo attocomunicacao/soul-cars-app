@@ -19,6 +19,7 @@ import {
   type ChildProcessWithoutNullStreams,
   spawn,
 } from "node:child_process";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -81,8 +82,14 @@ export function estadoMotor() {
 
 /** uv baixado pelo próprio app (usuário final não precisa instalar nada). */
 const UV_LOCAL = () => path.join(caminhos.userData(), "uv", "uv.exe");
-const UV_URL =
-  "https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-pc-windows-msvc.zip";
+/**
+ * Versão do uv e SHA-256 do zip oficial (astral-sh/uv, 0.13.9). Ao subir a versão, atualize os dois
+ * juntos: o hash sai de `sha256sum` do zip baixado.
+ */
+const UV_VERSAO = "0.13.9";
+const UV_SHA256 =
+  "edd61f7f5728a56cc62455386661860bdfc7bab65872f39b0c25bdcc1d8e1beb";
+const UV_URL = `https://github.com/astral-sh/uv/releases/download/${UV_VERSAO}/uv-x86_64-pc-windows-msvc.zip`;
 
 function uvDisponivel(): string | null {
   return naPath("uv") ?? (fs.existsSync(UV_LOCAL()) ? UV_LOCAL() : null);
@@ -98,17 +105,26 @@ async function garantirUv(emitir: Emitir): Promise<string> {
   const resposta = await fetch(UV_URL);
   if (!resposta.ok)
     throw new Error(`Falha ao baixar o uv (${resposta.status}).`);
+  const conteudo = Buffer.from(await resposta.arrayBuffer());
+  if (createHash("sha256").update(conteudo).digest("hex") !== UV_SHA256)
+    throw new Error(
+      "O uv baixado não confere com o esperado (SHA-256). Instalação cancelada.",
+    );
   const zip = path.join(pasta, "uv.zip");
-  fs.writeFileSync(zip, Buffer.from(await resposta.arrayBuffer()));
+  fs.writeFileSync(zip, conteudo);
   await new Promise<void>((resolver, rejeitar) => {
+    // Os caminhos vão por variável de ambiente: nome de usuário com apóstrofo não quebra o comando.
     const p = spawn(
       "powershell.exe",
       [
         "-NoProfile",
         "-Command",
-        `Expand-Archive -LiteralPath '${zip}' -DestinationPath '${pasta}' -Force`,
+        "Expand-Archive -LiteralPath $env:SOUL_UV_ZIP -DestinationPath $env:SOUL_UV_PASTA -Force",
       ],
-      { windowsHide: true },
+      {
+        windowsHide: true,
+        env: { ...process.env, SOUL_UV_ZIP: zip, SOUL_UV_PASTA: pasta },
+      },
     );
     p.on("error", rejeitar);
     p.on("close", (c) =>

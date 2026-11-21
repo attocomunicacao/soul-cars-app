@@ -80,9 +80,37 @@ function criar(id: IdEmbutida, janela: BrowserWindow): Embutida {
     }
     return { action: "deny" };
   });
-  const embutida = { vista, pai: janela, carregada: false };
-  janela.once("closed", () => abertas.delete(id));
-  return embutida;
+  // A página só navega por http(s): file:, data:, javascript: e afins são barrados. Domínios de
+  // outros sites seguem livres porque logins (SSO) passam por vários endereços.
+  vista.webContents.on("will-navigate", (evento, url) => {
+    if (!/^https?:/i.test(url)) evento.preventDefault();
+  });
+  // Câmera, microfone, notificações etc. só para páginas do próprio site; o resto é negado.
+  vista.webContents.session.setPermissionRequestHandler(
+    (_conteudo, _permissao, responder, detalhes) => {
+      responder(hostPermitido(site.hosts, detalhes.requestingUrl));
+    },
+  );
+  observarJanela(janela);
+  return { vista, pai: janela, carregada: false };
+}
+
+/** Diz se o endereço é https de um host do site. */
+function hostPermitido(hosts: RegExp, endereco: string) {
+  try {
+    const u = new URL(endereco);
+    return u.protocol === "https:" && hosts.test(u.hostname);
+  } catch {
+    return false;
+  }
+}
+
+const janelasObservadas = new WeakSet<BrowserWindow>();
+/** Registra uma única vez por janela a limpeza das vistas ao fechar (evita um listener por criação). */
+function observarJanela(janela: BrowserWindow) {
+  if (janelasObservadas.has(janela)) return;
+  janelasObservadas.add(janela);
+  janela.once("closed", () => abertas.clear());
 }
 
 /** Mostra o site no retângulo informado e esconde o outro. */

@@ -49,7 +49,8 @@ import * as bancoStudio from "../studio/database";
 import * as repo from "../studio/repository";
 import * as motor from "../studio/engine-bridge";
 import { criarEsquemas, EXTENSOES_EXECUTAVEIS } from "./schemas";
-import { validarChamada } from "./validation";
+import { criarCaminhosEscolhidos, validarChamada } from "./validation";
+import { registrar } from "../core/diagnostics";
 import * as instagram from "../studio/instagram";
 import { criarEntrada } from "../studio/intake";
 
@@ -166,7 +167,16 @@ type OpcoesDialogo = {
   mode?: "open" | "save";
 };
 
+/** Caminhos escolhidos pelo usuário nos diálogos nativos desta sessão (base da regra de `config_gravar`). */
+const escolhidosNoDialogo = criarCaminhosEscolhidos();
+
 async function dialogo(opcoes: OpcoesDialogo) {
+  const caminho = await abrirDialogo(opcoes);
+  for (const p of [caminho ?? []].flat()) escolhidosNoDialogo.lembrar(p);
+  return caminho;
+}
+
+async function abrirDialogo(opcoes: OpcoesDialogo) {
   const pai = janela ?? undefined;
   if (opcoes.mode === "save") {
     const r = await dialog.showSaveDialog(pai!, {
@@ -234,7 +244,14 @@ const COMANDOS: Record<string, Comando> = {
     } = caminhos.lerConfig();
     return { ...resto, raizDados: caminhos.raizDados() };
   },
-  config_gravar: (a) => caminhos.gravarConfig(a.patch ?? {}),
+  config_gravar: (a) => {
+    const patch = a.patch ?? {};
+    // A raiz dos dados e a pasta do motor definem o que o app lê e executa: só valem se vieram do seletor de pastas.
+    for (const campo of ["raizDados", "pastaMotor"])
+      if (typeof patch[campo] === "string")
+        escolhidosNoDialogo.exigir(patch[campo], campo);
+    return caminhos.gravarConfig(patch);
+  },
   caminhos_app: () => ({
     raizDados: caminhos.raizDados(),
     estoque: caminhos.ESTOQUE(),
@@ -534,6 +551,9 @@ export function registrarIpc() {
         const v = validarChamada(comando, esquema, args, decodificados, corpo);
         return await executar(v.args, v.corpo, v.cabecalhos);
       } catch (erro) {
+        registrar(
+          `ipc ${comando}: ${erro instanceof Error ? erro.message : String(erro)}`,
+        );
         throw new Error(erro instanceof Error ? erro.message : String(erro), {
           cause: erro,
         });
