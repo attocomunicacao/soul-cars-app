@@ -50,7 +50,7 @@ As bibliotecas **não são redistribuídas** no instalador nem no repositório: 
 | packaging | 26.3 | Apache-2.0 OR BSD-2-Clause | indireta |
 | pdfminer-six | 20260107 | MIT | indireta |
 | pdfplumber | 0.11.10 | MIT | direta (documentos) |
-| pillow | 12.3.0 | MIT-CMU (HPND) | direta (documentos) |
+| pillow | 13.0.0 | MIT-CMU (HPND) | direta (documentos) |
 | platformdirs | 4.11.8 | MIT | indireta |
 | pooch | 1.9.0 | BSD-3-Clause | indireta |
 | protobuf | 7.36.1 | BSD-3-Clause | indireta |
