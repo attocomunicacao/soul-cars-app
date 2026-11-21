@@ -2,6 +2,7 @@
  * Aba Produção: painel de fotos (ordenar, renomear, recortar fundo), Editor Mágico de
  * vídeo e versão leve para anúncio.
  */
+import { textoDoErro } from "../../../app/components";
 import { useEffect, useState } from "react";
 import { invoke } from "../../../lib/desktop-bridge";
 import { aquecerRecorte } from "../../../lib/engine-client";
@@ -61,7 +62,7 @@ export function Production({
         const s = await statusProducao(pasta);
         if (ativo) setStatus(s);
       } catch (e) {
-        if (ativo) setAviso(String(e));
+        if (ativo) setAviso(textoDoErro(e));
       } finally {
         consultando = false;
       }
@@ -93,7 +94,7 @@ export function Production({
         });
       })
       .catch((e) => {
-        if (ativo) setAviso(String(e));
+        if (ativo) setAviso(textoDoErro(e));
       });
     return () => {
       ativo = false;
@@ -112,7 +113,7 @@ export function Production({
       await verificar();
       setAviso(resultado === false ? "Seleção cancelada." : mensagem);
     } catch (e) {
-      setAviso(String(e));
+      setAviso(textoDoErro(e));
     } finally {
       setOcupado(false);
       onBusy(false);
@@ -302,7 +303,9 @@ export function Production({
           {gerandoVideo && (
             <button
               onClick={() =>
-                void invoke("video_cancelar").catch((e) => setAviso(String(e)))
+                void invoke("video_cancelar").catch((e) =>
+                  setAviso(textoDoErro(e)),
+                )
               }
             >
               Cancelar geração do vídeo

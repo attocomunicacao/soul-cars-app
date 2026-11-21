@@ -8,6 +8,7 @@
  *
  * Fluxo: Estoque (lista/vitrine/relatório) → "Abrir ficha →" → Studio (VehiclePage).
  */
+import { textoDoErro } from "./components";
 import { useCallback, useEffect, useState } from "react";
 import { type Veiculo, manutencaoBanco } from "../lib/database";
 import { invoke } from "../lib/desktop-bridge";
@@ -66,7 +67,7 @@ export function App() {
     try {
       await fn();
     } catch (e) {
-      setErro(String(e));
+      setErro(textoDoErro(e));
     } finally {
       setOcupado(false);
     }
@@ -77,12 +78,12 @@ export function App() {
     const off = window.soul.ouvir<{ texto: string }>("estoque:log", (v) =>
       setLogs((l) => [...l.slice(-199), v.texto]),
     );
-    void carregar().catch((e) => setErro(String(e)));
+    void carregar().catch((e) => setErro(textoDoErro(e)));
     void manutencaoBanco()
       .then((r) => {
         if (!r.ok || r.detalhe !== "ok") setErro(r.detalhe);
       })
-      .catch((e) => setErro(String(e)));
+      .catch((e) => setErro(textoDoErro(e)));
     return off;
   }, [carregar]);
 
@@ -93,7 +94,7 @@ export function App() {
     const timer = setInterval(() => {
       void importarEstoque()
         .then((v) => ativo && setLista(v))
-        .catch((e) => ativo && setErro(String(e)));
+        .catch((e) => ativo && setErro(textoDoErro(e)));
     }, 60_000);
     return () => {
       ativo = false;

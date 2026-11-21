@@ -60,6 +60,7 @@
     "tests/utalk-writer.test.ts",
     "tests/csp.test.ts",
     "tests/meta-url.test.ts",
-    "tests/css-classes.test.ts"
+    "tests/css-classes.test.ts",
+    "tests/error-text.test.ts"
   ]
 }

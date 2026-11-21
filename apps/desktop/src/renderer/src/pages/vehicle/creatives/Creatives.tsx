@@ -2,6 +2,7 @@
  * Aba Criativos: hospeda o editor de criativos (iframe em public/creative-editor) e
  * exporta as artes PNG para a pasta CRIATIVO do veículo.
  */
+import { textoDoErro } from "../../../app/components";
 import { useEffect, useRef, useState } from "react";
 import { atualizarVeiculo, type Veiculo } from "../../../lib/database";
 import {
@@ -159,9 +160,13 @@ export function Creatives({
         }
       }
     } catch (e) {
-      setAviso(String(e));
+      setAviso(textoDoErro(e));
       if (data?.type === "soul:export")
-        post({ type: "soul:export-result", ok: false, message: String(e) });
+        post({
+          type: "soul:export-result",
+          ok: false,
+          message: textoDoErro(e),
+        });
     }
   }
   // O ouvinte é registrado uma vez e chama sempre a versão mais recente de `receber`,

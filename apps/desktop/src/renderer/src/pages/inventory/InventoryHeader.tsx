@@ -3,6 +3,7 @@
  * atualizar BNDV), métricas do balanço e o controle segmentado Lista / Vitrine /
  * Relatório.
  */
+import { textoDoErro } from "../../app/components";
 import { Icon } from "../../app/icons";
 import type { Veiculo } from "../../lib/database";
 import { invoke, openPath } from "../../lib/desktop-bridge";
@@ -41,7 +42,7 @@ export function FolderBar({
       : invoke<{ estoque: string }>("caminhos_app").then((c) => c.estoque)
     )
       .then((pasta) => openPath(pasta))
-      .catch((e) => aoErro(String(e)));
+      .catch((e) => aoErro(textoDoErro(e)));
   }
   return (
     <div className="barra-pasta">

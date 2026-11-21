@@ -90,7 +90,7 @@ export function MetaAdsPage({
         setEstado(e);
         if (e.configurado && e.conta) void carregar();
       })
-      .catch((e) => aoErro(String(e)));
+      .catch((e) => aoErro(textoDoErro(e)));
     return () => {
       vivo = false;
     };

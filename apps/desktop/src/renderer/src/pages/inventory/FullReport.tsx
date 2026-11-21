@@ -9,6 +9,7 @@
  *
  * O botão "Exportar PDF" pede ao main o PDF em A4 (`relatorio_pdf`).
  */
+import { textoDoErro } from "../../app/components";
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "../../lib/desktop-bridge";
 import { alturaDaMensagem, comAvisoDeAltura } from "../../lib/report-frame";
@@ -59,7 +60,7 @@ export function FullReport({ html, aoErro }: Props) {
       .then((r) => {
         if (!r.cancelado) setAvisoPdf("PDF salvo e aberto.");
       })
-      .catch((e) => aoErro(String(e)))
+      .catch((e) => aoErro(textoDoErro(e)))
       .finally(() => setGerandoPdf(false));
   }
 

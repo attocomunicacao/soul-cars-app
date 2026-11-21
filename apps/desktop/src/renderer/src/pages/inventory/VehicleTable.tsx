@@ -7,6 +7,7 @@
  *  - Selos de produção (fotos, vídeo, documento) de cada pasta, relidos a cada 15 s.
  *  - A linha inteira abre a ficha (Studio); o botão de pasta abre o Explorador.
  */
+import { textoDoErro } from "../../app/components";
 import { Icon } from "../../app/icons";
 import { useEffect, useState } from "react";
 import { cartaoDaFicha, type CartaoVitrine } from "../../../../shared/showcase";
@@ -115,7 +116,7 @@ export function VehicleTable({ lista, abrirFicha, aoErro }: Props) {
       .then((c) => ativo && setNoEstoque(c))
       .catch((e) => {
         if (!ativo) return;
-        aoErro(String(e));
+        aoErro(textoDoErro(e));
         setSoEstoque(false);
       });
     return () => {

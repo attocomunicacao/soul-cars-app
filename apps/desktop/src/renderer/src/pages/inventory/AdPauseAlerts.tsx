@@ -2,6 +2,7 @@
  * Avisos de pausa de anúncio: lista veículos vendidos que ainda têm anúncio ativo e
  * avisa quando os dados do BNDV estão antigos.
  */
+import { textoDoErro } from "../../app/components";
 import { useEffect, useState } from "react";
 import {
   anunciosParaPausar,
@@ -55,7 +56,7 @@ export function AdPauseAlerts({
       setErro("");
     }
     const rodar = () =>
-      void carregar().catch((e) => ativo && setErro(String(e)));
+      void carregar().catch((e) => ativo && setErro(textoDoErro(e)));
     rodar();
     const timer = setInterval(rodar, 60_000);
     return () => {
@@ -88,7 +89,9 @@ export function AdPauseAlerts({
               <button onClick={() => abrir(veiculo)}>Abrir veículo</button>
             )}{" "}
             <button
-              onClick={() => void pausada(a).catch((e) => setErro(String(e)))}
+              onClick={() =>
+                void pausada(a).catch((e) => setErro(textoDoErro(e)))
+              }
             >
               Marcar como pausada
             </button>
