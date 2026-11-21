@@ -13,6 +13,7 @@ import { useEffect } from "react";
 import { Icon } from "../../app/icons";
 import { invoke, open } from "../../lib/desktop-bridge";
 import { ConnectionsSettings } from "./ConnectionsSettings";
+import { AppearanceSettings } from "./AppearanceSettings";
 import { StoreSettings } from "./StoreSettings";
 
 type Props = {
@@ -82,6 +83,7 @@ export function SettingsPanel({
           </button>
         </div>
         <div className="sheet-body">
+          <AppearanceSettings />
           <ConnectionsSettings />
           <section>
             <h3>Pasta de dados</h3>

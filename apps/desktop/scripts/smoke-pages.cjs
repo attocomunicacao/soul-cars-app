@@ -146,6 +146,11 @@ app.on("browser-window-created", (_e, w) => {
         seg: async (t) => { const b = [...document.querySelectorAll('.segmented button')].find((x) => x.textContent.trim() === t); if (!b) throw Error('sem ' + t); b.click(); await window.__t.dormir(500); }
       }; null`);
       await js(AXE + "; null");
+      // SOUL_TEMA=dark mede o tema escuro (os tokens dele só valem com data-theme="dark").
+      if (process.env.SOUL_TEMA === "dark")
+        await js(
+          `document.documentElement.dataset.theme = 'dark'; document.documentElement.style.colorScheme = 'dark'; null`,
+        );
       const auditar = async (nome) => {
         axe[nome] =
           await js(`axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa'] } })
@@ -160,6 +165,22 @@ app.on("browser-window-created", (_e, w) => {
         await js(
           `(() => { const f = document.querySelector('.sheet-backdrop'); return !!f && getComputedStyle(f).display !== 'none' && f.getBoundingClientRect().width > 0; })()`,
         ),
+      );
+      await js(
+        `[...document.querySelectorAll('.sheet .segmented button')].find((b) => b.textContent.trim() === 'Escuro')?.click(); window.__t.dormir(300)`,
+      );
+      registra(
+        "tema: Escuro aplica data-theme=dark e fica guardado",
+        await js(
+          `document.documentElement.dataset.theme === 'dark' && localStorage.getItem('soul-theme') === 'dark'`,
+        ),
+      );
+      await js(
+        `[...document.querySelectorAll('.sheet .segmented button')].find((b) => b.textContent.trim() === 'Claro')?.click(); window.__t.dormir(300)`,
+      );
+      registra(
+        "tema: Claro volta ao tema claro",
+        await js(`document.documentElement.dataset.theme === 'light'`),
       );
       await js(`window.__t.menu('Configurações'); window.__t.dormir(300)`);
 
@@ -243,7 +264,13 @@ app.on("browser-window-created", (_e, w) => {
       registra("console sem erros", erros.length === 0, erros.join(" | "));
       fs.mkdirSync(path.join(REPO, ".tmp"), { recursive: true });
       fs.writeFileSync(
-        path.join(REPO, ".tmp", "axe-report.json"),
+        path.join(
+          REPO,
+          ".tmp",
+          process.env.SOUL_TEMA === "dark"
+            ? "axe-report-dark.json"
+            : "axe-report.json",
+        ),
         JSON.stringify(axe, null, 2),
       );
       const violacoes = Object.values(axe).reduce(
