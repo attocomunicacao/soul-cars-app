@@ -1020,7 +1020,7 @@ wheels = [
 
 [[package]]
 name = "rembg"
-version = "2.0.84"
+version = "2.0.87"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jsonschema" },
@@ -1032,9 +1032,9 @@ dependencies = [
     { name = "scipy" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/13/0f/f1f6ef6c97ffe38a717f20a38225c041fb5ddadee34fe1bda5cdc65c9b49/rembg-2.0.84.tar.gz", hash = "sha256:f180a7443c8552d1d45b15464a8266f6b585ec39fbeb6883899da8037bbeef0b", size = 47925, upload-time = "2026-09-08T01:04:31.096Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/06/80/fec75ee0e2ed9e1d94f1afbf9f27a1361e7976126a87a7f35e0349ce1dc3/rembg-2.0.87.tar.gz", hash = "sha256:34674fdde1e15e17a38dfb8560f1e6f232a27de48f3204b154049f8b7dfd65d8", size = 55787, upload-time = "2026-11-06T01:19:56.005Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/92/6a/9d30544e4ac1a9de715da6edde4884f6b777e6f2d016844c9a7e7500b9c2/rembg-2.0.84-py3-none-any.whl", hash = "sha256:3f27854a35b2e65aa74cc144040423f701a1a7bf8031359e2fb7a5e00ec355fe", size = 62458, upload-time = "2026-09-08T01:04:32.303Z" },
+    { url = "https://files.pythonhosted.org/packages/5b/10/5380109d4e825ba934409ed6206a8986d8ba99f80283aa893de443cbb842/rembg-2.0.87-py3-none-any.whl", hash = "sha256:928468af97067e09232505bd9c7714a5c34e0a8624382e04236faaba4734ecd6", size = 70625, upload-time = "2026-11-06T01:19:57.161Z" },
 ]
 
 [package.optional-dependencies]
@@ -1318,7 +1318,7 @@ documentos = [
 planilha = [{ name = "openpyxl", specifier = ">=3.1.5" }]
 recorte = [
     { name = "pillow", specifier = ">=12.3.0" },
-    { name = "rembg", extras = ["cpu"], specifier = ">=2.0.84" },
+    { name = "rembg", extras = ["cpu"], specifier = ">=2.0.86" },
 ]
 video = [
     { name = "faster-whisper", specifier = ">=1.2.1" },
