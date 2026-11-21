@@ -24,6 +24,7 @@
     "knip": "knip",
     "smoke": "npm run smoke -w apps/desktop",
     "smoke:security": "npm run smoke:security -w apps/desktop",
+    "smoke:csp": "npm run smoke:csp -w apps/desktop",
     "smoke:pages": "npm run smoke:pages -w apps/desktop",
     "smoke:instagram": "npm run smoke:instagram -w apps/desktop",
     "e2e:launcher": "npm run build -w apps/launcher && electron apps/launcher/scripts/e2e-install.cjs",
