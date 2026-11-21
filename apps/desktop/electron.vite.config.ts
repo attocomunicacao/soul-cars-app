@@ -54,6 +54,8 @@ export default defineConfig({
     },
     plugins: [react(), cspDoRenderer()],
     build: {
+      // O padrão do electron-vite é não minificar; minificar encolhe o bundle em mais da metade.
+      minify: "esbuild",
       rollupOptions: { input: { index: resolve("src/renderer/index.html") } },
     },
   },
