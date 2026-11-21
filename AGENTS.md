@@ -117,7 +117,7 @@ Rodar da raiz do monorepo:
 
 ## Validação
 
-Antes do commit: `npm run lint && npm run typecheck && npm test` (e `npm run build`; o CI também roda `npm run format:check` — use `npm run format`).
+Antes do commit: `npm run lint && npm run typecheck && npm test` (e `npm run build`; o CI também roda `npm run format:check` — use `npm run format` — e `npm run docs:check`, que confere os links dos `.md` e se o `AGENTS.md` é idêntico a este arquivo; para copiar use `npm run docs:sync`).
 
 | Alteração | Comando extra |
 |---|---|

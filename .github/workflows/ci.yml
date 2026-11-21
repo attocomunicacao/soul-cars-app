@@ -29,6 +29,8 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run format:check
+      # Documentação: links relativos dos .md e AGENTS.md idêntico ao CLAUDE.md.
+      - run: npm run docs:check
       - run: npm test
       - run: npm run build
       # Só falha em vulnerabilidade alta ou crítica (avisos moderados conhecidos vêm do electron-builder).

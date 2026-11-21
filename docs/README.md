@@ -28,7 +28,6 @@ Documentação do Soul Cars, organizada por assunto (pastas e arquivos em inglê
 | [architecture-and-migration.md](architecture/architecture-and-migration.md) | Arquitetura e histórico da migração |
 | [python-engine.md](architecture/python-engine.md) | Motor Python |
 | [implementation-details.md](architecture/implementation-details.md) | Contratos e detalhes de implementação |
-| [code-inventory.md](architecture/code-inventory.md) / [reading-coverage.md](architecture/reading-coverage.md) | Inventário histórico (anterior à reestruturação v1) |
 
 ## `development/` — para quem mexe no código
 
