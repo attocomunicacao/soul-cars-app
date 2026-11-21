@@ -10,6 +10,15 @@ import {
   salvarConfig,
 } from "../../lib/database";
 import type { Loja } from "../../lib/description-generator";
+/** Campos da loja com rótulo legível e altura (linhas) de cada caixa. */
+const ROTULOS = [
+  ["loja", "Nome da loja", 1],
+  ["contato", "Contato (WhatsApp)", 1],
+  ["horario", "Horário de atendimento", 3],
+  ["endereco", "Endereço", 3],
+] as const;
+
+/** Formulário com os dados da revenda e a campanha modelo. */
 export function StoreSettings() {
   const [loja, setLoja] = useState<Loja | null>(null),
     [campanhaModelo, setCampanhaModelo] = useState(""),
@@ -36,14 +45,17 @@ export function StoreSettings() {
     }
   }
   return (
-    <div>
+    <section>
       <h3>Dados da loja</h3>
+      <p>Aparecem nas descrições, nos anúncios e nas artes.</p>
       {loja && (
-        <div className="grid">
-          {(["loja", "contato", "horario", "endereco"] as const).map((k) => (
+        <div className="grid grid-2">
+          {ROTULOS.map(([k, rotulo, linhas]) => (
             <label key={k}>
-              {k}
+              {rotulo}
               <textarea
+                rows={linhas}
+                style={{ minHeight: 0 }}
                 value={loja[k]}
                 onChange={(e) => setLoja({ ...loja, [k]: e.target.value })}
               />
@@ -52,22 +64,26 @@ export function StoreSettings() {
         </div>
       )}
       <label>
-        Nome da campanha modelo (Gerenciador de Anúncios)
+        Campanha modelo no Gerenciador de Anúncios
         <input
           value={campanhaModelo}
           onChange={(e) => setCampanhaModelo(e.target.value)}
-          placeholder="Aparece no passo a passo do anúncio"
+          placeholder="Nome que aparece no passo a passo do anúncio"
         />
       </label>
-      <p>
-        O app não usa nenhum serviço pago. Os textos dos anúncios saem pelo
+      <small>
+        O app não usa nenhum serviço pago: os textos dos anúncios saem pelo
         prompt pronto (Ficha › Textos pelo chat), que você cola no chat que já
-        usa. Revise a ficha e os anúncios antes de publicar.
-      </p>
-      <button disabled={ocupado} onClick={salvar}>
-        Salvar dados da loja
-      </button>
-      <p role="status">{aviso}</p>
-    </div>
+        usa.
+      </small>
+      <div className="actions" style={{ marginTop: 18 }}>
+        <button className="primary" disabled={ocupado} onClick={salvar}>
+          Salvar dados da loja
+        </button>
+        <span role="status" className="status-texto">
+          {aviso}
+        </span>
+      </div>
+    </section>
   );
 }

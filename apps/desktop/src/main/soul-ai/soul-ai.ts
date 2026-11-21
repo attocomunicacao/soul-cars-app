@@ -26,7 +26,6 @@ import {
   migrarMemoria,
   resumoDaMemoria,
 } from "./memory";
-import { calcularDesempenho } from "./performance";
 import { montarAbas, paraCsv } from "./spreadsheet";
 import { sincronizar } from "./sync";
 
@@ -45,6 +44,9 @@ function banco(): DatabaseSync {
   conexao = db;
   return db;
 }
+
+/** Conversas guardadas na memória (para os exemplos reais do Pré-atendimento IA). */
+export const conversasDaMemoria = () => lerConversas(banco());
 
 export function fecharMemoria() {
   conexao?.close();
@@ -79,21 +81,6 @@ export async function sincronizarSouliaIa(
   } finally {
     controle = null;
   }
-}
-
-let cacheDesempenho: { chave: string; valor: unknown } | null = null;
-
-/** Painel de desempenho a partir da memória; guarda o resultado até a memória mudar. */
-export function desempenhoSouliaIa() {
-  const db = banco();
-  const r = resumoDaMemoria(db);
-  const chave = `${r.conversas}|${r.mensagens}|${r.ultimaSincronizacao}|${new Date().toISOString().slice(0, 10)}`;
-  if (cacheDesempenho?.chave === chave) return cacheDesempenho.valor;
-  const conversas = lerConversas(db);
-  const valor =
-    conversas.length === 0 ? null : calcularDesempenho(analisar(conversas));
-  cacheDesempenho = { chave, valor };
-  return valor;
 }
 
 export function cancelarSouliaIa() {

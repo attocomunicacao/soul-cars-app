@@ -14,7 +14,7 @@
 export class SessaoExpirada extends Error {
   constructor() {
     super(
-      "Sua sessão no BNDV expirou. Abra o 04 · BNDV no menu, faça o login e tente atualizar de novo.",
+      "Sua sessão no BNDV expirou. Clique em Atualizar BNDV de novo e faça o login na janela que abrir.",
     );
     this.name = "SessaoExpirada";
   }

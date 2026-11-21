@@ -31,3 +31,17 @@ Em desenvolvimento, o ambiente é apps/engine/.venv. No app instalado, **Instala
 | Vídeo | FFmpeg/ffprobe, faster-whisper, Pillow; fonte e logo acompanham o app; a trilha é sua (veja o guia 08) |
 
 Licenças das bibliotecas, dos modelos e dos arquivos embutidos: [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md) (gerado por `scripts/generate-license-notices.py`; nenhuma dependência é de copyleft forte). Modelos de recorte/visão/transcrição são baixados quando utilizados. Instalar bibliotecas não baixa todos os pesos. Estoque, balanço, ficha manual, DES.md sem IA, publicação, relatórios e editor manual funcionam sem automações Python. CNW exige rede (consulta pública). O motor não chama nenhum serviço pago e não existe chave no código: os textos de IA saem pelo prompt pronto, colado no chat do usuário.
+
+## Integridade dos modelos
+
+Os modelos são baixados na primeira vez que a função é usada. O que cada um confere:
+
+| Modelo | Origem | Conferência |
+|---|---|---|
+| CLIP (fotos), `model.onnx` ~605 MB e `tokenizer.json` | Hugging Face, revisão fixa (commit) | **SHA-256 de cada arquivo** antes de usar (`media/vision.py`). Arquivo que não bate é descartado. Instalações antigas (baixadas da branch `main`) são conferidas uma vez e refeitas se diferirem; a conferência fica registrada num arquivo `.sha256` ao lado |
+| Recorte de fundo (`rembg`) | GitHub Releases do `rembg` | **MD5** do modelo, pelo `pooch`, a menos que `MODEL_CHECKSUM_DISABLED` esteja ligada. MD5 detecta corrupção, não substitui o SHA-256 contra adulteração |
+| Transcrição (`faster-whisper`) | Hugging Face, pelo `huggingface_hub` | Só o **tamanho** esperado do arquivo; o conteúdo não é conferido por hash. Risco residual aceito: transporte por HTTPS |
+
+Para atualizar o CLIP: troque `REVISAO` em `media/vision.py`, baixe os dois arquivos dessa revisão, calcule o `sha256sum` e atualize os hashes em `ARQUIVOS`. Os testes (`tests/test_model_integrity.py`) usam um servidor local e arquivos falsos; nunca baixam o modelo.
+
+A pasta de trabalho do vídeo (`.soul_tmp`) é limpa ao iniciar uma geração e quando ela falha, mantendo só a transcrição em cache (`*_words.json`); no sucesso é apagada por inteiro.

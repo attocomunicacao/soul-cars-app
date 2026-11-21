@@ -85,7 +85,7 @@ Me entregue primeiro o plano. Critério de aceite: com 3 carros de teste, a past
 ```text
 Tarefa: gerar uma versão leve do vídeo só para anúncio, sem mexer no render atual.
 
-Contexto: apps/engine/video/render.py codifica 1080x1920 em HEVC pelo codificador Intel (hevc_qsv) a 50 Mbps (-b:v 50M, -maxrate 100M), com queda para libx265 se o QSV falhar. O resultado tem cerca de 400 MB, grande demais para subir em anúncio. O app também publica no Instagram usando "o único VIDEO_*.mp4" da pasta do veículo (veja apps/desktop/src/main/studio/instagram-plan.ts e docs/guides/instagram.md), e vídeos com prefixo VIDEO_ nunca são usados como entrada do Editor Mágico (docs/guides/studio-flow.md).
+Contexto: apps/engine/video/render.py codifica 1080x1920 em HEVC pelo codificador Intel (hevc_qsv) a 50 Mbps (-b:v 50M, -maxrate 100M), com queda para libx265 se o QSV falhar. O resultado tem cerca de 400 MB, grande demais para subir em anúncio. Vídeos com prefixo VIDEO_ nunca são usados como entrada do Editor Mágico (docs/guides/studio-flow.md).
 
 Faça assim:
 1. Leia render.py, instagram-plano.ts, arquivos.ts e como o Editor Mágico chama o motor. Me diga como a versão leve pode existir sem criar um segundo arquivo VIDEO_*.mp4 na pasta do veículo (por exemplo, com outro prefixo ou dentro de CRIATIVO) e sem ser pega como vídeo bruto de entrada.

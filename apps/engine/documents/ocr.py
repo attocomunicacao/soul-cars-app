@@ -145,8 +145,8 @@ def equipamentos(data: bytes, modo: str = "auto") -> dict:
     result = {v: [] for v in _CATEGORIAS.values()}
     unassigned = 0
     # Linha a linha (itens na mesma altura, da esquerda para a direita), como no sistema antigo.
-    altura = float(np.median([l["y1"] - l["y0"] for l in found])) if found else 1.0
-    for line in sorted(found, key=lambda l: (round(l["y0"] / (altura * 0.6)), l["x0"])):
+    altura = float(np.median([item["y1"] - item["y0"] for item in found])) if found else 1.0
+    for line in sorted(found, key=lambda item: (round(item["y0"] / (altura * 0.6)), item["x0"])):
         text = _limpar(line["text"])
         n = _normalize(text).strip()
         if not text or re.fullmatch(r"(EQUIPAMENTOS|SEGURANCA|CONFORTO|INFOTENIMENTO)", n) or line["y0"] >= bottom:
@@ -165,4 +165,4 @@ def equipamentos(data: bytes, modo: str = "auto") -> dict:
 def pagina_pdf_itens(image: Image.Image, scale: float) -> list[dict]:
     """Itens no formato do crlv.extract (coordenadas em pontos do PDF)."""
     found, _ = linhas(image, limpar_icones=False)
-    return [{"text": l["text"].strip(), "x": l["x0"] / scale, "y": l["y1"] / scale} for l in found if l["text"].strip()]
+    return [{"text": item["text"].strip(), "x": item["x0"] / scale, "y": item["y1"] / scale} for item in found if item["text"].strip()]

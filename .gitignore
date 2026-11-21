@@ -21,9 +21,8 @@ apps/engine/.venv/
 
 
 
-# Dados da loja e projetos anteriores (locais, nunca vão para o GitHub)
+# Dados da loja (pesados, ficam dentro do projeto, nunca vão para o GitHub)
 /dados-loja/
-/legado/
 
 # Trilha do vídeo: origem/licença não documentada, não é redistribuída. Coloque a sua em
 # %APPDATA%/soul-cars-app/trilha/TRILHA.flac (ou em PROJETO/ASSETS do veículo).
@@ -32,3 +31,8 @@ apps/engine/video/assets/TRILHA.*
 # Restos locais da reestruturação
 .restructure/
 .ruff_cache/
+.promptfoo/
+
+# Resultados locais dos evals e do Laboratório da IA (podem conter respostas de modelo/dados de teste)
+apps/desktop/resultado-eval.*
+lab-ia/

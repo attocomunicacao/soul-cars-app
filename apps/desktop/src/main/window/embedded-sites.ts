@@ -1,16 +1,16 @@
 /**
- * Sites embutidos na janela principal: CRM (Umbler uTalk), BNDV e Meta Ads.
+ * Sites embutidos na janela principal: CRM (Umbler uTalk) e Meta Ads.
  *
  * Em vez de abrir uma janela à parte, uma vista (`WebContentsView`) é colocada sobre a
  * área de conteúdo da janela, no retângulo que a interface informa. Cada site tem sessão
- * própria e persistente, então o login permanece. O BNDV usa a mesma sessão
- * (`persist:bndv`) do botão Atualizar BNDV: entrar aqui vale para a atualização.
+ * própria e persistente, então o login permanece.
  * As páginas são remotas: sem Node, sem preload e em sandbox.
  */
 import { BrowserWindow, WebContentsView, shell } from "electron";
 import * as caminhos from "../core/paths";
+import { urlDoGerenciadorMeta } from "./meta-url";
 
-export type IdEmbutida = "crm" | "bndv" | "meta";
+export type IdEmbutida = "crm" | "meta";
 
 export type Retangulo = {
   x: number;
@@ -28,14 +28,9 @@ const SITES: Record<
     sessao: "persist:utalk",
     hosts: /(^|\.)(umbler|google|microsoft|microsoftonline)\.com$/i,
   },
-  bndv: {
-    url: () => caminhos.URL_BNDV,
-    sessao: "persist:bndv",
-    hosts: /(^|\.)(bndv\.com\.br|google\.com|microsoftonline\.com)$/i,
-  },
   meta: {
-    url: () =>
-      "https://adsmanager.facebook.com/adsmanager/manage/all?nav_source=comet&nav_entry_point=comet_bookmark&campaign_id=415838275119884&placement=bkmk_admgr&extra_1=campaign&act=340363905178843",
+    // A conta vem da configuração do usuário (a mesma do painel Campanhas); nenhum ID fica no código.
+    url: () => urlDoGerenciadorMeta(caminhos.lerConfig().metaConta as string),
     sessao: "persist:meta",
     hosts: /(^|\.)(facebook|meta|instagram|fbsbx)\.com$/i,
   },
@@ -80,9 +75,37 @@ function criar(id: IdEmbutida, janela: BrowserWindow): Embutida {
     }
     return { action: "deny" };
   });
-  const embutida = { vista, pai: janela, carregada: false };
-  janela.once("closed", () => abertas.delete(id));
-  return embutida;
+  // A página só navega por http(s): file:, data:, javascript: e afins são barrados. Domínios de
+  // outros sites seguem livres porque logins (SSO) passam por vários endereços.
+  vista.webContents.on("will-navigate", (evento, url) => {
+    if (!/^https?:/i.test(url)) evento.preventDefault();
+  });
+  // Câmera, microfone, notificações etc. só para páginas do próprio site; o resto é negado.
+  vista.webContents.session.setPermissionRequestHandler(
+    (_conteudo, _permissao, responder, detalhes) => {
+      responder(hostPermitido(site.hosts, detalhes.requestingUrl));
+    },
+  );
+  observarJanela(janela);
+  return { vista, pai: janela, carregada: false };
+}
+
+/** Diz se o endereço é https de um host do site. */
+function hostPermitido(hosts: RegExp, endereco: string) {
+  try {
+    const u = new URL(endereco);
+    return u.protocol === "https:" && hosts.test(u.hostname);
+  } catch {
+    return false;
+  }
+}
+
+const janelasObservadas = new WeakSet<BrowserWindow>();
+/** Registra uma única vez por janela a limpeza das vistas ao fechar (evita um listener por criação). */
+function observarJanela(janela: BrowserWindow) {
+  if (janelasObservadas.has(janela)) return;
+  janelasObservadas.add(janela);
+  janela.once("closed", () => abertas.clear());
 }
 
 /** Mostra o site no retângulo informado e esconde o outro. */

@@ -7,7 +7,7 @@
 **Do estoque ao anúncio publicado. Num app só, no seu computador.**
 
 Plataforma desktop para revendas de veículos: estoque do BNDV, ficha e documento,
-fotos, vídeo, criativos, anúncio, Instagram, CRM, Soul IA e finanças.
+fotos, vídeo, criativos, anúncio, CRM e Soul IA.
 
 [**Baixar o Launcher**](../../releases/latest) · [Apresentação](website/index.html) · [Documentação](docs/README.md) · [Changelog](CHANGELOG.md)
 
@@ -25,15 +25,13 @@ Uma revenda passa o dia trocando de ferramenta: o sistema de estoque, o Drive co
 o editor de vídeo, o Canva, o Gerenciador de Anúncios, o CRM, a planilha do mês. O Soul Cars
 junta tudo num fluxo só, **carro por carro**, e deixa cada anúncio pronto para publicar.
 
-| | |
-|---|---|
-| **Estoque sincronizado** | Lê veículos e vendas do BNDV, cria uma pasta por carro e calcula patrimônio, giro e margem. |
-| **Ficha automática** | Lê o CRLV (PDF ou escaneado), busca a ficha técnica na web e gera a descrição do anúncio. |
-| **Studio de produção** | Ordena e recorta fotos, monta o vídeo com tarjas e legendas animadas, gera os criativos. |
+|                          |                                                                                                    |
+| ------------------------ | -------------------------------------------------------------------------------------------------- |
+| **Estoque sincronizado** | Lê veículos e vendas do BNDV, cria uma pasta por carro e calcula patrimônio, giro e margem.        |
+| **Ficha automática**     | Lê o CRLV (PDF ou escaneado), busca a ficha técnica na web e gera a descrição do anúncio.          |
+| **Studio de produção**   | Ordena e recorta fotos, monta o vídeo com tarjas e legendas animadas, gera os criativos.           |
 | **Pronto para anunciar** | Checklist, textos, títulos e arquivos do anúncio com botão de copiar; lembrete de pausa ao vender. |
-| **Instagram** | Carrossel e Reels publicados pelo navegador integrado, com retomada e sem duplicatas. |
-| **CRM e Soul IA** | Leads por etiqueta, demanda por modelo, desempenho do atendimento e memória das conversas. |
-| **Finanças** | Contas do mês direto da planilha da loja, com backup a cada edição. |
+| **CRM e Soul IA**        | Leads por etiqueta, demanda por modelo, desempenho do atendimento e memória das conversas.         |
 
 ## 02 / Telas
 
@@ -54,7 +52,7 @@ junta tudo num fluxo só, **carro por carro**, e deixa cada anúncio pronto para
 ## 03 / Instalar
 
 1. Baixe **`soul-cars-launcher-setup-<versão>.exe`** na [última release](../../releases/latest).
-2. Execute. Na primeira vez o Windows pode mostrar *"O Windows protegeu o seu PC"* (o instalador
+2. Execute. Na primeira vez o Windows pode mostrar _"O Windows protegeu o seu PC"_ (o instalador
    ainda não tem assinatura digital paga): clique em **Mais informações › Executar assim mesmo**.
 3. No Launcher, clique em **Instalar** no cartão do Soul Cars e depois em **Abrir**.
 
@@ -80,7 +78,7 @@ Detalhes em [docs/architecture/launcher-and-updates.md](docs/architecture/launch
 ## 04 / Princípios
 
 - **Local-first.** Banco, fotos, vídeos e documentos ficam na máquina da loja.
-- **Custo zero por uso.** Nenhuma API paga, nenhuma chave. Textos de IA saem por um *prompt pronto*
+- **Custo zero por uso.** Nenhuma API paga, nenhuma chave. Textos de IA saem por um _prompt pronto_
   colado no chat que a equipe já usa.
 - **Nada é publicado sozinho.** O app deixa tudo pronto; uma pessoa revisa e publica.
 - **Seguro por padrão.** Interface sem acesso a Node, comandos IPC com esquema, sites externos sem
@@ -89,14 +87,14 @@ Detalhes em [docs/architecture/launcher-and-updates.md](docs/architecture/launch
 ## 05 / Arquitetura
 
 ```text
-soul-cars/
+soul-cars-app/
 ├── apps/
 │   ├── launcher/        Soul Cars Launcher — Electron + TypeScript puro
 │   │   └── src/{main,preload,shared,renderer}
 │   ├── desktop/         Soul Cars — Electron + React 19 + TypeScript
-│   │   ├── src/main/        core · ipc · window · inventory · studio · crm · soul-ai · finance
+│   │   ├── src/main/        core · ipc · window · inventory · studio · crm · soul-ai
 │   │   ├── src/preload/     ponte segura window.soul
-│   │   ├── src/shared/      regras puras (anúncio, entrada, Instagram, vitrine…)
+│   │   ├── src/shared/      regras puras (anúncio, entrada, vitrine…)
 │   │   ├── src/renderer/    app/ (shell) · pages/<área>/ · lib/ · public/creative-editor
 │   │   ├── tests/           Vitest + fixtures
 │   │   └── scripts/         smoke em Electron real e prints do README
@@ -107,13 +105,13 @@ soul-cars/
 └── .github/workflows/   CI (lint, tipos, testes, motor, smoke) e Release por tag
 ```
 
-| Camada | Tecnologia |
-|---|---|
-| Desktop | Electron 44 · electron-vite · Vite 7 · React 19 · TypeScript 5 (strict) |
-| Dados | SQLite embutido (`node:sqlite`), migrações versionadas |
-| Motor | Python 3.12 + uv · pdfplumber · Tesseract · rembg/ONNX · CLIP · faster-whisper · FFmpeg · openpyxl |
-| Qualidade | ESLint · Prettier · Vitest · unittest · smoke e E2E em Electron real · GitHub Actions |
-| Entrega | electron-builder (zip + NSIS) · GitHub Releases · manifesto com SHA-256 |
+| Camada    | Tecnologia                                                                                         |
+| --------- | -------------------------------------------------------------------------------------------------- |
+| Desktop   | Electron 44 · electron-vite · Vite 7 · React 19 · TypeScript 5 (strict)                            |
+| Dados     | SQLite embutido (`node:sqlite`), migrações versionadas                                             |
+| Motor     | Python 3.12 + uv · pdfplumber · Tesseract · rembg/ONNX · CLIP · faster-whisper · FFmpeg · openpyxl |
+| Qualidade | ESLint · Prettier · Vitest · unittest · smoke e E2E em Electron real · GitHub Actions              |
+| Entrega   | electron-builder (zip + NSIS) · GitHub Releases · manifesto com SHA-256                            |
 
 Inventário completo em [technology-stack.md](docs/architecture/technology-stack.md) e a crítica
 técnica com o roadmap em [technical-review.md](docs/architecture/technical-review.md).
@@ -129,15 +127,15 @@ npm run dev               # app desktop com recarga automática
 npm run dev:launcher      # Launcher
 ```
 
-| Comando | Para quê |
-|---|---|
-| `npm run lint` / `npm run typecheck` / `npm run format:check` | Qualidade (zero avisos) |
-| `npm test` | Vitest do app e do Launcher |
-| `npm run test:engine` | Testes do motor Python |
-| `npm run smoke` · `npm run smoke:instagram` | Electron real com dados temporários |
-| `npm run e2e:launcher` | Launcher instala o app de um feed local (exige `package:desktop`) |
-| `npm run screenshots` | Regera os prints do README com dados fictícios |
-| `npm run package:desktop` · `npm run package:launcher` | Pacotes em `apps/*/dist` |
+| Comando                                                                                  | Para quê                                                          |
+| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `npm run lint` / `npm run typecheck` / `npm run format:check`                            | Qualidade (zero avisos)                                           |
+| `npm test`                                                                               | Vitest do app e do Launcher                                       |
+| `npm run test:engine`                                                                    | Testes do motor Python                                            |
+| `npm run smoke` · `npm run smoke:security` · `npm run smoke:pages` · `npm run smoke:csp` | Electron real com dados temporários                               |
+| `npm run e2e:launcher`                                                                   | Launcher instala o app de um feed local (exige `package:desktop`) |
+| `npm run screenshots`                                                                    | Regera os prints do README com dados fictícios                    |
+| `npm run package:desktop` · `npm run package:launcher`                                   | Pacotes em `apps/*/dist`                                          |
 
 **Publicar uma versão:** adicione a seção em `CHANGELOG.md`, depois
 

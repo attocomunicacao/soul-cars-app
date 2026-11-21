@@ -30,9 +30,14 @@ import {
   type IdEmbutida,
   type Retangulo,
 } from "../window/embedded-sites";
-import * as financas from "../finance/finance";
 import * as utalk from "../crm/utalk";
+import * as leadsCrm from "../crm/leads";
+import * as soulApp from "../crm/soul-app-import";
+import * as metaAds from "../meta/meta";
+import * as funil from "../funnel/funnel";
 import * as souliaIa from "../soul-ai/soul-ai";
+import * as preAtendimento from "../pre-service/pre-service";
+import * as lab from "../lab/lab";
 import { vitrine } from "../inventory/showcase";
 import { exportarRelatorioPdf } from "../inventory/report-pdf";
 import { gerarHtml } from "../inventory/report";
@@ -43,8 +48,8 @@ import * as bancoStudio from "../studio/database";
 import * as repo from "../studio/repository";
 import * as motor from "../studio/engine-bridge";
 import { criarEsquemas, EXTENSOES_EXECUTAVEIS } from "./schemas";
-import { validarChamada } from "./validation";
-import * as instagram from "../studio/instagram";
+import { criarCaminhosEscolhidos, validarChamada } from "./validation";
+import { registrar } from "../core/diagnostics";
 import { criarEntrada } from "../studio/intake";
 
 type Args = Record<string, any>;
@@ -86,6 +91,10 @@ const semCopiaEmAndamento = () => {
     );
 };
 export const iniciarEntrada = () => entrada.iniciar();
+/** Pré-atendimento IA: o laço só roda se estiver ligado nas configurações dele. */
+export const iniciarPreAtendimento = () =>
+  preAtendimento.iniciarPreAtendimento(emitir);
+export const pararPreAtendimento = () => preAtendimento.pararLaco();
 export const pararEntrada = () => entrada.parar();
 
 const naoVazio = (v: unknown, mensagem: string) => {
@@ -156,7 +165,16 @@ type OpcoesDialogo = {
   mode?: "open" | "save";
 };
 
+/** Caminhos escolhidos pelo usuário nos diálogos nativos desta sessão (base da regra de `config_gravar`). */
+const escolhidosNoDialogo = criarCaminhosEscolhidos();
+
 async function dialogo(opcoes: OpcoesDialogo) {
+  const caminho = await abrirDialogo(opcoes);
+  for (const p of [caminho ?? []].flat()) escolhidosNoDialogo.lembrar(p);
+  return caminho;
+}
+
+async function abrirDialogo(opcoes: OpcoesDialogo) {
   const pai = janela ?? undefined;
   if (opcoes.mode === "save") {
     const r = await dialog.showSaveDialog(pai!, {
@@ -184,13 +202,6 @@ async function dialogo(opcoes: OpcoesDialogo) {
 
 // --------------------------------------------------------- tabela de comandos
 const COMANDOS: Record<string, Comando> = {
-  instagram_plano: (a) => instagram.planoInstagram(a.id),
-  instagram_estado: (a) => instagram.estadoInstagram(a.id),
-  instagram_conta: (a) => instagram.salvarContaInstagram(a.conta),
-  instagram_abrir: () => instagram.abrirInstagram(janela!, emitir),
-  instagram_publicar: (a) => instagram.publicarInstagram(a.id, emitir, janela!),
-  instagram_reiniciar: (a) => instagram.reiniciarInstagram(a.id),
-  instagram_cancelar: () => instagram.cancelarInstagram(),
   // ---- banco do Studio ----
   // Cada operação do banco é um comando nomeado: a interface não escreve SQL.
   db_veiculos_listar: (a) => repo.listarVeiculos(banco(), a.busca),
@@ -215,11 +226,23 @@ const COMANDOS: Record<string, Comando> = {
   // ---- caminhos e configuração ----
   app_data: () => caminhos.userData(),
   config_ler: () => {
-    // O token cifrado do uTalk nunca vai para a interface.
-    const { utalkTokenCifrado: _token, ...resto } = caminhos.lerConfig();
+    // Os tokens cifrados (uTalk, Meta e Groq) nunca vão para a interface.
+    const {
+      utalkTokenCifrado: _token,
+      metaTokenCifrado: _meta,
+      groqChaveCifrada: _groq,
+      ...resto
+    } = caminhos.lerConfig();
     return { ...resto, raizDados: caminhos.raizDados() };
   },
-  config_gravar: (a) => caminhos.gravarConfig(a.patch ?? {}),
+  config_gravar: (a) => {
+    const patch = a.patch ?? {};
+    // A raiz dos dados e a pasta do motor definem o que o app lê e executa: só valem se vieram do seletor de pastas.
+    for (const campo of ["raizDados", "pastaMotor"])
+      if (typeof patch[campo] === "string")
+        escolhidosNoDialogo.exigir(patch[campo], campo);
+    return caminhos.gravarConfig(patch);
+  },
   caminhos_app: () => ({
     raizDados: caminhos.raizDados(),
     estoque: caminhos.ESTOQUE(),
@@ -238,30 +261,78 @@ const COMANDOS: Record<string, Comando> = {
     esconderEmbutidas();
     return true;
   },
-  utalk_estado: () => utalk.estadoUtalk(),
   utalk_token_salvar: (a) => utalk.salvarTokenUtalk(String(a.token)),
   utalk_token_remover: () => utalk.removerTokenUtalk(),
-  utalk_visao: () => utalk.visaoUtalk(),
+  // ---- CRM · Leads, Meta Ads e Funil (vindos do Soul APP) ----
+  crm_leads_dados: () => leadsCrm.dadosLeads(),
+  crm_leads_atualizar: () => leadsCrm.atualizarLeads(),
+  crm_leads_config_salvar: (a) => leadsCrm.salvarConfigLeads(a.patch),
+  meta_estado: () => metaAds.estadoMeta(),
+  meta_salvar: (a) =>
+    metaAds.salvarMeta({ token: a.token, conta: a.conta, versao: a.versao }),
+  meta_token_remover: () => metaAds.removerTokenMeta(),
+  meta_testar: (a) => metaAds.testarMeta({ token: a.token, conta: a.conta }),
+  meta_token_validade: () => metaAds.validadeTokenMeta(),
+  meta_config_ler: () => metaAds.configMeta(),
+  meta_painel: (a) => metaAds.painelMeta(a.preset),
+  meta_config_salvar: (a) => metaAds.salvarConfigMeta(a.patch),
+  funil_dados: (a) => funil.dadosFunil(!!a.forcar),
+  funil_config_salvar: (a) => funil.salvarConfigFunil(a.patch),
+  soulapp_estado: () => ({ encontrado: soulApp.soulAppEncontrado() }),
+  soulapp_importar: () => soulApp.importarSoulApp(),
   // ---- Soul IA (memória das conversas do uTalk) ----
   soulia_estado: () => souliaIa.estadoSouliaIa(),
   soulia_sincronizar: (a) =>
     souliaIa.sincronizarSouliaIa({ limite: a.limite }, emitir),
-  soulia_desempenho: () => souliaIa.desempenhoSouliaIa(),
   soulia_cancelar: () => souliaIa.cancelarSouliaIa(),
   soulia_exportar: () => souliaIa.exportarSouliaIa(emitir),
   soulia_abrir_pasta: () => souliaIa.abrirPastaSouliaIa(),
   soulia_esquecer: () => souliaIa.esquecerSouliaIa(),
+  // ---- Pré-atendimento IA (atende pelo uTalk os leads com a etiqueta de gatilho) ----
+  pre_painel: () => preAtendimento.painel(),
+  pre_config_salvar: (a) => preAtendimento.salvarConfig(a.patch),
+  pre_chave_groq_salvar: (a) => preAtendimento.salvarChaveGroq(String(a.chave)),
+  pre_loja_salvar: (a) => preAtendimento.salvarLoja(a.patch),
+  pre_persona_salvar: (a) => preAtendimento.salvarPersona(String(a.persona)),
+  pre_resposta_salvar: (a) => preAtendimento.salvarResposta(a.item),
+  pre_resposta_remover: (a) => preAtendimento.removerResposta(String(a.id)),
+  pre_respostas_importar: () => preAtendimento.importarRespostas(),
+  pre_exemplo_salvar: (a) => preAtendimento.salvarExemplo(a.item),
+  pre_exemplo_remover: (a) => preAtendimento.removerExemplo(String(a.id)),
+  pre_exemplos_recalcular: () => preAtendimento.recalcularExemplos(),
+  pre_simular: (a) => preAtendimento.simular(a as never),
+  pre_rodar: () => preAtendimento.rodar(),
+  pre_aprovar: (a) => preAtendimento.aprovar(String(a.id), a.texto),
+  pre_descartar: (a) => preAtendimento.descartar(String(a.id)),
+  pre_reativar: (a) => preAtendimento.reativar(String(a.chatId)),
+  pre_esquecer: (a) => preAtendimento.esquecerChat(String(a.chatId)),
+  pre_etiquetas: () => preAtendimento.etiquetasUtalk(),
+  pre_modelos: () => preAtendimento.modelos(),
+  pre_auditoria: (a) =>
+    preAtendimento.auditoria(a.limite === undefined ? 200 : Number(a.limite)),
+  // ---- Laboratório de testes da IA ----
+  lab_cenarios: () => lab.listarCenarios(),
+  lab_rodar: (a) =>
+    lab.rodarLab(
+      {
+        ids: a.ids as string[] | undefined,
+        categoria: a.categoria as string | undefined,
+        repeticoes: a.repeticoes as number | undefined,
+      },
+      emitir,
+    ),
+  lab_cancelar: () => lab.cancelarLab(),
+  lab_execucoes: () => lab.listarExecucoes(),
+  lab_execucao: (a) => lab.lerExecucao(String(a.id)),
+  lab_avaliar: (a) => lab.salvarAvaliacao(a as never),
+  lab_avaliacoes: (a) =>
+    lab.listarAvaliacoes(a.execucaoId as string | undefined),
+  lab_relatorio: (a) => lab.relatorioDaExecucao(String(a.execucaoId)),
+  lab_analisar_historico: () => lab.analisarHistoricoLab(),
+  lab_cenarios_auditoria: () => lab.gerarCenariosDaAuditoria(),
+  lab_abrir_pasta: () => lab.abrirPastaLab(),
   estoque_vitrine: () => vitrine(),
   // ---- Finanças (planilha mensal vinculada) ----
-  financas_estado: () => financas.estadoFinancas(),
-  financas_vincular: (a) => financas.vincularFinancas(String(a.origem)),
-  financas_desvincular: () => financas.desvincularFinancas(),
-  financas_ler: () => financas.lerFinancas(),
-  financas_abrir: () => financas.abrirFinancas(),
-  financas_editar: (a) =>
-    financas.editarFinancas(a.operacoes, a.lidoEm, emitir),
-  financas_pago: (a) =>
-    financas.marcarPagos(a.chaves as string[], a.pago === true),
   relatorio_pdf: () => exportarRelatorioPdf(janela),
   estoque_resumo: () => resumoEstoque(),
   anuncios_vendas: () => ultimasVendas(),
@@ -459,6 +530,9 @@ export function registrarIpc() {
         const v = validarChamada(comando, esquema, args, decodificados, corpo);
         return await executar(v.args, v.corpo, v.cabecalhos);
       } catch (erro) {
+        registrar(
+          `ipc ${comando}: ${erro instanceof Error ? erro.message : String(erro)}`,
+        );
         throw new Error(erro instanceof Error ? erro.message : String(erro), {
           cause: erro,
         });

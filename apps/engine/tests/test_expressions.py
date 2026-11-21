@@ -7,7 +7,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "video"))
 import composition as composicao
-import speech_context as contexto
 import expressions as expressoes
 import phrases as frases
 import captions as legendas

@@ -36,6 +36,12 @@ export type AppRelease = {
   executable: Record<string, string>;
   /** Pacotes por plataforma (ex.: "win32-x64"). */
   downloads: Record<string, Download>;
+  /**
+   * Pacote só de código (a pasta `resources` do app), opcional. Serve para atualizar sem trocar
+   * o executável: o Launcher copia uma versão já instalada cujo runtime (Electron) tem o id
+   * `runtime` e só troca a pasta `resources`. Sem versão compatível, usa o pacote completo.
+   */
+  patch?: { runtime: string; downloads: Record<string, Download> };
 };
 
 /** Versão mais recente do próprio Launcher. */
@@ -58,6 +64,10 @@ const SHA256 = /^[0-9a-f]{64}$/;
 const ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
 /** Nome de executável seguro: sem barras nem "..", para não sair da pasta do app. */
 const EXECUTAVEL = /^[\w .-]+\.(exe|app|AppImage)$|^[\w.-]+$/;
+
+/** O regex aceita "." e ".." (a classe inclui o ponto): aqui eles são barrados. */
+export const executavelSeguro = (nome: string) =>
+  EXECUTAVEL.test(nome) && !nome.includes("..") && !/^\.+$/.test(nome);
 
 /** Erro de manifesto inválido (mensagem em português para mostrar ao usuário). */
 export class ManifestoInvalido extends Error {}
@@ -145,10 +155,24 @@ export function lerManifesto(
       (a.executable ?? {}) as Record<string, unknown>,
     )) {
       exigir(
-        typeof nome === "string" && EXECUTAVEL.test(nome),
+        typeof nome === "string" && executavelSeguro(nome),
         `apps[${i}].executable.${so}`,
       );
       executable[so] = nome;
+    }
+    let patch: AppRelease["patch"];
+    if (a.patch) {
+      const p = a.patch as Record<string, unknown>;
+      const runtime = texto(p.runtime, `apps[${i}].patch.runtime`, 64);
+      exigir(SHA256.test(runtime), `apps[${i}].patch.runtime`);
+      patch = {
+        runtime,
+        downloads: lerDownloads(
+          p.downloads,
+          `apps[${i}].patch.downloads`,
+          opcoes,
+        ),
+      };
     }
     return {
       id,
@@ -159,6 +183,7 @@ export function lerManifesto(
       notes: texto(a.notes ?? "", `apps[${i}].notes`),
       executable,
       downloads: lerDownloads(a.downloads, `apps[${i}].downloads`, opcoes),
+      ...(patch ? { patch } : {}),
     } satisfies AppRelease;
   });
   return {
@@ -213,16 +238,39 @@ export function situacaoDoApp(
   return "atualizado";
 }
 
-/** Versões a apagar depois de instalar: mantém a ativa e a anterior (para voltar atrás). */
+/**
+ * Versões a apagar depois de instalar: mantém a ativa, a anterior (para voltar atrás) e
+ * a última que abriu de fato. Esta é a reserva quando o Windows (Smart App Control) ainda
+ * bloqueia uma versão nova: ela nunca é apagada, mesmo após várias atualizações seguidas.
+ */
 export function versoesParaLimpar(
   instaladas: string[],
   ativa: string,
   manter = 2,
+  ultimaQueAbriu?: string,
 ): string[] {
   const ordenadas = [...instaladas].sort((a, b) => compararVersoes(b, a));
   const preservar = new Set([
     ativa,
     ...ordenadas.filter((v) => v !== ativa).slice(0, manter - 1),
   ]);
+  if (ultimaQueAbriu) preservar.add(ultimaQueAbriu);
   return ordenadas.filter((v) => !preservar.has(v));
+}
+
+/**
+ * Versões para tentar quando a ativa é bloqueada pelo Windows, em ordem: primeiro a última
+ * que abriu de fato; depois as demais instaladas, da mais nova para a mais antiga.
+ */
+export function versoesAlternativas(
+  instaladas: string[],
+  ativa: string,
+  ultimaQueAbriu?: string,
+): string[] {
+  const outras = [...new Set(instaladas)]
+    .filter((v) => v !== ativa)
+    .sort((a, b) => compararVersoes(b, a));
+  if (ultimaQueAbriu && outras.includes(ultimaQueAbriu))
+    return [ultimaQueAbriu, ...outras.filter((v) => v !== ultimaQueAbriu)];
+  return outras;
 }

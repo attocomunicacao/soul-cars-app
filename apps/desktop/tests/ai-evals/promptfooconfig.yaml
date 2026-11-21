@@ -1,0 +1,25 @@
+# Eval do Pré-atendimento IA contra o Ollama local (grátis, sem chave).
+# Rodar: npm run eval:ai   |   Ver resultados: npm run eval:ai:view
+description: Pré-atendimento IA — comportamento do modelo local
+
+prompts:
+  - file://prompt.mjs
+
+providers:
+  - id: ollama:chat:qwen2.5:7b
+    config:
+      temperature: 0.3
+
+defaultTest:
+  options:
+    # Igual ao app: tira o raciocínio <think> antes de avaliar.
+    transform: output.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+  assert:
+    - type: javascript
+      description: no máximo ~3 frases curtas
+      value: output.replace(/\[(TRANSFERIR|ENCERRAR)\]/g, "").length < 450
+    - type: not-icontains
+      description: não vaza o raciocínio
+      value: "<think>"
+
+tests: file://tests.yaml

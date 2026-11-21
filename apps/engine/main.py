@@ -8,7 +8,6 @@ Bibliotecas pesadas são importadas só no primeiro uso (o ping responde na hora
 
 import base64
 import json
-import os
 import platform
 import sys
 import time
@@ -139,14 +138,6 @@ def gerar_doc_md(params):
     return {"values": resultado["values"], "markdown": markdown, "conflicts": resultado["conflicts"]}
 
 
-def planilha_aplicar(params):
-    """Edita a planilha de finanças (células, linhas e totais). Ver apps/engine/spreadsheets/finance_sheet.py."""
-    from spreadsheets import finance_sheet as planilha
-
-    pasta = Path(os.environ.get("SOUL_DATA_DIR") or ".") / "backups" / "financas"
-    return planilha.aplicar(params["caminho"], params["operacoes"], params.get("lido_em"), str(pasta))
-
-
 def soulia_planilha(params):
     """Grava a planilha da Soul IA a partir de um JSON temporário. Ver apps/engine/spreadsheets/soul_ai_sheet.py."""
     from spreadsheets import soul_ai_sheet as sp
@@ -209,29 +200,56 @@ METHODS = {
     "ficha_web_buscar": ficha_web_buscar,
     "ficha_web_ficha": ficha_web_ficha,
     "fotos_organizar": fotos_organizar,
-    "planilha_aplicar": planilha_aplicar,
     "soulia_planilha": soulia_planilha,
 }
+
+
+def _erro(exc: BaseException) -> dict:
+    """Resposta de erro; o detalhe técnico vai só para o stderr (o app o grava no log)."""
+    print(f"[engine] {type(exc).__name__}: {exc}", file=sys.stderr)
+    if isinstance(exc, KeyError):
+        return {"error": f"Campo ausente na requisição: {exc}"}
+    return {"error": str(exc)}
+
+
+def processar_linha(linha: str) -> str:
+    """Trata uma requisição e devolve a linha de resposta (sempre um JSON de uma linha).
+
+    Nenhuma falha escapa daqui: erro do método, requisição malformada e resposta que não vira
+    JSON (bytes, Path, numpy…) voltam como {"error": ...}. Se isso derrubasse o laço, o app só
+    veria "O motor foi encerrado", sem o motivo.
+    """
+    try:
+        request = json.loads(linha.lstrip("﻿"))
+        if not isinstance(request, dict):
+            raise ValueError("A requisição deve ser um objeto JSON com method e params.")
+        handler = METHODS.get(request.get("method"))
+        if handler is None:
+            raise ValueError(f"Método desconhecido: {request.get('method')}")
+        params = request.get("params")
+        if params is None:
+            params = {}
+        if not isinstance(params, dict):
+            raise ValueError("params deve ser um objeto JSON.")
+        resposta = {"result": handler(params)}
+    except Exception as exc:  # noqa: BLE001 - todo erro volta para a interface
+        resposta = _erro(exc)
+    try:
+        # allow_nan=False: NaN/Infinity não são JSON válido e o JSON.parse do app rejeitaria a linha.
+        return json.dumps(resposta, ensure_ascii=False, allow_nan=False)
+    except (TypeError, ValueError) as exc:
+        return json.dumps(_erro(exc), ensure_ascii=False)
 
 
 def main():
     # O app fala UTF-8; sem isso o Windows usa cp1252 nos pipes e os acentos quebram.
     sys.stdin.reconfigure(encoding="utf-8")
     sys.stdout.reconfigure(encoding="utf-8")
-    sys.path.insert(0, __file__.rsplit("\\", 1)[0].rsplit("/", 1)[0])
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
     for line in sys.stdin:
         if not line.strip():
             continue
-        try:
-            request = json.loads(line.lstrip("﻿"))
-            handler = METHODS.get(request.get("method"))
-            if handler is None:
-                raise ValueError(f"Método desconhecido: {request.get('method')}")
-            response = {"result": handler(request.get("params") or {})}
-        except Exception as exc:  # noqa: BLE001 - todo erro volta para a interface
-            print(f"[engine] {type(exc).__name__}: {exc}", file=sys.stderr)
-            response = {"error": str(exc)}
-        sys.stdout.write(json.dumps(response, ensure_ascii=False) + "\n")
+        sys.stdout.write(processar_linha(line) + "\n")
         sys.stdout.flush()
 
 

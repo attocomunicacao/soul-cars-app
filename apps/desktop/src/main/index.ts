@@ -14,7 +14,9 @@ import * as caminhos from "./core/paths";
 import {
   definirJanela,
   iniciarEntrada,
+  iniciarPreAtendimento,
   pararEntrada,
+  pararPreAtendimento,
   registrarIpc,
 } from "./ipc/commands";
 import { reiniciarMotor } from "./studio/engine-bridge";
@@ -26,7 +28,6 @@ import {
 import { fecharEmbutidas } from "./window/embedded-sites";
 import { mostrarSplash, type Splash } from "./window/splash";
 import { iniciarDiagnostico, registrar } from "./core/diagnostics";
-import { encerrarInstagram } from "./studio/instagram";
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 
@@ -84,7 +85,6 @@ function criarJanela(splash: Splash | null) {
   janela.webContents.on("did-fail-load", (_e, codigo, descricao, url) =>
     registrar(`Falha ao carregar ${url}: ${descricao} (${codigo})`),
   );
-  janela.on("closed", encerrarInstagram);
   // Com tela de carregamento, ela decide o momento (tempo mínimo) de mostrar a janela.
   janela.once("ready-to-show", () =>
     splash ? splash.revelar(janela) : janela.show(),
@@ -146,6 +146,7 @@ if (!app.requestSingleInstanceLock()) {
       registrarIpc();
       criarJanela(splash);
       iniciarEntrada();
+      iniciarPreAtendimento();
 
       app.on("activate", () => {
         if (!BrowserWindow.getAllWindows().length) criarJanela(null);
@@ -169,7 +170,7 @@ if (!app.requestSingleInstanceLock()) {
     }, 5000).unref();
   });
   app.on("before-quit", pararEntrada);
+  app.on("before-quit", pararPreAtendimento);
   app.on("before-quit", reiniciarMotor);
-  app.on("before-quit", encerrarInstagram);
   app.on("before-quit", fecharEmbutidas);
 }
