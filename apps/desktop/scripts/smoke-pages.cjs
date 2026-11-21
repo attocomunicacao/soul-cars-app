@@ -152,6 +152,17 @@ app.on("browser-window-created", (_e, w) => {
           .then((r) => r.violations.map((v) => ({ id: v.id, impacto: v.impact, ocorrencias: v.nodes.length })))`);
       };
 
+      // ---------------- Configurações sobre uma página embutida (a vista nativa cobre a tela)
+      await js(`window.__t.menu('Atendimento'); window.__t.dormir(800)`);
+      await js(`window.__t.menu('Configurações'); window.__t.dormir(500)`);
+      registra(
+        "configurações: a folha fica visível sobre a página embutida",
+        await js(
+          `(() => { const f = document.querySelector('.sheet-backdrop'); return !!f && getComputedStyle(f).display !== 'none' && f.getBoundingClientRect().width > 0; })()`,
+        ),
+      );
+      await js(`window.__t.menu('Configurações'); window.__t.dormir(300)`);
+
       // ---------------- CRM · Leads
       await js(
         `window.__t.menu('Leads'); window.__t.esperar(() => document.querySelector('.page-head h1')?.textContent === 'Leads', 'Leads não abriu')`,

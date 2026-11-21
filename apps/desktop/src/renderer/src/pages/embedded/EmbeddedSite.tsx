@@ -12,15 +12,18 @@ import { invoke } from "../../lib/desktop-bridge";
 export function EmbeddedSite({
   id,
   aoErro,
+  pausada,
 }: {
   id: "crm" | "bndv" | "meta";
   aoErro: (mensagem: string) => void;
+  /** Verdadeiro enquanto algo do app (as Configurações) precisa ficar por cima: a vista nativa se esconde. */
+  pausada?: boolean;
 }) {
   const area = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = area.current;
-    if (!el) return;
+    if (!el || pausada) return;
     let quadro = 0;
     const enviar = () => {
       const r = el.getBoundingClientRect();
@@ -46,7 +49,7 @@ export function EmbeddedSite({
       window.removeEventListener("resize", agendar);
       invoke("embutida_esconder").catch(() => {});
     };
-  }, [id, aoErro]);
+  }, [id, aoErro, pausada]);
 
   const nome = { crm: "CRM", bndv: "BNDV", meta: "Meta Ads" }[id];
   // O texto fica por baixo da vista nativa: aparece só enquanto o site ainda não abriu.

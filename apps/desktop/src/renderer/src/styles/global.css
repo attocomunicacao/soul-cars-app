@@ -1053,7 +1053,7 @@ main.crm {
   flex-direction: column;
   height: 100vh;
 }
-main.crm > :not(.crm-area):not([role="alert"]) {
+main.crm > :not(.crm-area):not([role="alert"]):not(.sheet-backdrop) {
   display: none;
 }
 .crm-area {
