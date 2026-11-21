@@ -8,7 +8,6 @@ Bibliotecas pesadas são importadas só no primeiro uso (o ping responde na hora
 
 import base64
 import json
-import os
 import platform
 import sys
 import time
