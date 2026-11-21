@@ -2,6 +2,13 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.3.1]
+
+Motor do aplicativo atualizado.
+
+- **Electron 45** (Chromium e Node mais novos, com correções de segurança). Como o executável muda, esta atualização baixa o pacote completo (cerca de 140 MB). Se o Windows bloquear o novo executável, o Launcher abre a versão anterior e avisa.
+- Launcher 1.0.9: atualiza para o Electron 45 e traz as correções de segurança do motor de interface.
+
 ## [1.3.0]
 
 Acabamento e manutenção.
