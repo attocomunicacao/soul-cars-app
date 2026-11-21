@@ -1,12 +1,12 @@
 /**
- * Área de um site embutido (CRM uTalk, BNDV, Meta Ads): reserva o espaço na janela e
+ * Área de um site embutido (CRM uTalk, Meta Ads): reserva o espaço na janela e
  * pede ao main para posicionar a WebContentsView sobre ele.
  */
 import { useEffect, useRef } from "react";
 import { invoke } from "../../lib/desktop-bridge";
 
 /**
- * Área de um site embutido (CRM da Umbler uTalk, BNDV ou Meta Ads). A página em si é uma vista nativa do Electron, colocada
+ * Área de um site embutido (CRM da Umbler uTalk ou Meta Ads). A página em si é uma vista nativa do Electron, colocada
  * pelo processo principal sobre este retângulo; aqui só medimos o espaço e avisamos.
  */
 export function EmbeddedSite({
@@ -14,7 +14,7 @@ export function EmbeddedSite({
   aoErro,
   pausada,
 }: {
-  id: "crm" | "bndv" | "meta";
+  id: "crm" | "meta";
   aoErro: (mensagem: string) => void;
   /** Verdadeiro enquanto algo do app (as Configurações) precisa ficar por cima: a vista nativa se esconde. */
   pausada?: boolean;
@@ -51,7 +51,7 @@ export function EmbeddedSite({
     };
   }, [id, aoErro, pausada]);
 
-  const nome = { crm: "CRM", bndv: "BNDV", meta: "Meta Ads" }[id];
+  const nome = { crm: "CRM", meta: "Meta Ads" }[id];
   // O texto fica por baixo da vista nativa: aparece só enquanto o site ainda não abriu.
   return (
     <div ref={area} className="crm-area" aria-label={nome}>

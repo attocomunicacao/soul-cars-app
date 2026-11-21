@@ -30,7 +30,6 @@ import {
   type IdEmbutida,
   type Retangulo,
 } from "../window/embedded-sites";
-import * as financas from "../finance/finance";
 import * as utalk from "../crm/utalk";
 import * as leadsCrm from "../crm/leads";
 import * as soulApp from "../crm/soul-app-import";
@@ -262,10 +261,8 @@ const COMANDOS: Record<string, Comando> = {
     esconderEmbutidas();
     return true;
   },
-  utalk_estado: () => utalk.estadoUtalk(),
   utalk_token_salvar: (a) => utalk.salvarTokenUtalk(String(a.token)),
   utalk_token_remover: () => utalk.removerTokenUtalk(),
-  utalk_visao: () => utalk.visaoUtalk(),
   // ---- CRM · Leads, Meta Ads e Funil (vindos do Soul APP) ----
   crm_leads_dados: () => leadsCrm.dadosLeads(),
   crm_leads_atualizar: () => leadsCrm.atualizarLeads(),
@@ -287,7 +284,6 @@ const COMANDOS: Record<string, Comando> = {
   soulia_estado: () => souliaIa.estadoSouliaIa(),
   soulia_sincronizar: (a) =>
     souliaIa.sincronizarSouliaIa({ limite: a.limite }, emitir),
-  soulia_desempenho: () => souliaIa.desempenhoSouliaIa(),
   soulia_cancelar: () => souliaIa.cancelarSouliaIa(),
   soulia_exportar: () => souliaIa.exportarSouliaIa(emitir),
   soulia_abrir_pasta: () => souliaIa.abrirPastaSouliaIa(),
@@ -337,15 +333,6 @@ const COMANDOS: Record<string, Comando> = {
   lab_abrir_pasta: () => lab.abrirPastaLab(),
   estoque_vitrine: () => vitrine(),
   // ---- Finanças (planilha mensal vinculada) ----
-  financas_estado: () => financas.estadoFinancas(),
-  financas_vincular: (a) => financas.vincularFinancas(String(a.origem)),
-  financas_desvincular: () => financas.desvincularFinancas(),
-  financas_ler: () => financas.lerFinancas(),
-  financas_abrir: () => financas.abrirFinancas(),
-  financas_editar: (a) =>
-    financas.editarFinancas(a.operacoes, a.lidoEm, emitir),
-  financas_pago: (a) =>
-    financas.marcarPagos(a.chaves as string[], a.pago === true),
   relatorio_pdf: () => exportarRelatorioPdf(janela),
   estoque_resumo: () => resumoEstoque(),
   anuncios_vendas: () => ultimasVendas(),

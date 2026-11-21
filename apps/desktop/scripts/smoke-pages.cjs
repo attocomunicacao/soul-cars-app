@@ -189,6 +189,8 @@ app.on("browser-window-created", (_e, w) => {
       await js(
         `window.__t.menu('Estoque'); window.__t.esperar(() => !!document.querySelector('.metric-link'), 'Estoque não abriu')`,
       );
+      // Espera a transição de cores do tema (trocado logo antes) acabar, para o axe medir a cor final.
+      await js(`window.__t.dormir(700)`);
       await auditar("estoque");
 
       // ---------------- CRM · Leads

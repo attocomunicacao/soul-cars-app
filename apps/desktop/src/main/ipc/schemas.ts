@@ -42,11 +42,8 @@ export const METODOS_DO_MOTOR_PELA_INTERFACE = [
   "fotos_organizar",
 ] as const;
 
-/** Métodos que só o processo principal chama (finanças e Soul IA); a interface não os alcança. */
-export const METODOS_INTERNOS_DO_MOTOR = [
-  "planilha_aplicar",
-  "soulia_planilha",
-] as const;
+/** Métodos que só o processo principal chama (planilha da Soul IA); a interface não os alcança. */
+export const METODOS_INTERNOS_DO_MOTOR = ["soulia_planilha"] as const;
 
 /** Todos os métodos de `apps/engine/main.py` (um teste confere a lista com o Python). */
 export const METODOS_DO_MOTOR = [
@@ -315,7 +312,7 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
     estoque_atualizar: { args: { todos: opcional(booleano) } },
     embutida_mostrar: {
       args: {
-        id: umDe("crm", "bndv", "meta"),
+        id: umDe("crm", "meta"),
         x: numero,
         y: numero,
         largura: numero,
@@ -323,10 +320,8 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
       },
     },
     embutida_esconder: vazio,
-    utalk_estado: vazio,
     utalk_token_salvar: { args: { token: texto({ max: 4000 }) } },
     utalk_token_remover: vazio,
-    utalk_visao: vazio,
     // ---- CRM · Leads, Meta Ads e Funil (vindos do Soul APP) ----
     crm_leads_dados: vazio,
     crm_leads_atualizar: vazio,
@@ -392,7 +387,6 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
     soulapp_importar: vazio,
     soulia_estado: vazio,
     soulia_sincronizar: { args: { limite: opcional(inteiro) } },
-    soulia_desempenho: vazio,
     soulia_cancelar: vazio,
     soulia_exportar: vazio,
     soulia_abrir_pasta: vazio,
@@ -519,31 +513,6 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
     lab_cenarios_auditoria: vazio,
     lab_abrir_pasta: vazio,
     estoque_vitrine: vazio,
-    financas_estado: vazio,
-    financas_vincular: { args: { origem: caminhoQualquer } },
-    financas_desvincular: vazio,
-    financas_ler: vazio,
-    financas_abrir: vazio,
-    financas_editar: {
-      args: {
-        operacoes: lista(
-          objeto({
-            op: umDe("celula", "novo_mes"),
-            aba: texto({ max: 100 }),
-            linha: opcional(inteiro),
-            coluna: opcional(inteiro),
-            variaveis: opcional(lista(lista(texto({ max: 60 }), 50), 10)),
-            valor: opcional(anulavel(texto({ max: 500, vazio: true }))),
-            tipo: opcional(umDe("numero")),
-          }),
-          200,
-        ),
-        lidoEm: opcional(numero),
-      },
-    },
-    financas_pago: {
-      args: { chaves: lista(texto({ max: 300 }), 500), pago: booleano },
-    },
     relatorio_pdf: vazio,
     estoque_resumo: vazio,
     anuncios_vendas: vazio,

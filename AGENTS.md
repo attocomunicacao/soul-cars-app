@@ -2,7 +2,7 @@
 
 > `CLAUDE.md` e `AGENTS.md` têm **exatamente o mesmo conteúdo**. Ao alterar um, copie para o outro.
 
-App desktop privado da Atto Comunicação para a revenda SOUL Cars: estoque e vendas do BNDV, ficha do veículo (Studio), produção de mídia, criativos, anúncios, CRM uTalk, Meta Ads, Pré-atendimento IA e finanças. Tudo roda no Windows da loja; dados ficam no computador do usuário.
+App desktop privado da Atto Comunicação para a revenda SOUL Cars: estoque e vendas do BNDV, ficha do veículo (Studio), produção de mídia, criativos, anúncios, CRM uTalk, Meta Ads, Pré-atendimento IA. Tudo roda no Windows da loja; dados ficam no computador do usuário.
 
 ## Economia de contexto
 
@@ -35,7 +35,7 @@ main/studio/engine-bridge.ts ↔ JSON por linha ↔ apps/engine/main.py
 - Só a janela principal (mainFrame) invoca comandos. Comando sem esquema (ou esquema sem comando) impede o app de abrir. SQL arbitrário fica bloqueado.
 - Binários trafegam como `Uint8Array`; cabeçalhos de caminho/nome são codificados uma vez no renderer e decodificados no main.
 - Sites embutidos (uTalk, BNDV, Meta) são `WebContentsView` sem preload, com partições persistentes.
-- Navegação é estado React (sem roteador): `renderer/src/app/navigation.ts` define `Pagina`, `MENU` e `MENU_OCULTO` (Leads antigos/Soul IA, BNDV e Finanças estão ocultos, mas o código continua).
+- Navegação é estado React (sem roteador): `renderer/src/app/navigation.ts` define `Pagina`, `MENU` e `PAGINAS_EMBUTIDAS` (só o CRM e o Meta Ads são sites embutidos).
 
 ## Mapa: quero alterar → arquivo
 
@@ -62,12 +62,11 @@ Caminhos relativos a `apps/desktop/src/`.
 | Caminhos, config, diagnóstico | `main/core/paths.ts`, `config-json.ts`, `json-store.ts`, `diagnostics.ts`, `gpu.ts`, `legacy-ai-cleanup.ts`; `main/index.ts`, `main/window/*` |
 | Motor Python (ponte) | `main/studio/engine-bridge.ts`, `renderer/src/lib/engine-client.ts`, `apps/engine/main.py` |
 | CRM · Leads (Kanban, SDR) | `pages/crm-leads/CrmLeadsPage.tsx`, `shared/crm-leads.ts`, `shared/crm-tags.ts`, `main/crm/leads.ts`, `leads-sync.ts`, `umbler-client.ts`, `utalk-api.ts`, `utalk.ts` |
-| Soul IA (memória, desempenho) | `pages/leads/*`, `main/soul-ai/*` (banco próprio `soul-ia.db`), engine `spreadsheets/soul_ai_sheet.py` |
+| Soul IA (memória do histórico; alimenta exemplos reais e o Laboratório) | `pages/settings/SoulAiMemory.tsx` (em Configurações, com "Esquecer"), `main/soul-ai/*` (banco próprio `soul-ia.db`), engine `spreadsheets/soul_ai_sheet.py` |
 | Meta Ads (Campanhas) | `pages/meta-ads/MetaAdsPage.tsx`, `shared/meta-ads.ts`, `main/meta/graph-api.ts`, `meta.ts` |
 | Funil Meta → CRM | `pages/funnel/FunnelPage.tsx`, `shared/funnel.ts`, `main/funnel/funnel.ts` |
 | Pré-atendimento IA | `pages/pre-service/PreServicePage.tsx`, `shared/pre-service.ts`, `shared/pre-service-pipeline.ts` (pós-processamento), `shared/pre-service-guard.ts` (anti-duplicação), `shared/pre-service-audit.ts` + `main/pre-service/audit.ts` (auditoria), `shared/lead-profile.ts`, `main/pre-service/pre-service.ts`, `llm.ts`, `utalk-writer.ts`; evals em `apps/desktop/tests/ai-evals/` |
 | Laboratório de testes da IA | `pages/pre-service/lab/LabTab.tsx`, `renderer/src/lib/lab-client.ts`, `main/lab/{runner,lab,history-analysis,audit-scenarios,cli,cli-args}.ts` (`npm run lab:cli`), `shared/lab.ts`, `shared/lab-corpus.ts` (`CONJUNTO_RAPIDO`); lista em `docs/ai/lab-cenarios.md`; skills `/ia-ciclo` (erros pontuais), `/ia-lab` e `/ia-corpus` |
-| Finanças | `pages/finance/FinancePage.tsx`, `lib/finance.ts`, `main/finance/finance.ts`; engine `spreadsheets/finance_sheet.py` |
 | Configurações e conexões | `pages/settings/*`, `main/crm/soul-app-import.ts` |
 | Launcher | `apps/launcher/src/{main,preload,renderer,shared}`; contrato em `shared/api.ts`, manifesto em `shared/manifest.ts` |
 | CI / release | `.github/workflows/{ci,release,pages,eval-ia-groq}.yml`, `scripts/release/*`, `CHANGELOG.md` |

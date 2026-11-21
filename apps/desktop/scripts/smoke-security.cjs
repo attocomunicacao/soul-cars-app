@@ -163,10 +163,10 @@ app.whenReady().then(async () => {
           );
         else {
           // ---------- cofre: token no formato antigo continua valendo
-          r = await inv("utalk_estado");
+          r = await inv("crm_leads_dados");
           registra(
             "cofre: token do uTalk gravado pela versão anterior continua lido",
-            r.ok && r.v.configurado === true,
+            r.ok && r.v.conectado === true,
             JSON.stringify(r),
           );
 
