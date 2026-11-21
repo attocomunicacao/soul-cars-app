@@ -2527,3 +2527,85 @@ button.kanban-cartao {
 .pre-atendimento .campo-com-botao {
   margin-bottom: 14px;
 }
+
+/* ---------------------------------------------------------------- andamento do vídeo */
+.andamento {
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.andamento.pronto {
+  background: var(--success-soft);
+  border-color: var(--success);
+}
+.andamento-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.andamento-topo small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+}
+.andamento-pct {
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.andamento-trilho {
+  height: 8px;
+  border-radius: var(--pill);
+  background: var(--fill);
+  overflow: hidden;
+}
+.andamento-barra {
+  height: 100%;
+  border-radius: var(--pill);
+  background: var(--accent);
+  transition: width 400ms var(--ease);
+}
+.andamento.pronto .andamento-barra {
+  background: var(--success);
+}
+.andamento-rodape {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.andamento details {
+  margin-top: 10px;
+}
+.andamento pre {
+  max-height: 200px;
+  overflow: auto;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .andamento-barra {
+    transition: none;
+  }
+}
+
+/* Textos de apoio soltos */
+.muted,
+.dica-campo {
+  color: var(--muted);
+  font-size: 13px;
+}
+.dica-campo {
+  display: block;
+  margin-top: 4px;
+}
+.turno-lab {
+  border-top: 1px solid var(--hairline);
+  padding: 10px 0;
+}

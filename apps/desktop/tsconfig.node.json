@@ -54,6 +54,7 @@
     "tests/http-retry.test.ts",
     "tests/utalk-writer.test.ts",
     "tests/csp.test.ts",
-    "tests/meta-url.test.ts"
+    "tests/meta-url.test.ts",
+    "tests/css-classes.test.ts"
   ]
 }
