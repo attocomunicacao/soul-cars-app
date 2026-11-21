@@ -207,6 +207,9 @@ describe("montagem do pedido ao modelo", () => {
     expect(mensagens[0].content).toMatch(/CHEVROLET CRUZE · R\$ 66900/);
     expect(mensagens[0].content).toMatch(/último horário de visita é 16h/);
     expect(mensagens[0].content).toMatch(/FOTOS: nota/);
+    // Privacidade: só o primeiro nome vai ao modelo externo, nunca o nome completo.
+    expect(mensagens[0].content).toContain("Nome do lead: Fulano.");
+    expect(mensagens[0].content).not.toContain("Teste.");
     expect(usados.exemplos).toBe(1);
     expect(mensagens.at(-1)?.content).toMatch(/posso ir 17h/);
   });

@@ -52,6 +52,16 @@ export function mensagemDoMeta(e: {
   return `Meta: ${e.message ?? "erro da API"}`;
 }
 
+/** Verdadeiro para https em graph.facebook.com (a única origem para onde o token pode ir). */
+function enderecoDaMeta(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && u.hostname === "graph.facebook.com";
+  } catch {
+    return false;
+  }
+}
+
 /** GET paginado (segue `paging.next`). Token inválido vira mensagem clara. */
 export async function graphGet<T = Record<string, unknown>>(
   buscar: Buscar,
@@ -87,6 +97,9 @@ export async function graphGet<T = Record<string, unknown>>(
     }
     out.push(...(json.data ?? []));
     proxima = json.paging?.next;
+    // O token vai em cada pedido: só segue para a própria Meta, nunca para um endereço vindo da resposta.
+    if (proxima && !enderecoDaMeta(proxima))
+      throw new Error("O Meta devolveu um endereço inesperado na paginação.");
   }
   return out;
 }
