@@ -129,7 +129,12 @@ export function App() {
       />
       <main className={ehEmbutida(pagina) ? "crm" : ""}>
         {ehEmbutida(pagina) && (
-          <EmbeddedSite key={pagina} id={pagina} aoErro={setErro} />
+          <EmbeddedSite
+            key={pagina}
+            id={pagina}
+            aoErro={setErro}
+            pausada={config}
+          />
         )}
         {noEstoque && (
           <FolderBar
