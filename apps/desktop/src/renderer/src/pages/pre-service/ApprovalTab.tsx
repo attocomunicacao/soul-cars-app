@@ -6,7 +6,7 @@ import { Vazio, ha } from "../../app/components";
 import { type Painel, type Agir } from "./shared";
 
 // ------------------------------------------------------------------ Aprovação
-export function Aprovacao({
+export function ApprovalTab({
   p,
   agir,
   ocupado,

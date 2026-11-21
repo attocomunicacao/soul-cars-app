@@ -9,7 +9,7 @@ import { type Painel, type Agir } from "./shared";
 
 // ------------------------------------------------------------------ Ensinar
 type Simulada = MensagemIa & { fotos?: string[]; nota?: string };
-export function Ensinar({
+export function TeachTab({
   p,
   agir,
   aoErro,

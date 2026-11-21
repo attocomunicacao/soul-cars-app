@@ -7,7 +7,7 @@ import { type Painel, type Agir } from "./shared";
 
 // ------------------------------------------------------------------ Respostas-rápidas e persona
 const NOVA: RespostaRapida = { id: "", titulo: "", palavras: "", texto: "" };
-export function Respostas({ p, agir }: { p: Painel; agir: Agir }) {
+export function RepliesTab({ p, agir }: { p: Painel; agir: Agir }) {
   const [item, setItem] = useState<RespostaRapida>(NOVA);
   const [persona, setPersona] = useState(p.persona);
   return (

@@ -16,7 +16,7 @@ const CAMPOS_LOJA: [keyof LojaIa, string, boolean][] = [
   ["troca", "Troca", true],
   ["extra", "Outras informações", true],
 ];
-export function Loja({ p, agir }: { p: Painel; agir: Agir }) {
+export function StoreTab({ p, agir }: { p: Painel; agir: Agir }) {
   const [loja, setLoja] = useState(p.loja);
   return (
     <div className="panel">

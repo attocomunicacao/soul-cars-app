@@ -13,7 +13,7 @@ const FILTROS_ATIVIDADE = [
   ["sdr", "Troca de SDR"],
 ] as const;
 
-export function Atividade({
+export function Activity({
   eventos,
   intervalo,
 }: {

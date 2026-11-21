@@ -8,7 +8,7 @@ import { invoke } from "../../lib/desktop-bridge";
 import { type Painel, type Agir } from "./shared";
 
 // ------------------------------------------------------------------ Configurações
-export function Configuracoes({
+export function SettingsTab({
   p,
   agir,
   aoErro,
