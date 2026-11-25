@@ -14,7 +14,6 @@
  *     [--notes CHANGELOG-trecho.md] [--out dist/manifest.json]
  *     [--patch-zip <zip só de código> --runtime <id do Electron>]
  *     [--previous-manifest <manifest.json anterior> --launcher-version <versão>]
- *     [--launcher-base-url <base do instalador do Launcher, se estiver em outro repositório>]
  *
  * Com --previous-manifest e --launcher-version iguais à versão do Launcher no manifesto
  * anterior, o bloco do Launcher é copiado dele: o Launcher não mudou, então não é oferecido
@@ -36,7 +35,6 @@ const { values: a } = parseArgs({
     "previous-manifest": { type: "string" },
     "launcher-version": { type: "string" },
     "base-url": { type: "string" },
-    "launcher-base-url": { type: "string" },
     notes: { type: "string" },
     out: { type: "string", default: "manifest.json" },
   },
@@ -54,14 +52,11 @@ function exigir(valor, nome) {
 const versao = exigir(a.version, "version").replace(/^v/, "");
 const base = exigir(a["base-url"], "base-url").replace(/\/?$/, "/");
 
-/** Base dos downloads do instalador do Launcher (por padrão, a mesma do app). */
-const baseLauncher = (a["launcher-base-url"] ?? base).replace(/\/?$/, "/");
-
-/** SHA-256, tamanho e endereço de um arquivo da release (`origem`: por padrão a base do app). */
-function pacote(arquivo, origem = base) {
+/** SHA-256, tamanho e endereço de um arquivo da release. */
+function pacote(arquivo) {
   const dados = fs.readFileSync(arquivo);
   return {
-    url: origem + encodeURIComponent(path.basename(arquivo)),
+    url: base + encodeURIComponent(path.basename(arquivo)),
     sha256: createHash("sha256").update(dados).digest("hex"),
     size: dados.length,
   };
@@ -98,7 +93,7 @@ function blocoLauncher() {
     version: a["launcher-version"] ?? versao,
     notes: notas,
     downloads: a["launcher-exe"]
-      ? { "win32-x64": pacote(a["launcher-exe"], baseLauncher) }
+      ? { "win32-x64": pacote(a["launcher-exe"]) }
       : {},
   };
 }
