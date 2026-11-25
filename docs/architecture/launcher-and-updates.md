@@ -96,3 +96,17 @@ node scripts/release/create-manifest.mjs --version 1.0.0 \
 
 Com `SOUL_CARS_FEED_URL` definida, o Launcher aceita downloads de `http://127.0.0.1` (só para teste);
 em produção, apenas `https`.
+
+## Migração do feed (v1.4.1)
+
+Launchers até a 1.0.9 leem `manifest.json` da última Release **deste** repositório. A v1.4.1 foi a
+primeira a levar só o instalador, então, **uma única vez**, o manifesto dela foi copiado para cá:
+
+```text
+gh release download v1.4.1 --repo attocomunicacao/soul-cars-updates --pattern manifest.json
+gh release upload v1.4.1 manifest.json --repo attocomunicacao/soul-cars-app --clobber
+```
+
+Esse manifesto oferece o Launcher 1.0.10 (que já lê o repositório de atualizações). Releases
+seguintes não precisam disso; quem ainda estiver no 1.0.9 usa o último catálogo guardado até
+atualizar o Launcher.
