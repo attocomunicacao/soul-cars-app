@@ -46,6 +46,8 @@ import { ultimasVendas } from "../inventory/sales";
 import * as arquivos from "../studio/files";
 import * as bancoStudio from "../studio/database";
 import * as repo from "../studio/repository";
+import { rebasearBanco } from "../studio/estoque-rebase";
+import { detectarPastaDrive } from "../drive/detect";
 import * as motor from "../studio/engine-bridge";
 import { criarEsquemas, EXTENSOES_EXECUTAVEIS } from "./schemas";
 import { criarCaminhosEscolhidos, validarChamada } from "./validation";
@@ -242,6 +244,25 @@ const COMANDOS: Record<string, Comando> = {
       if (typeof patch[campo] === "string")
         escolhidosNoDialogo.exigir(patch[campo], campo);
     return caminhos.gravarConfig(patch);
+  },
+  // Vincula o ESTOQUE a uma pasta sincronizada (Google Drive para Desktop). Só vale se a pasta
+  // veio do seletor; reaponta os veículos do banco e não move nem apaga nada no disco.
+  estoque_vincular: (a) => {
+    escolhidosNoDialogo.exigir(a.pasta, "estoquePasta");
+    caminhos.gravarConfig({ estoquePasta: a.pasta });
+    return rebasearBanco(banco(), a.pasta);
+  },
+  estoque_drive_detectar: (a) => {
+    const r = detectarPastaDrive(a.link);
+    // O caminho achado vem do disco (estrutura fixa do Drive para Desktop), não da interface:
+    // pode ser vinculado sem passar pelo seletor.
+    if (r.situacao === "encontrada") escolhidosNoDialogo.lembrar(r.caminho);
+    return r;
+  },
+  // Volta ao ESTOQUE dentro da raiz de dados (as pastas do Drive continuam onde estão).
+  estoque_desvincular: () => {
+    caminhos.gravarConfig({ estoquePasta: "" });
+    return rebasearBanco(banco(), caminhos.ESTOQUE());
   },
   caminhos_app: () => ({
     raizDados: caminhos.raizDados(),
@@ -467,9 +488,10 @@ const COMANDOS: Record<string, Comando> = {
 };
 
 const ESQUEMAS = criarEsquemas({
-  raizes: () => [caminhos.raizDados(), caminhos.userData()],
+  raizes: () => [caminhos.raizDados(), caminhos.ESTOQUE(), caminhos.userData()],
   raizesAbrir: () => [
     caminhos.raizDados(),
+    caminhos.ESTOQUE(),
     caminhos.userData(),
     path.join(os.homedir(), "Pictures", "SOUL Cars"),
   ],

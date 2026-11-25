@@ -30,6 +30,8 @@
     "tests/legacy-ai-cleanup.test.ts",
     "tests/validation.test.ts",
     "tests/repository.test.ts",
+    "tests/drive-locate.test.ts",
+    "tests/estoque-rebase.test.ts",
     "tests/bndv-graphql.test.ts",
     "tests/showcase.test.ts",
     "tests/bndv-extras.test.ts",

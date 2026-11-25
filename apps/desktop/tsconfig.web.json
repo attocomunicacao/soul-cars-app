@@ -42,6 +42,8 @@
     "tests/models.test.ts",
     "tests/gpu.test.ts",
     "tests/repository.test.ts",
+    "tests/drive-locate.test.ts",
+    "tests/estoque-rebase.test.ts",
     "tests/utalk-api.test.ts",
     "tests/crm-tags.test.ts",
     "tests/soul-ai.test.ts",

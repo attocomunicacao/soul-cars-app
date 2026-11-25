@@ -306,6 +306,9 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
         }),
       },
     },
+    estoque_vincular: { args: { pasta: caminhoQualquer } },
+    estoque_desvincular: vazio,
+    estoque_drive_detectar: { args: { link: texto({ max: 500 }) } },
     caminhos_app: vazio,
 
     // ---- Estoque ----

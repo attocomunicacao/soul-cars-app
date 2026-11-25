@@ -2,6 +2,10 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [Não lançado]
+
+- **Estoque no Google Drive**: em Configurações › Estoque no Google Drive, cole o link da pasta ESTOQUE e o app a vincula (precisa do Google Drive para Desktop). Fotos e documentos inseridos em um computador aparecem no outro. Nada é movido nem apagado ao vincular.
+
 ## [1.3.0]
 
 Acabamento e manutenção.

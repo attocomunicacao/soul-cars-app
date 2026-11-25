@@ -88,7 +88,16 @@ export function raizDados(): string {
   return padrao;
 }
 
-export const ESTOQUE = () => path.join(raizDados(), "ESTOQUE");
+/**
+ * Pasta ESTOQUE. Se o usuário vinculou uma pasta sincronizada (Google Drive para Desktop),
+ * ela vale no lugar de `<raizDados>/ESTOQUE`. Não há retorno silencioso ao disco local quando
+ * a pasta vinculada some (Drive desconectado): isso criaria um estoque paralelo e divergente.
+ */
+export const ESTOQUE = () => {
+  const vinculada = lerConfig().estoquePasta;
+  if (typeof vinculada === "string" && vinculada.trim()) return vinculada;
+  return path.join(raizDados(), "ESTOQUE");
+};
 export const DADOS = () => path.join(raizDados(), "dados");
 export const PERFIL_BNDV = () => path.join(raizDados(), ".perfil-bndv");
 
