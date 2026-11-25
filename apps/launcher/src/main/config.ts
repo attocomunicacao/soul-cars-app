@@ -17,16 +17,10 @@ export const REPOSITORIO = "attocomunicacao/soul-cars-app";
 /** Página do projeto (link "Sobre" e "Notas da versão"). */
 export const URL_PROJETO = `https://github.com/${REPOSITORIO}`;
 
-/**
- * Repositório público que hospeda app, patch e manifest.json. A Release do código leva só o
- * instalador do Launcher (igual a UPDATES_REPO em .github/workflows/release.yml).
- */
-export const REPOSITORIO_ATUALIZACOES = "attocomunicacao/soul-cars-updates";
-
-/** Manifesto da release mais recente do repositório de atualizações. */
+/** Manifesto da release mais recente. */
 export const URL_MANIFESTO =
   process.env.SOUL_CARS_FEED_URL ??
-  `https://github.com/${REPOSITORIO_ATUALIZACOES}/releases/latest/download/manifest.json`;
+  `${URL_PROJETO}/releases/latest/download/manifest.json`;
 
 /** Feed alternativo definido para testes: libera downloads de http://127.0.0.1. */
 export const FEED_DE_TESTE = !!process.env.SOUL_CARS_FEED_URL;
