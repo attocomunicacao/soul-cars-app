@@ -2,6 +2,13 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões em [SemVer](https://semver.org/lang/pt-BR/). Cada seção `## [x.y.z]` vira as notas da versão exibidas no Soul Cars Launcher.
 
+## [1.4.1]
+
+Launcher na página de downloads.
+
+- **Baixar o Launcher direto**: a página de releases do projeto passa a mostrar só o instalador do Launcher, e o botão "Baixar" do site baixa esse instalador sem passos extras.
+- **Launcher 1.0.10**: passa a buscar os pacotes do app e as atualizações no novo repositório de atualizações. Atualize o Launcher quando ele avisar; o app e seus dados não mudam.
+
 ## [1.4.0]
 
 Estoque compartilhado entre computadores pelo Google Drive.
