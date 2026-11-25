@@ -236,7 +236,9 @@ function esquemasDoBanco(): Record<string, Esquema> {
         }),
       },
     },
-    db_veiculo_atualizar: { args: { id, patch: patchVeiculo } },
+    db_veiculo_atualizar: {
+      args: { id, patch: patchVeiculo, semSidecar: opcional(booleano) },
+    },
     db_anuncios_listar: { args: { veiculoId: opcional(id) } },
     db_anuncio_registrar: {
       args: {
@@ -306,6 +308,10 @@ export function criarEsquemas(ctx: Contexto): Record<string, Esquema> {
         }),
       },
     },
+    estoque_vincular: { args: { pasta: caminhoQualquer } },
+    estoque_desvincular: vazio,
+    estoque_sidecar_aplicar: { args: { veiculo } },
+    estoque_drive_detectar: { args: { link: texto({ max: 500 }) } },
     caminhos_app: vazio,
 
     // ---- Estoque ----

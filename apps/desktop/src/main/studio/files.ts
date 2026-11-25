@@ -9,6 +9,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import * as caminhos from "../core/paths";
+import { copiasDeConflito } from "../../shared/drive-conflicts";
+import { ehTemporario } from "../../shared/intake-rules";
 
 export const SLOTS = ["main", "left", "center", "right", "original"] as const;
 export type Slot = (typeof SLOTS)[number];
@@ -105,16 +107,16 @@ export function pastaFotos(pasta: string) {
 /** Fotos reais do veículo (imagens da pasta de fotos), em ordem natural. */
 export function fotosDaPasta(pasta: string) {
   return arquivos(pastaFotos(pasta))
-    .filter(
-      (p) => IMAGENS.includes(ext(p)) && !path.basename(p).startsWith("."),
-    )
+    .filter((p) => IMAGENS.includes(ext(p)) && !ehTemporario(path.basename(p)))
     .sort(natural);
 }
 
 /** PDFs do documento: na raiz da pasta ou numa subpasta DOC/DOCUMENTO/CRLV. */
 export function pdfsDoDocumento(pasta: string) {
   return [pasta, ...subpastas(pasta, NOMES_DOC)].flatMap((d) =>
-    arquivos(d).filter((p) => ext(p) === ".pdf"),
+    arquivos(d).filter(
+      (p) => ext(p) === ".pdf" && !ehTemporario(path.basename(p)),
+    ),
   );
 }
 
@@ -352,6 +354,8 @@ export type StatusProducao = {
   video_leve_bytes: number | null;
   criativos: string[];
   projeto: boolean;
+  /** Fotos que parecem cópia de conflito do Drive (dois computadores gravaram o mesmo arquivo). */
+  conflitos: string[];
 };
 
 export function statusProducao(pasta: string): StatusProducao {
@@ -404,6 +408,7 @@ export function statusProducao(pasta: string): StatusProducao {
       path.basename(p),
     ),
     projeto: fs.existsSync(path.join(pasta, "PROJETO")),
+    conflitos: copiasDeConflito(lista.map((p) => path.basename(p))),
   };
 }
 

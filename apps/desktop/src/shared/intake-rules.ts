@@ -18,6 +18,8 @@ const TEMPORARIOS_EXT = [
   ".partial",
   ".part",
   ".parcial",
+  ".drivedownload",
+  ".driveupload",
   ".gdoc",
   ".gsheet",
   ".gslides",

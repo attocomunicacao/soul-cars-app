@@ -172,6 +172,13 @@ export function Production({
             ? `✓ ${status.fotos.length} imagem(ns) encontrada(s)`
             : "○ Coloque as fotos na pasta FOTOS do veículo"}
         </p>
+        {!!status?.conflitos?.length && (
+          <p className="notice" role="status">
+            O Drive criou cópia(s) de conflito: {status.conflitos.join(", ")}.
+            Dois computadores gravaram o mesmo arquivo; confira qual versão vale
+            e apague a outra.
+          </p>
+        )}
         <div className="actions">
           <button
             disabled={ocupado || !pasta}

@@ -11,6 +11,8 @@ Anúncios registrados ficam na tabela `anuncios` (migração 7) e entram no back
 
 Entrada por pasta sincronizada: a pasta escolhida fica no banco (`config`, chave `entrada_pasta`) e o registro do que foi copiado, pendente ou com aviso fica na tabela `entrada_arquivos` (migração 6). A pasta da nuvem em si não faz parte do backup do app; os arquivos copiados ficam na pasta do veículo no ESTOQUE.
 
+Estoque no Google Drive: em Configurações › Estoque no Google Drive, o ESTOQUE pode apontar para a pasta sincronizada pelo Google Drive para Desktop (`estoquePasta` no `config.json`). Fotos, documentos, DES.md e DOC.md viajam como arquivos da pasta. O `soul.db` continua local em cada computador (SQLite com WAL não pode ser sincronizado por dois PCs), então cada veículo leva um arquivo `.soul-veiculo.json` na própria pasta com os campos editados (valor, km, textos, ajustes dos criativos). Vale o registro mais recente inteiro; o outro computador o aplica ao ler as pastas, e o marcador `sidecar:<pasta>` na tabela `config` evita reaplicar o que já foi visto. Se o Drive estiver desconectado, o app não volta ao disco local: a pasta fica indisponível até o Drive voltar. Cópias de conflito do Drive (`1 (1).jpg`) aparecem como aviso em Produção. Os backups do `soul.db` continuam locais.
+
 `dados/bndv_vendas.csv` é entrada financeira do Estoque.
 ## Importação antiga
 

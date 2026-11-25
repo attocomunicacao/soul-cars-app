@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { Icon } from "../../app/icons";
 import { invoke, open } from "../../lib/desktop-bridge";
 import { ConnectionsSettings } from "./ConnectionsSettings";
+import { DriveSettings } from "./DriveSettings";
 import { AppearanceSettings } from "./AppearanceSettings";
 import { SoulAiMemory } from "./SoulAiMemory";
 import { StoreSettings } from "./StoreSettings";
@@ -115,6 +116,7 @@ export function SettingsPanel({
               </button>
             </div>
           </section>
+          <DriveSettings />
           <section>
             <h3>Motor de automação</h3>
             <p>
