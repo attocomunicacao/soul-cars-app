@@ -24,6 +24,8 @@ export type StatusProducao = {
   video_leve_bytes: number | null;
   criativos: string[];
   projeto: boolean;
+  /** Fotos que parecem cópia de conflito do Drive (dois computadores gravaram o mesmo arquivo). */
+  conflitos: string[];
 };
 
 export const proximoNumero = (raiz: string) =>

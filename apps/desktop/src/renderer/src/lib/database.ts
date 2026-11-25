@@ -76,9 +76,11 @@ export function criarVeiculo(v: NovoVeiculo): Promise<number> {
 export async function atualizarVeiculo(
   id: number,
   patch: Partial<Pick<Veiculo, Editavel>>,
+  /** Leitura das pastas (não é edição do usuário): não grava o sidecar. */
+  semSidecar = false,
 ): Promise<void> {
   if (!EDITAVEIS.some((c) => c in patch)) return;
-  await invoke("db_veiculo_atualizar", { id, patch });
+  await invoke("db_veiculo_atualizar", { id, patch, semSidecar });
 }
 
 export type Anuncio = {

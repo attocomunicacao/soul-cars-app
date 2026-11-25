@@ -48,6 +48,7 @@ import * as bancoStudio from "../studio/database";
 import * as repo from "../studio/repository";
 import { rebasearBanco } from "../studio/estoque-rebase";
 import { detectarPastaDrive } from "../drive/detect";
+import { aplicarSidecar, gravarSidecar } from "../studio/sidecar";
 import * as motor from "../studio/engine-bridge";
 import { criarEsquemas, EXTENSOES_EXECUTAVEIS } from "./schemas";
 import { criarCaminhosEscolhidos, validarChamada } from "./validation";
@@ -209,7 +210,11 @@ const COMANDOS: Record<string, Comando> = {
   db_veiculos_listar: (a) => repo.listarVeiculos(banco(), a.busca),
   db_veiculo_obter: (a) => repo.obterVeiculo(banco(), a.id),
   db_veiculo_criar: (a) => repo.criarVeiculo(banco(), a.veiculo as never),
-  db_veiculo_atualizar: (a) => repo.atualizarVeiculo(banco(), a.id, a.patch),
+  db_veiculo_atualizar: (a) => {
+    repo.atualizarVeiculo(banco(), a.id, a.patch);
+    // A leitura das pastas também atualiza o veículo; só a edição do usuário vai para o outro PC.
+    if (!a.semSidecar) gravarSidecar(banco(), a.id);
+  },
   db_anuncios_listar: (a) => repo.listarAnuncios(banco(), a.veiculoId),
   db_anuncio_registrar: (a) =>
     repo.registrarAnuncio(banco(), a.anuncio as never),
@@ -252,6 +257,7 @@ const COMANDOS: Record<string, Comando> = {
     caminhos.gravarConfig({ estoquePasta: a.pasta });
     return rebasearBanco(banco(), a.pasta);
   },
+  estoque_sidecar_aplicar: (a) => aplicarSidecar(banco(), a.veiculo),
   estoque_drive_detectar: (a) => {
     const r = detectarPastaDrive(a.link);
     // O caminho achado vem do disco (estrutura fixa do Drive para Desktop), não da interface:

@@ -69,7 +69,9 @@ async function executarImportacao() {
       existente?.id ??
       (await criarVeiculo({ nome: patch.nome || modelo, placa }));
     // Preserva progresso e ajustes do Studio ao reler a ficha do BNDV.
-    await atualizarVeiculo(id, patch);
+    await atualizarVeiculo(id, patch, true);
+    // Edições feitas no outro computador (sidecar da pasta) valem depois da leitura das fichas.
+    await invoke("estoque_sidecar_aplicar", { veiculo: id });
     await salvarConfig(`${LEITURA}${pasta.caminho}`, String(pasta.modificado));
   }
   const presentes = new Set(pastas.map((p) => p.caminho));

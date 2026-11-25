@@ -4,7 +4,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) · versões
 
 ## [Não lançado]
 
-- **Estoque no Google Drive**: em Configurações › Estoque no Google Drive, cole o link da pasta ESTOQUE e o app a vincula (precisa do Google Drive para Desktop). Fotos e documentos inseridos em um computador aparecem no outro. Nada é movido nem apagado ao vincular.
+- **Estoque no Google Drive**: em Configurações › Estoque no Google Drive, cole o link da pasta ESTOQUE e o app a vincula (precisa do Google Drive para Desktop). Fotos e documentos inseridos em um computador aparecem no outro. Nada é movido nem apagado ao vincular. As informações editadas de cada veículo também seguem pelo Drive (arquivo `.soul-veiculo.json` na pasta do veículo), arquivos temporários do Drive são ignorados e cópias de conflito geram aviso em Produção.
 
 ## [1.3.0]
 
