@@ -5,13 +5,13 @@ ArtCraft Launcher: **um Launcher instala e atualiza os apps; cada app roda sozin
 
 ## Peças
 
-| Peça | Onde | O que faz |
-|---|---|---|
-| Soul Cars Launcher | `apps/launcher` | Instalador NSIS leve. Lê o catálogo, baixa, confere, instala, atualiza e abre os apps. Atualiza a si mesmo. |
-| Soul Cars Desktop | `apps/desktop` | O app. Publicado como `.zip` (electron-builder, alvo `zip`). |
-| Motor Python | `apps/engine` | Vai dentro do pacote do app (`resources/engine`); o ambiente Python é instalado sob demanda pelo próprio app. |
-| Manifesto | `manifest.json` na GitHub Release | Catálogo: versões, notas, URLs, SHA-256 e tamanho de cada pacote. |
-| Gerador do manifesto | `scripts/release/create-manifest.mjs` | Calcula hashes e monta o manifesto no CI. |
+| Peça                 | Onde                                  | O que faz                                                                                                     |
+| -------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Soul Cars Launcher   | `apps/launcher`                       | Instalador NSIS leve. Lê o catálogo, baixa, confere, instala, atualiza e abre os apps. Atualiza a si mesmo.   |
+| Soul Cars Desktop    | `apps/desktop`                        | O app. Publicado como `.zip` (electron-builder, alvo `zip`).                                                  |
+| Motor Python         | `apps/engine`                         | Vai dentro do pacote do app (`resources/engine`); o ambiente Python é instalado sob demanda pelo próprio app. |
+| Manifesto            | `manifest.json` na GitHub Release     | Catálogo: versões, notas, URLs, SHA-256 e tamanho de cada pacote.                                             |
+| Gerador do manifesto | `scripts/release/create-manifest.mjs` | Calcula hashes e monta o manifesto no CI.                                                                     |
 
 ## Fluxo de uma release
 
@@ -23,11 +23,17 @@ git tag v1.1.0 && git push origin v1.1.0
   package:desktop → soul-cars-desktop-1.1.0-win-x64.zip
   package:launcher → soul-cars-launcher-setup-1.1.0.exe
   create-manifest  → manifest.json (SHA-256 + tamanho)
-  gh release create v1.1.0 (zip + exe + manifest.json, notas do CHANGELOG.md)
+  gh release create v1.1.0 em <dono>/soul-cars-updates (zip + patch + manifest.json)
+  gh release create v1.1.0 neste repositório (só o instalador do Launcher)
         │
         ▼
-  Launcher lê https://github.com/<dono>/<repo>/releases/latest/download/manifest.json
+  Launcher lê https://github.com/<dono>/soul-cars-updates/releases/latest/download/manifest.json
 ```
+
+A Release do código mostra **só o instalador do Launcher**. O app, o patch e o manifesto ficam no
+repositório público de atualizações (`UPDATES_REPO` em `release.yml` = `REPOSITORIO_ATUALIZACOES`
+em `apps/launcher/src/main/config.ts`). O workflow precisa do segredo `UPDATES_REPO_TOKEN`
+(token com escrita em _Contents_ desse repositório).
 
 ## Atualização sem esperar o Windows (pacote de código)
 
@@ -44,9 +50,10 @@ instalação, Electron novo) ou se algo falhar, usa o zip completo e a espera do
 valer. Atualizar o Electron (`electron` em `apps/desktop/package.json`) é, portanto, a única
 mudança que reintroduz a espera.
 
-O Launcher tem versão própria em `apps/launcher/package.json` e o workflow só empacota um
-instalador novo quando ela muda; nas demais releases o bloco `launcher` do manifesto é copiado do
-manifesto anterior. Mude essa versão apenas quando o código do Launcher mudar.
+O Launcher tem versão própria em `apps/launcher/package.json`. O instalador é empacotado e anexado
+a toda Release do código, mas o manifesto só oferece instalador novo (autoatualização) quando essa
+versão muda; nas demais o bloco `launcher` do manifesto é copiado do manifesto anterior. Mude a
+versão apenas quando o código do Launcher mudar.
 
 ## Fluxo no computador da loja
 
@@ -70,10 +77,9 @@ em `%APPDATA%\soul-cars-app`, e as pastas de veículos na raiz de dados escolhid
 
 ## Requisitos para publicar
 
-- As releases precisam ser **públicas** (o Launcher baixa sem token). Se o código for privado,
-  publique as releases num repositório público separado e ajuste `REPOSITORIO` em
-  `apps/launcher/src/main/config.ts`.
-- Não marque a release como *pre-release* (o endereço `latest` ignora pré-lançamentos).
+- As releases do repositório de atualizações precisam ser **públicas** (o Launcher baixa sem
+  token). Para trocá-lo, ajuste `UPDATES_REPO` e `REPOSITORIO_ATUALIZACOES`.
+- Não marque a release como _pre-release_ (o endereço `latest` ignora pré-lançamentos).
 - Mantenha `CHANGELOG.md` com uma seção `## [x.y.z]` por versão (vira as notas no Launcher).
 
 ## Testar localmente
